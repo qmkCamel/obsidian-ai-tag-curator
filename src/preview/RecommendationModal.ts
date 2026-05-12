@@ -2,6 +2,8 @@
 import { ButtonComponent, Modal, Notice, Setting } from "obsidian";
 import type { RecommendationResult, TagRecommendation } from "../ai/RecommendationSchema";
 import type { getLabels } from "../ui/labels";
+import { formatDuration } from "../utils/formatDuration";
+import type { OperationTimingReport, OperationStageTiming } from "../utils/OperationTimer";
 import { createChangePlan, type ChangePlan } from "./ChangePlan";
 
 type Labels = ReturnType<typeof getLabels>;
@@ -13,6 +15,7 @@ export class RecommendationModal extends Modal {
     app: ConstructorParameters<typeof Modal>[0],
     private readonly result: RecommendationResult,
     private readonly labels: Labels,
+    private readonly timingReport: OperationTimingReport | null,
     private readonly onApply: (plan: ChangePlan) => Promise<void>
   ) {
     super(app);
@@ -23,9 +26,11 @@ export class RecommendationModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
+    this.modalEl.addClass("tag-curator-recommendation-modal");
     contentEl.empty();
-    contentEl.createEl("h2", { text: this.labels.recommendations.title });
-    contentEl.createEl("p", {
+    const header = contentEl.createDiv({ cls: "tag-curator-recommendation__header" });
+    header.createEl("h2", { text: this.labels.recommendations.title });
+    header.createEl("p", {
       cls: "tag-curator-recommendation__intro",
       text: this.labels.recommendations.subtitle
     });
@@ -41,7 +46,13 @@ export class RecommendationModal extends Modal {
       this.renderRecommendation(contentEl, recommendation, index + 1);
     }
 
-    new Setting(contentEl).addButton((button: ButtonComponent) =>
+    if (this.timingReport) {
+      this.renderTimingReport(contentEl, this.timingReport);
+    }
+
+    const actions = new Setting(contentEl);
+    actions.settingEl.addClass("tag-curator-recommendation__actions");
+    actions.addButton((button: ButtonComponent) =>
       button
         .setButtonText(this.labels.recommendations.apply)
         .setCta()
@@ -69,13 +80,8 @@ export class RecommendationModal extends Modal {
   private renderRecommendation(parent: HTMLElement, recommendation: TagRecommendation, index: number): void {
     const row = parent.createDiv({ cls: "tag-curator-recommendation" });
 
-    new Setting(row)
+    const setting = new Setting(row)
       .setName(`${this.labels.recommendations.candidateLabel(index)} · #${recommendation.tag}`)
-      .setDesc(
-        `${this.labels.recommendations.typeLabel(recommendation.type)} · ${this.labels.recommendations.confidenceLabel(
-          recommendation.confidence
-        )}`
-      )
       .addToggle((toggle) =>
         toggle.setValue(this.selected.has(recommendation.tag)).onChange((value) => {
           if (value) {
@@ -85,6 +91,17 @@ export class RecommendationModal extends Modal {
           }
         })
       );
+    setting.settingEl.addClass("tag-curator-recommendation__topline");
+
+    const badges = row.createDiv({ cls: "tag-curator-recommendation__badges" });
+    badges.createSpan({
+      cls: `tag-curator-recommendation__badge tag-curator-recommendation__badge--${recommendation.type}`,
+      text: this.labels.recommendations.typeLabel(recommendation.type)
+    });
+    badges.createSpan({
+      cls: `tag-curator-recommendation__badge tag-curator-recommendation__badge--${recommendation.confidence}`,
+      text: this.labels.recommendations.confidenceLabel(recommendation.confidence)
+    });
 
     row.createDiv({
       cls: "tag-curator-recommendation__meta",
@@ -103,4 +120,43 @@ export class RecommendationModal extends Modal {
       }
     }
   }
+
+  private renderTimingReport(parent: HTMLElement, timing: OperationTimingReport): void {
+    const container = parent.createDiv({ cls: "tag-curator-dev-timing" });
+    container.createEl("h3", { text: this.labels.recommendations.devTimingTitle });
+
+    const list = container.createEl("ul");
+    list.createEl("li", {
+      text: `${this.labels.recommendations.totalTiming} · ${this.labels.recommendations.timingRow(
+        formatTime(timing.startedAt),
+        formatTime(timing.endedAt),
+        formatDuration(timing.durationMs)
+      )}`
+    });
+
+    for (const stage of timing.stages) {
+      list.createEl("li", { text: this.formatStageTiming(stage) });
+    }
+  }
+
+  private formatStageTiming(stage: OperationStageTiming): string {
+    const label =
+      stage.name === "read-current-note"
+        ? this.labels.recommendations.stageTiming.readCurrentNote
+        : stage.name === "prepare-tag-index"
+          ? this.labels.recommendations.stageTiming.prepareTagIndex
+          : stage.name === "request-ai-recommendations"
+            ? this.labels.recommendations.stageTiming.requestAiRecommendations
+            : stage.name;
+
+    return `${label} · ${this.labels.recommendations.timingRow(
+      formatTime(stage.startedAt),
+      formatTime(stage.endedAt),
+      formatDuration(stage.durationMs)
+    )}`;
+  }
+}
+
+function formatTime(value: string): string {
+  return new Date(value).toLocaleTimeString();
 }

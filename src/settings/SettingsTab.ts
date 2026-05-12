@@ -102,9 +102,9 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
       .setDesc(labels.settings.newTagStrictnessDesc)
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("strict", "Strict")
-          .addOption("balanced", "Balanced")
-          .addOption("exploratory", "Exploratory")
+          .addOption("strict", labels.settings.strictnessStrict)
+          .addOption("balanced", labels.settings.strictnessBalanced)
+          .addOption("exploratory", labels.settings.strictnessExploratory)
           .setValue(this.plugin.settings.newTagStrictness)
           .onChange(async (value) => {
             this.plugin.settings.newTagStrictness = value as typeof this.plugin.settings.newTagStrictness;
@@ -128,6 +128,16 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.refreshIndexOnLoad).onChange(async (value) => {
           this.plugin.settings.refreshIndexOnLoad = value;
+          await this.plugin.savePluginData();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName(labels.settings.devModeName)
+      .setDesc(labels.settings.devModeDesc)
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.devMode).onChange(async (value) => {
+          this.plugin.settings.devMode = value;
           await this.plugin.savePluginData();
         })
       );

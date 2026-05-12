@@ -20,4 +20,43 @@ describe("buildRecommendationMessages", () => {
 
     expect(messages.map((message) => message.content).join("\n")).toContain("Simplified Chinese");
   });
+
+  it("limits prompt context to current note 10000 chars, top 100 tags, and 3 examples per tag", () => {
+    const longContent = "a".repeat(10050);
+    const index: TagIndex = {
+      updatedAt: "2026-05-12T00:00:00.000Z",
+      tags: Object.fromEntries(
+        Array.from({ length: 101 }, (_, index) => [
+          `tag-${index}`,
+          {
+            tag: `tag-${index}`,
+            normalized: `tag-${index}`,
+            count: 101 - index,
+            files: [],
+            examples: [
+              { path: "a.md", snippet: "one" },
+              { path: "b.md", snippet: "two" },
+              { path: "c.md", snippet: "three" },
+              { path: "d.md", snippet: "four" }
+            ],
+            namingSignals: { hasHierarchy: false, depth: 1 }
+          }
+        ])
+      )
+    };
+
+    const userPayload = JSON.parse(
+      buildRecommendationMessages(
+        { path: "note.md", content: longContent, frontmatterTags: [] },
+        index,
+        DEFAULT_SETTINGS,
+        "en"
+      )[1].content
+    );
+
+    expect(userPayload.note.content).toHaveLength(10012);
+    expect(userPayload.note.content).toContain("[truncated]");
+    expect(userPayload.vaultTags).toHaveLength(100);
+    expect(userPayload.vaultTags[0].examples).toHaveLength(3);
+  });
 });

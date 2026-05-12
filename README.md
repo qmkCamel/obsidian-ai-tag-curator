@@ -9,6 +9,7 @@ This plugin is not a generic AI tag generator. It is designed as a curator that 
 The first implementation focuses on:
 
 - scanning existing vault tags;
+- analyzing vault tag health;
 - recommending tags for the current note;
 - strongly preferring existing tags over new tags;
 - explaining why each tag is recommended;
@@ -67,7 +68,8 @@ cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag
 4. Run `Suggest tags for current note`.
 5. Review recommended tags, confidence levels, and explanations in the preview modal.
 6. Keep only the tags you want to apply, then confirm the write.
-7. To undo the latest tag change made by this plugin for the current note, run `Undo last tag curator change`.
+7. To inspect taxonomy issues in the current vault, run `Analyze tag health`.
+8. To undo the latest tag change made by this plugin for the current note, run `Undo last tag curator change`.
 
 ## Plugin Commands
 
@@ -75,6 +77,7 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 
 - `Refresh vault tag index`
 - `Show tag index summary`
+- `Analyze tag health`
 - `Suggest tags for current note`
 - `Undo last tag curator change`
 
@@ -82,7 +85,8 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 
 - The first version only writes to the current note's frontmatter `tags`.
 - Inline tags are read for indexing, but are not automatically rewritten.
-- Folder-level batch tagging, tag health reports, and richer undo history are not implemented yet.
+- Tag health reports are read-only diagnostics; they do not automatically merge, rename, or deprecate tags.
+- Folder-level batch tagging and richer undo history are not implemented yet.
 - AI responses must be structured JSON. If parsing fails, no file is modified.
 
 ## Documentation
@@ -90,3 +94,4 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 - [English product handoff](docs/product-handoff.md)
 - [Chinese product explanation](docs/product-handoff.zh-CN.md)
 - [Chinese technical design](docs/technical-design.zh-CN.md)
+- [Chinese roadmap](docs/roadmap.zh-CN.md)

@@ -29,6 +29,33 @@ describe("parseRecommendationResult", () => {
     expect(result.warnings).toEqual(["Index is small."]);
   });
 
+  it("filters out tags already present on the note", () => {
+    const result = parseRecommendationResult(
+      JSON.stringify({
+        recommendations: [
+          {
+            tag: "育儿",
+            type: "existing",
+            confidence: "high",
+            reason: "Already present."
+          },
+          {
+            tag: "AI教育",
+            type: "new",
+            confidence: "high",
+            reason: "New topic tag."
+          }
+        ]
+      }),
+      {
+        notePath: "notes/parenting.md",
+        existingTags: ["clippings", "育儿"]
+      }
+    );
+
+    expect(result.recommendations.map((recommendation) => recommendation.tag)).toEqual(["AI教育"]);
+  });
+
   it("rejects malformed JSON and incomplete recommendations", () => {
     expect(() => parseRecommendationResult("{bad json", { notePath: "x.md", existingTags: [] })).toThrow(
       /valid JSON/

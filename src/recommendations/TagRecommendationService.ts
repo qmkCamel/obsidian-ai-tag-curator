@@ -3,7 +3,6 @@ import { buildRecommendationMessages } from "../ai/PromptBuilder";
 import { parseRecommendationResult } from "../ai/RecommendationParser";
 import type { RecommendationResult } from "../ai/RecommendationSchema";
 import type { AiProvider } from "../ai/AiProvider";
-import { buildTagIndex } from "../index/TagIndexBuilder";
 import type { TagIndex, IndexedNote } from "../index/TagIndex";
 import type { TagCuratorSettings } from "../settings/PluginSettings";
 import type { UiLanguage } from "../ui/labels";
@@ -15,8 +14,7 @@ export class TagRecommendationService {
     private readonly uiLanguage: UiLanguage
   ) {}
 
-  async recommendForNote(note: IndexedNote, notesForIndex: IndexedNote[], cachedIndex?: TagIndex): Promise<RecommendationResult> {
-    const index = cachedIndex ?? buildTagIndex(notesForIndex);
+  async recommendForNote(note: IndexedNote, index: TagIndex): Promise<RecommendationResult> {
     const raw = await this.provider.completeJson(buildRecommendationMessages(note, index, this.settings, this.uiLanguage));
     return parseRecommendationResult(raw, {
       notePath: note.path,

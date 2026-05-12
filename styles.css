@@ -1,34 +1,258 @@
-/* Styles the recommendation preview modal with lightweight Obsidian-native spacing. */
+/* Styles the recommendation preview modal with compact Obsidian-native spacing. */
+.tag-curator-recommendation-modal {
+  max-width: min(760px, calc(100vw - 48px));
+}
+
+.tag-curator-recommendation-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tag-curator-recommendation__header {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 12px;
+}
+
+.tag-curator-recommendation__header h2 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
 .tag-curator-recommendation {
-  border-top: 1px solid var(--background-modifier-border);
-  padding: 12px 0;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.tag-curator-recommendation + .tag-curator-recommendation {
+  margin-top: 2px;
 }
 
 .tag-curator-recommendation:first-child {
   border-top: 0;
 }
 
+.tag-curator-recommendation__topline {
+  border: 0;
+  padding: 0;
+}
+
+.tag-curator-recommendation__topline .setting-item-info {
+  margin-right: 12px;
+}
+
+.tag-curator-recommendation__topline .setting-item-name {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tag-curator-recommendation__topline .setting-item-control {
+  min-width: auto;
+}
+
+.tag-curator-recommendation__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 12px;
+}
+
+.tag-curator-recommendation__badge {
+  background: var(--background-modifier-border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.tag-curator-recommendation__badge--new {
+  background: rgba(var(--interactive-accent-rgb), 0.18);
+  color: var(--text-accent);
+}
+
+.tag-curator-recommendation__badge--high {
+  color: var(--text-success);
+}
+
 .tag-curator-recommendation__meta {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+  font-weight: 600;
 }
 
 .tag-curator-recommendation__intro {
   color: var(--text-muted);
-  margin-bottom: 12px;
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  margin: 0;
 }
 
 .tag-curator-recommendation__alternatives-title {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .tag-curator-recommendation__reason {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  line-height: 1.55;
   margin-top: 6px;
+}
+
+.tag-curator-recommendation ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.tag-curator-recommendation li {
+  line-height: 1.45;
+  margin: 4px 0;
+}
+
+.tag-curator-dev-timing {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  padding: 10px 12px;
+}
+
+.tag-curator-dev-timing h3 {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  margin: 0 0 6px;
+}
+
+.tag-curator-dev-timing ul {
+  margin: 0 0 0 18px;
+  padding: 0;
+}
+
+.tag-curator-recommendation__actions {
+  border-top: 1px solid var(--background-modifier-border);
+  justify-content: flex-end;
+  padding: 12px 0 0;
+}
+
+.tag-curator-recommendation__actions .setting-item-info {
+  display: none;
 }
 
 .tag-curator-summary-stats,
 .tag-curator-summary-tags {
   margin-top: 8px;
+}
+
+.tag-curator-health-modal {
+  max-width: min(820px, calc(100vw - 48px));
+}
+
+.tag-curator-health-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tag-curator-health__header {
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 12px;
+}
+
+.tag-curator-health__header h2 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+
+.tag-curator-health__header p,
+.tag-curator-health__meta,
+.tag-curator-health__empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tag-curator-health__summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.tag-curator-health__summary div {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.tag-curator-health__section h3 {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  margin: 0 0 8px;
+}
+
+.tag-curator-health__issue {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 12px 14px;
+}
+
+.tag-curator-health__issue-title {
+  color: var(--text-normal);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tag-curator-health__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.tag-curator-health__tag {
+  background: rgba(var(--interactive-accent-rgb), 0.16);
+  border-radius: 999px;
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.tag-curator-health__field {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.tag-curator-health__field-label {
+  color: var(--text-normal);
+  font-weight: 700;
+}
+
+.tag-curator-health__actions {
+  border: 0;
+  justify-content: flex-end;
+  padding: 8px 0 0;
+}
+
+.tag-curator-health__actions .setting-item-info {
+  display: none;
 }
 
 .tag-curator-loading-spinner {
@@ -39,6 +263,23 @@
   height: 28px;
   margin: 16px 0;
   width: 28px;
+}
+
+.tag-curator-loading-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tag-curator-loading-header .setting-item {
+  border: 0;
+  padding: 0;
+}
+
+.tag-curator-loading-compact {
+  color: var(--text-muted);
+  margin: 8px 0 0;
 }
 
 @keyframes tag-curator-spin {

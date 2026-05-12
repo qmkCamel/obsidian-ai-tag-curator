@@ -13,11 +13,11 @@ export function buildRecommendationMessages(
 ): ChatMessage[] {
   const relevantTags = Object.values(index.tags)
     .sort((a, b) => b.count - a.count)
-    .slice(0, 80)
+    .slice(0, 100)
     .map((tag) => ({
       tag: tag.tag,
       count: tag.count,
-      examples: tag.examples.slice(0, 2)
+      examples: tag.examples.slice(0, 3)
     }));
 
   return [
@@ -26,6 +26,7 @@ export function buildRecommendationMessages(
       content: [
         "You are an AI tag curator for an Obsidian vault.",
         "Prefer existing tags over new tags.",
+        "Do not recommend tags that are already present on the current note.",
         "Order recommendations by relevance and confidence.",
         "Each recommendation is an independent candidate, not a parent-child or chained ranking.",
         "Return only valid JSON.",
@@ -58,7 +59,7 @@ export function buildRecommendationMessages(
         note: {
           path: note.path,
           existingTags: note.frontmatterTags,
-          content: truncate(note.content, 6000)
+          content: truncate(note.content, 10000)
         },
         vaultTags: relevantTags
       })

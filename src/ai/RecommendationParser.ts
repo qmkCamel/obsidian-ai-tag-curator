@@ -7,6 +7,7 @@ import type {
   RejectedTag,
   TagRecommendation
 } from "./RecommendationSchema";
+import { normalizeTag } from "../utils/normalizeTag";
 
 const recommendationTypes: RecommendationType[] = ["existing", "new"];
 const confidenceValues: RecommendationConfidence[] = ["high", "medium", "low"];
@@ -27,9 +28,17 @@ export function parseRecommendationResult(raw: string, context: RecommendationPa
   return {
     notePath: context.notePath,
     existingTags: context.existingTags,
-    recommendations: parsed.recommendations.map(parseRecommendation),
+    recommendations: filterExistingRecommendations(parsed.recommendations.map(parseRecommendation), context.existingTags),
     warnings: parseWarnings(parsed.warnings)
   };
+}
+
+function filterExistingRecommendations(
+  recommendations: TagRecommendation[],
+  existingTags: string[]
+): TagRecommendation[] {
+  const existing = new Set(existingTags.map(normalizeTag));
+  return recommendations.filter((recommendation) => !existing.has(normalizeTag(recommendation.tag)));
 }
 
 function parseRecommendation(value: unknown): TagRecommendation {

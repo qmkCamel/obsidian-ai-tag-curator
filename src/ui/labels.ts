@@ -8,6 +8,7 @@ type LabelTree = {
   commands: {
     refreshTagIndex: string;
     showTagIndexSummary: string;
+    analyzeTagHealth: string;
     suggestTagsForCurrentNote: string;
     undoLastChangeForCurrentNote: string;
   };
@@ -16,13 +17,17 @@ type LabelTree = {
     refreshMessage: string;
     suggestTitle: string;
     suggestMessage: string;
+    minimize: string;
+    expand: string;
   };
   notices: {
     indexed: (count: number) => string;
     refreshFailed: string;
     noTagIndex: string;
+    tagHealthStarted: string;
     openMarkdownForSuggest: string;
     configureApiKey: string;
+    suggestStarted: string;
     noRecommendations: string;
     suggestFailed: string;
     openMarkdownForUndo: string;
@@ -53,10 +58,15 @@ type LabelTree = {
     allowNewTagsDesc: string;
     newTagStrictnessName: string;
     newTagStrictnessDesc: string;
+    strictnessStrict: string;
+    strictnessBalanced: string;
+    strictnessExploratory: string;
     readInlineTagsName: string;
     readInlineTagsDesc: string;
     refreshIndexOnLoadName: string;
     refreshIndexOnLoadDesc: string;
+    devModeName: string;
+    devModeDesc: string;
   };
   summary: {
     title: string;
@@ -78,6 +88,46 @@ type LabelTree = {
     confidenceLabel: (confidence: RecommendationConfidence) => string;
     apply: string;
     alternative: (tag: string, reason: string) => string;
+    devTimingTitle: string;
+    totalTiming: string;
+    stageTiming: {
+      readCurrentNote: string;
+      prepareTagIndex: string;
+      requestAiRecommendations: string;
+    };
+    timingRow: (startedAt: string, endedAt: string, duration: string) => string;
+  };
+  health: {
+    title: string;
+    subtitle: string;
+    generatedAt: (value: string) => string;
+    indexUpdatedAt: (value: string) => string;
+    summary: {
+      totalTags: (count: number) => string;
+      totalUsages: (count: number) => string;
+      totalFiles: (count: number) => string;
+      riskItems: (count: number) => string;
+    };
+    sections: {
+      lowFrequency: string;
+      nearDuplicates: string;
+      hierarchyInconsistency: string;
+      overBroad: string;
+      overNarrow: string;
+      namingDrift: string;
+    };
+    noIssues: string;
+    evidence: string;
+    impact: string;
+    suggestion: string;
+    suggestions: {
+      merge: string;
+      rename: string;
+      observe: string;
+      deprecate: string;
+    };
+    copyTags: string;
+    copied: string;
   };
 };
 
@@ -85,21 +135,26 @@ const ZH_LABELS: LabelTree = {
   commands: {
     refreshTagIndex: "刷新标签索引",
     showTagIndexSummary: "查看标签索引摘要",
+    analyzeTagHealth: "分析标签健康度",
     suggestTagsForCurrentNote: "为当前笔记推荐标签",
     undoLastChangeForCurrentNote: "撤销当前笔记最近标签修改"
   },
   loading: {
     refreshTitle: "正在刷新标签索引",
-    refreshMessage: "正在扫描 Markdown 笔记并统计 vault 标签用法。",
+    refreshMessage: "正在扫描 Markdown 笔记并统计当前库的标签用法。",
     suggestTitle: "正在生成标签推荐",
-    suggestMessage: "正在读取 vault 上下文并请求 AI provider 返回结构化建议。"
+    suggestMessage: "正在读取当前库上下文并请求 AI 服务返回结构化建议。",
+    minimize: "最小化",
+    expand: "展开"
   },
   notices: {
     indexed: (count) => `已索引 ${count} 个标签。`,
     refreshFailed: "刷新标签索引失败。",
     noTagIndex: "还没有标签索引，请先运行“刷新标签索引”。",
+    tagHealthStarted: "正在分析标签健康度，完成后会弹出报告。",
     openMarkdownForSuggest: "请先打开一篇 Markdown 笔记再请求标签推荐。",
     configureApiKey: "请先在 AI Tag Curator 设置中配置 API key。",
+    suggestStarted: "正在后台生成标签推荐，完成后会弹出结果。",
     noRecommendations: "没有返回标签推荐。",
     suggestFailed: "标签推荐失败。",
     openMarkdownForUndo: "请先打开一篇 Markdown 笔记再撤销标签修改。",
@@ -127,13 +182,18 @@ const ZH_LABELS: LabelTree = {
     maxRecommendationsName: "推荐数量上限",
     maxRecommendationsDesc: "预览中最多展示多少个标签。",
     allowNewTagsName: "允许新标签",
-    allowNewTagsDesc: "关闭时，推荐必须复用已有 vault 标签。",
+    allowNewTagsDesc: "关闭时，推荐必须复用当前库已有标签。",
     newTagStrictnessName: "新标签严格程度",
     newTagStrictnessDesc: "控制模型建议新标签时应有多保守。",
+    strictnessStrict: "严格",
+    strictnessBalanced: "平衡",
+    strictnessExploratory: "探索",
     readInlineTagsName: "读取 inline tags",
     readInlineTagsDesc: "构建索引时包含正文里的标签。",
     refreshIndexOnLoadName: "启动时刷新索引",
-    refreshIndexOnLoadDesc: "默认关闭，避免大 vault 启动时扫描过慢。"
+    refreshIndexOnLoadDesc: "默认关闭，避免大型库启动时扫描过慢。",
+    devModeName: "开发模式",
+    devModeDesc: "开启后，推荐结果底部会显示开始时间、结束时间和各阶段耗时。"
   },
   summary: {
     title: "标签索引摘要",
@@ -159,7 +219,47 @@ const ZH_LABELS: LabelTree = {
         low: "低置信度"
       })[confidence],
     apply: "应用选中标签",
-    alternative: (tag, reason) => `#${tag}：${reason}`
+    alternative: (tag, reason) => `#${tag}：${reason}`,
+    devTimingTitle: "耗时详情",
+    totalTiming: "总耗时",
+    stageTiming: {
+      readCurrentNote: "读取当前笔记",
+      prepareTagIndex: "准备标签索引",
+      requestAiRecommendations: "请求 AI 推荐"
+    },
+    timingRow: (startedAt, endedAt, duration) => `开始：${startedAt} · 结束：${endedAt} · 耗时：${duration}`
+  },
+  health: {
+    title: "标签健康报告",
+    subtitle: "以下是基于当前库标签索引生成的只读诊断，不会修改任何 Markdown 文件。",
+    generatedAt: (value) => `生成时间：${value}`,
+    indexUpdatedAt: (value) => `索引时间：${value}`,
+    summary: {
+      totalTags: (count) => `标签数：${count}`,
+      totalUsages: (count) => `标签使用次数：${count}`,
+      totalFiles: (count) => `有标签的文件数：${count}`,
+      riskItems: (count) => `风险分组：${count}`
+    },
+    sections: {
+      lowFrequency: "低频标签",
+      nearDuplicates: "近似重复标签",
+      hierarchyInconsistency: "层级不一致",
+      overBroad: "过宽标签",
+      overNarrow: "过细标签",
+      namingDrift: "命名风格不一致"
+    },
+    noIssues: "暂未发现明显问题。",
+    evidence: "证据",
+    impact: "影响",
+    suggestion: "建议动作",
+    suggestions: {
+      merge: "建议合并",
+      rename: "建议重命名",
+      observe: "建议保留观察",
+      deprecate: "建议废弃"
+    },
+    copyTags: "复制标签",
+    copied: "标签已复制。"
   }
 };
 
@@ -167,6 +267,7 @@ const EN_LABELS: LabelTree = {
   commands: {
     refreshTagIndex: "Refresh vault tag index",
     showTagIndexSummary: "Show tag index summary",
+    analyzeTagHealth: "Analyze tag health",
     suggestTagsForCurrentNote: "Suggest tags for current note",
     undoLastChangeForCurrentNote: "Undo last tag curator change"
   },
@@ -174,14 +275,18 @@ const EN_LABELS: LabelTree = {
     refreshTitle: "Refreshing tag index",
     refreshMessage: "Scanning Markdown notes and collecting vault tag usage.",
     suggestTitle: "Generating tag recommendations",
-    suggestMessage: "Scanning vault context and asking the AI provider for structured suggestions."
+    suggestMessage: "Scanning vault context and asking the AI provider for structured suggestions.",
+    minimize: "Minimize",
+    expand: "Expand"
   },
   notices: {
     indexed: (count) => `Indexed ${count} tags.`,
     refreshFailed: "Failed to refresh tag index.",
     noTagIndex: "No tag index yet. Run Refresh vault tag index first.",
+    tagHealthStarted: "Analyzing tag health in the background. The report will open when ready.",
     openMarkdownForSuggest: "Open a Markdown note before requesting tag suggestions.",
     configureApiKey: "Configure an API key in AI Tag Curator settings first.",
+    suggestStarted: "Generating tag recommendations in the background. Results will open when ready.",
     noRecommendations: "No tag recommendations returned.",
     suggestFailed: "Failed to suggest tags.",
     openMarkdownForUndo: "Open a Markdown note before undoing a tag change.",
@@ -212,10 +317,15 @@ const EN_LABELS: LabelTree = {
     allowNewTagsDesc: "When off, recommendations must reuse existing vault tags.",
     newTagStrictnessName: "New tag strictness",
     newTagStrictnessDesc: "Controls how reluctant the model should be when suggesting new tags.",
+    strictnessStrict: "Strict",
+    strictnessBalanced: "Balanced",
+    strictnessExploratory: "Exploratory",
     readInlineTagsName: "Read inline tags",
     readInlineTagsDesc: "Include tags from note bodies when building the vault tag index.",
     refreshIndexOnLoadName: "Refresh index on load",
-    refreshIndexOnLoadDesc: "Off by default to avoid scanning large vaults during startup."
+    refreshIndexOnLoadDesc: "Off by default to avoid scanning large vaults during startup.",
+    devModeName: "Dev mode",
+    devModeDesc: "When enabled, recommendation results show start time, end time, and per-stage durations."
   },
   summary: {
     title: "Tag index summary",
@@ -242,7 +352,47 @@ const EN_LABELS: LabelTree = {
         low: "Low confidence"
       })[confidence],
     apply: "Apply selected tags",
-    alternative: (tag, reason) => `#${tag}: ${reason}`
+    alternative: (tag, reason) => `#${tag}: ${reason}`,
+    devTimingTitle: "Dev timing",
+    totalTiming: "Total",
+    stageTiming: {
+      readCurrentNote: "Read current note",
+      prepareTagIndex: "Prepare tag index",
+      requestAiRecommendations: "Request AI recommendations"
+    },
+    timingRow: (startedAt, endedAt, duration) => `Start: ${startedAt} · End: ${endedAt} · Duration: ${duration}`
+  },
+  health: {
+    title: "Tag health report",
+    subtitle: "This read-only diagnosis is based on the current vault tag index and will not modify Markdown files.",
+    generatedAt: (value) => `Generated: ${value}`,
+    indexUpdatedAt: (value) => `Index updated: ${value}`,
+    summary: {
+      totalTags: (count) => `Tags: ${count}`,
+      totalUsages: (count) => `Tag usages: ${count}`,
+      totalFiles: (count) => `Files with tags: ${count}`,
+      riskItems: (count) => `Risk groups: ${count}`
+    },
+    sections: {
+      lowFrequency: "Low-frequency tags",
+      nearDuplicates: "Near-duplicate tags",
+      hierarchyInconsistency: "Hierarchy inconsistencies",
+      overBroad: "Over-broad tags",
+      overNarrow: "Over-narrow tags",
+      namingDrift: "Naming drift"
+    },
+    noIssues: "No obvious issues found.",
+    evidence: "Evidence",
+    impact: "Impact",
+    suggestion: "Suggested action",
+    suggestions: {
+      merge: "Merge",
+      rename: "Rename",
+      observe: "Keep under review",
+      deprecate: "Deprecate"
+    },
+    copyTags: "Copy tags",
+    copied: "Tags copied."
   }
 };
 

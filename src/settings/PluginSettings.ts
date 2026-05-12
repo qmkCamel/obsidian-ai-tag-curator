@@ -11,6 +11,7 @@ export interface TagCuratorSettings {
   newTagStrictness: "strict" | "balanced" | "exploratory";
   readInlineTags: boolean;
   refreshIndexOnLoad: boolean;
+  devMode: boolean;
   operationLogLimit: number;
 }
 
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS: TagCuratorSettings = {
   newTagStrictness: "strict",
   readInlineTags: true,
   refreshIndexOnLoad: false,
+  devMode: false,
   operationLogLimit: 20
 };
 

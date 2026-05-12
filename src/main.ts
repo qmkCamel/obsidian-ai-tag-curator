@@ -2,6 +2,7 @@
 import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
+import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
 import { buildTagIndex } from "./index/TagIndexBuilder";
 import type { TagIndex } from "./index/TagIndex";
 import { FrontmatterWriter } from "./obsidian/FrontmatterWriter";
@@ -10,10 +11,12 @@ import { OperationLog, type OperationRecord } from "./operations/OperationLog";
 import { UndoService } from "./operations/UndoService";
 import { RecommendationModal } from "./preview/RecommendationModal";
 import { LoadingModal } from "./preview/LoadingModal";
+import { TagHealthReportModal } from "./preview/TagHealthReportModal";
 import { TagIndexSummaryModal } from "./preview/TagIndexSummaryModal";
 import { DEFAULT_SETTINGS, mergeSettings, type TagCuratorSettings } from "./settings/PluginSettings";
 import { TagCuratorSettingsTab } from "./settings/SettingsTab";
 import { getLabels, resolveUiLanguage, type UiLanguage } from "./ui/labels";
+import { OperationTimer } from "./utils/OperationTimer";
 
 interface PluginData {
   settings?: Partial<TagCuratorSettings>;
@@ -52,6 +55,14 @@ export default class TagCuratorPlugin extends Plugin {
       name: this.labels.commands.showTagIndexSummary,
       callback: () => {
         this.showTagIndexSummary();
+      }
+    });
+
+    this.addCommand({
+      id: "analyze-tag-health",
+      name: this.labels.commands.analyzeTagHealth,
+      callback: () => {
+        void this.analyzeTagHealth();
       }
     });
 
@@ -98,7 +109,13 @@ export default class TagCuratorPlugin extends Plugin {
 
   private async refreshTagIndex(showNotice = true): Promise<void> {
     const loading = showNotice
-      ? new LoadingModal(this.app, this.labels.loading.refreshTitle, this.labels.loading.refreshMessage)
+      ? new LoadingModal(
+          this.app,
+          this.labels.loading.refreshTitle,
+          this.labels.loading.refreshMessage,
+          this.labels.loading.minimize,
+          this.labels.loading.expand
+        )
       : null;
 
     try {
@@ -129,6 +146,18 @@ export default class TagCuratorPlugin extends Plugin {
     new TagIndexSummaryModal(this.app, this.tagIndex, this.labels).open();
   }
 
+  private async analyzeTagHealth(): Promise<void> {
+    try {
+      new Notice(this.labels.notices.tagHealthStarted);
+      const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
+      this.tagIndex = index;
+      const report = analyzeTagHealth(index);
+      new TagHealthReportModal(this.app, report, this.labels).open();
+    } catch (error) {
+      new Notice(error instanceof Error ? error.message : this.labels.notices.refreshFailed);
+    }
+  }
+
   private async suggestTagsForCurrentNote(): Promise<void> {
     const file = this.vaultReader.getCurrentMarkdownFile();
     if (!file) {
@@ -141,43 +170,48 @@ export default class TagCuratorPlugin extends Plugin {
       return;
     }
 
-    const loading = new LoadingModal(
-      this.app,
-      this.labels.loading.suggestTitle,
-      this.labels.loading.suggestMessage
-    );
-
     try {
-      loading.open();
+      const timer = this.settings.devMode ? new OperationTimer() : null;
+      new Notice(this.labels.notices.suggestStarted);
+
+      timer?.startStage("read-current-note");
       const currentNote = await this.vaultReader.readNote(file);
-      const notes = await this.vaultReader.readAllMarkdownNotes();
-      const index =
-        this.tagIndex ??
-        buildTagIndex(notes, new Date(), {
-          includeInlineTags: this.settings.readInlineTags
-        });
+      timer?.endStage("read-current-note");
+
+      timer?.startStage("prepare-tag-index");
+      const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
       this.tagIndex = index;
+      timer?.endStage("prepare-tag-index");
 
       const provider = new OpenAICompatibleProvider(this.settings);
       const service = new TagRecommendationService(provider, this.settings, this.uiLanguage);
-      const result = await service.recommendForNote(currentNote, notes, index);
+      timer?.startStage("request-ai-recommendations");
+      const result = await service.recommendForNote(currentNote, index);
+      timer?.endStage("request-ai-recommendations");
 
       if (result.recommendations.length === 0) {
         new Notice(this.labels.notices.noRecommendations);
         return;
       }
 
-      loading.close();
-      new RecommendationModal(this.app, result, this.labels, async (plan) => {
+      new RecommendationModal(this.app, result, this.labels, timer?.finish() ?? null, async (plan) => {
         await this.frontmatterWriter.applyChangePlan(file, plan);
         this.operationLog.add(plan, this.settings.operationLogLimit);
         await this.savePluginData();
       }).open();
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.suggestFailed);
-    } finally {
-      loading.close();
     }
+  }
+
+  private async buildAndSaveTagIndex(): Promise<TagIndex> {
+    const notes = await this.vaultReader.readAllMarkdownNotes();
+    const index = buildTagIndex(notes, new Date(), {
+      includeInlineTags: this.settings.readInlineTags
+    });
+    this.tagIndex = index;
+    await this.savePluginData();
+    return index;
   }
 
   private async undoLastChangeForCurrentNote(): Promise<void> {
