@@ -1,0 +1,48 @@
+/* Styles the recommendation preview modal with lightweight Obsidian-native spacing. */
+.tag-curator-recommendation {
+  border-top: 1px solid var(--background-modifier-border);
+  padding: 12px 0;
+}
+
+.tag-curator-recommendation:first-child {
+  border-top: 0;
+}
+
+.tag-curator-recommendation__meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.tag-curator-recommendation__intro {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.tag-curator-recommendation__alternatives-title {
+  margin-top: 10px;
+}
+
+.tag-curator-recommendation__reason {
+  margin-top: 6px;
+}
+
+.tag-curator-summary-stats,
+.tag-curator-summary-tags {
+  margin-top: 8px;
+}
+
+.tag-curator-loading-spinner {
+  animation: tag-curator-spin 1s linear infinite;
+  border: 3px solid var(--background-modifier-border);
+  border-radius: 50%;
+  border-top-color: var(--interactive-accent);
+  height: 28px;
+  margin: 16px 0;
+  width: 28px;
+}
+
+@keyframes tag-curator-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "ai-tag-curator",
+  "name": "AI Tag Curator",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "AI tag governance and curation for Obsidian vaults.",
+  "author": "",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
