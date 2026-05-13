@@ -1,7 +1,7 @@
 {
   "name": "obsidian-ai-tag-curator",
   "version": "0.1.0",
-  "description": "AI tag governance and curation plugin for Obsidian vaults.",
+  "description": "AI tag management and governance plugin for Obsidian vaults.",
   "main": "main.js",
   "scripts": {
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
@@ -14,7 +14,15 @@
     "tags",
     "ai"
   ],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qmkCamel/obsidian-ai-tag-curator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qmkCamel/obsidian-ai-tag-curator/issues"
+  },
+  "homepage": "https://github.com/qmkCamel/obsidian-ai-tag-curator#readme",
+  "author": "qmkCamel",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.12.7",

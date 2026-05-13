@@ -138,6 +138,9 @@ npm run build
 
 ## 文档
 
+- [更新日志](CHANGELOG.md)
+- [许可证](LICENSE)
+- [Obsidian 插件市场发布清单](docs/release-checklist.zh-CN.md)
 - [英文产品交接文档](docs/product-handoff.md)
 - [中文产品说明](docs/product-handoff.zh-CN.md)
 - [中文技术方案](docs/technical-design.zh-CN.md)

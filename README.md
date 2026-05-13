@@ -138,6 +138,9 @@ npm run build
 
 ## Documentation
 
+- [Changelog](CHANGELOG.md)
+- [License](LICENSE)
+- [Chinese release checklist](docs/release-checklist.zh-CN.md)
 - [English product handoff](docs/product-handoff.md)
 - [Chinese product explanation](docs/product-handoff.zh-CN.md)
 - [Chinese technical design](docs/technical-design.zh-CN.md)
