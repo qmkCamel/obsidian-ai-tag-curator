@@ -2,39 +2,98 @@
 
 [简体中文](README.zh-CN.md) | English
 
-AI tag governance and curation for Obsidian vaults.
+AI tag management and governance for Obsidian vaults.
 
-This plugin is not a generic AI tag generator. It is designed as a curator that helps users maintain a coherent vault taxonomy. It prioritizes understanding and reusing existing vault tags instead of creating noisy new ones.
+AI Tag Curator is not a generic "generate tags for this note" plugin. It helps you keep an existing Obsidian tag taxonomy coherent by reusing known tags, explaining recommendations, and surfacing vault-level tag problems before any risky cleanup work.
 
-The first implementation focuses on:
+## Screenshots
 
-- scanning existing vault tags;
-- analyzing vault tag health;
-- recommending tags for the current note;
-- strongly preferring existing tags over new tags;
-- explaining why each tag is recommended;
-- previewing changes before writing to frontmatter;
-- recording the latest operation so it can be undone.
+Screenshots will be added before the public MVP release. Suggested slots:
 
-## Development
+| Area | Placeholder |
+| --- | --- |
+| Settings | `docs/images/settings.png` |
+| Tag index summary | `docs/images/tag-index-summary.png` |
+| Current note tag recommendations | `docs/images/tag-recommendations.png` |
+| Tag health report | `docs/images/tag-health-report.png` |
+| AI-enhanced health analysis | `docs/images/ai-health-analysis.png` |
 
-Install dependencies:
+## Current MVP Capabilities
+
+**Vault tag index**
+
+- Build a tag index from Obsidian metadata, frontmatter tags, and optional inline tags.
+- Show a tag index summary with tag counts, usage counts, file counts, and top tags.
+- Reuse the cached index for recommendations and health reports instead of scanning the whole vault every time.
+
+**Current note recommendations**
+
+- Suggest tags for the current Markdown note.
+- Prefer existing vault tags, even when new tags are allowed.
+- Filter out tags already present on the current note.
+- Explain each recommendation with confidence and close alternatives not selected.
+- Apply selected recommendations only after user confirmation.
+- Undo the latest tag change made by this plugin for the current note.
+
+**Vault-level tag health report**
+
+- Generate a read-only tag health report for the current vault.
+- Group health issues such as low-frequency tags, near duplicates, hierarchy inconsistencies, over-broad tags, over-narrow tags, and naming drift.
+- Show evidence, impact, and suggested action for each issue group.
+- Click health report tags to copy and search them in Obsidian.
+- Enhance the report with AI-generated summary and prioritized action items.
+
+**AI, language, and diagnostics**
+
+- Support OpenAI-compatible providers such as DeepSeek and OpenAI.
+- Run slow AI requests in the background and show results when ready.
+- Show dev-mode timing for tag recommendations and AI-enhanced health analysis.
+- Support Chinese, English, and `Auto` language mode following Obsidian.
+
+## Provider Configuration
+
+Open the plugin settings and configure:
+
+- `API base URL`
+- `API key`
+- `Model`
+
+Example OpenAI-compatible settings:
+
+| Provider | API base URL | Model example |
+| --- | --- | --- |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-v4-flash` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+
+The API key is stored locally in Obsidian plugin data.
+
+## Local Installation
+
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-Run tests:
-
-```bash
-npm test
-```
-
-Build the Obsidian plugin bundle:
+2. Build the plugin:
 
 ```bash
 npm run build
 ```
+
+3. Create a plugin directory in your target Obsidian vault:
+
+```bash
+mkdir -p /path/to/your-vault/.obsidian/plugins/ai-tag-curator
+```
+
+4. Copy the generated files:
+
+```bash
+cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
+```
+
+5. Open Obsidian, go to `Settings -> Community plugins`, and enable `AI Tag Curator`.
 
 Generated plugin files:
 
@@ -42,36 +101,18 @@ Generated plugin files:
 - `manifest.json`
 - `styles.css`
 
-## Local Installation In Obsidian
+## Usage
 
-1. Run `npm run build` to generate the plugin files.
-2. Create a plugin directory in your target Obsidian vault:
-
-```bash
-mkdir -p /path/to/your-vault/.obsidian/plugins/ai-tag-curator
-```
-
-3. Copy the generated files into that directory:
-
-```bash
-cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
-```
-
-4. Open Obsidian and go to `Settings -> Community plugins`.
-5. Disable safe mode if needed, then enable `AI Tag Curator` from the installed plugins list.
-
-## Usage Flow
-
-1. Configure an OpenAI-compatible API base URL, API key, and model in the plugin settings.
-2. Run `Refresh vault tag index` to scan the current vault taxonomy.
+1. Configure an OpenAI-compatible API base URL, API key, and model.
+2. Run `Refresh vault tag index`.
 3. Open a Markdown note.
 4. Run `Suggest tags for current note`.
-5. Review recommended tags, confidence levels, and explanations in the preview modal.
-6. Keep only the tags you want to apply, then confirm the write.
-7. To inspect taxonomy issues in the current vault, run `Analyze tag health`.
-8. To undo the latest tag change made by this plugin for the current note, run `Undo last tag curator change`.
+5. Review the recommendation modal and apply only the tags you want.
+6. Run `Analyze tag health` to inspect vault-level tag problems.
+7. Optionally run `AI-enhanced analysis` inside the health report.
+8. Run `Undo last tag curator change` if you need to revert the latest tag write for the current note.
 
-## Plugin Commands
+## Commands
 
 The plugin UI defaults to `Auto`, which follows the current Obsidian language. In English, the commands are:
 
@@ -81,13 +122,28 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 - `Suggest tags for current note`
 - `Undo last tag curator change`
 
+## Development
+
+Run tests:
+
+```bash
+npm test
+```
+
+Build:
+
+```bash
+npm run build
+```
+
 ## Current Limitations
 
-- The first version only writes to the current note's frontmatter `tags`.
-- Inline tags are read for indexing, but are not automatically rewritten.
-- Tag health reports are read-only diagnostics; they do not automatically merge, rename, or deprecate tags.
-- Folder-level batch tagging and richer undo history are not implemented yet.
-- AI responses must be structured JSON. If parsing fails, no file is modified.
+- The MVP only writes to the current note's frontmatter `tags`.
+- Inline tags are read for indexing but are not automatically rewritten.
+- Tag health reports are read-only diagnostics.
+- AI-enhanced health analysis only returns a summary and prioritized action items.
+- Cleanup plans, batch previews, batch writes, and batch undo are not implemented yet.
+- AI responses must be valid structured JSON. If parsing fails, no file is modified.
 
 ## Documentation
 

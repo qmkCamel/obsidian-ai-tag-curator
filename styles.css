@@ -1,6 +1,7 @@
 /* Styles the recommendation preview modal with compact Obsidian-native spacing. */
 .tag-curator-recommendation-modal {
-  max-width: min(760px, calc(100vw - 48px));
+  max-width: min(1040px, calc(100vw - 40px));
+  width: min(1040px, calc(100vw - 40px));
 }
 
 .tag-curator-recommendation-modal .modal-content {
