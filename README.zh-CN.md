@@ -6,49 +6,40 @@
 
 AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件。它更像一个标签体系整理助手：优先复用已有标签，解释推荐理由，并在真正进入高风险清理前，先帮你看清整个库的标签问题。
 
-## 截图
-
-公开 MVP 前会补充截图。建议预留这些位置：
-
-| 区域 | 占位路径 |
-| --- | --- |
-| 设置页 | `docs/images/settings.png` |
-| 标签索引摘要 | `docs/images/tag-index-summary.png` |
-| 当前笔记标签推荐 | `docs/images/tag-recommendations.png` |
-| 标签健康报告 | `docs/images/tag-health-report.png` |
-| AI 增强健康分析 | `docs/images/ai-health-analysis.png` |
 
 ## 当前 MVP 能力
 
 **库标签索引**
-
+![标签索引摘要](docs/images/tag-index-summary.png)
 - 从 Obsidian metadata、frontmatter tags 和可选 inline tags 构建标签索引。
 - 展示标签索引摘要，包括标签数、使用次数、文件数和高频标签。
 - 推荐和健康报告会复用缓存索引，避免每次都全库扫描。
 
 **当前笔记标签推荐**
-
+![当前笔记标签推荐](docs/images/tag-recommendations.png)
 - 为当前 Markdown 笔记推荐标签。
 - 即使允许新标签，也优先复用库中已有标签。
 - 自动过滤当前笔记已经拥有的标签，避免重复推荐。
 - 为每个推荐给出理由、置信度和相近但未选标签。
 - 写入前必须由用户确认。
 - 支持撤销本插件对当前笔记最近一次标签修改。
+- 慢速 AI 请求后台执行，完成后再弹出结果。
 
 **库级标签健康报告**
-
+![标签健康报告](docs/images/tag-health-report.png)
+![AI 增强健康分析](docs/images/ai-health-analysis.png)
 - 生成只读的库级标签健康报告。
 - 识别低频标签、近似重复标签、层级不一致、过宽标签、过细标签和命名风格漂移等问题。
 - 为每组问题展示证据、影响和建议动作。
 - 健康报告中的标签支持点击复制并搜索。
 - 支持 AI 增强健康分析，输出总体判断和优先处理项。
 
-**AI、多语言与诊断**
 
+**设置**
+![设置](docs/images/settings.png)
 - 支持 DeepSeek、OpenAI 等 OpenAI-compatible provider。
-- 慢速 AI 请求后台执行，完成后再弹出结果。
-- 开发模式支持展示标签推荐和 AI 增强分析的总耗时与阶段耗时。
 - 支持中文、英文和跟随 Obsidian 当前语言的 `Auto` 模式。
+- 开发模式支持展示标签推荐和 AI 增强分析的总耗时与阶段耗时。
 
 ## Provider 配置
 

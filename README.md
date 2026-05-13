@@ -6,47 +6,38 @@ AI tag management and governance for Obsidian vaults.
 
 AI Tag Curator is not a generic "generate tags for this note" plugin. It helps you keep an existing Obsidian tag taxonomy coherent by reusing known tags, explaining recommendations, and surfacing vault-level tag problems before any risky cleanup work.
 
-## Screenshots
-
-Screenshots will be added before the public MVP release. Suggested slots:
-
-| Area | Placeholder |
-| --- | --- |
-| Settings | `docs/images/settings.png` |
-| Tag index summary | `docs/images/tag-index-summary.png` |
-| Current note tag recommendations | `docs/images/tag-recommendations.png` |
-| Tag health report | `docs/images/tag-health-report.png` |
-| AI-enhanced health analysis | `docs/images/ai-health-analysis.png` |
 
 ## Current MVP Capabilities
 
 **Vault tag index**
-
+![标签索引摘要](docs/images/tag-index-summary.png)
 - Build a tag index from Obsidian metadata, frontmatter tags, and optional inline tags.
 - Show a tag index summary with tag counts, usage counts, file counts, and top tags.
 - Reuse the cached index for recommendations and health reports instead of scanning the whole vault every time.
 
 **Current note recommendations**
-
+![当前笔记标签推荐](docs/images/tag-recommendations.png)
 - Suggest tags for the current Markdown note.
 - Prefer existing vault tags, even when new tags are allowed.
 - Filter out tags already present on the current note.
 - Explain each recommendation with confidence and close alternatives not selected.
 - Apply selected recommendations only after user confirmation.
 - Undo the latest tag change made by this plugin for the current note.
+- Run slow AI requests in the background and show results when ready.
 
 **Vault-level tag health report**
-
+![标签健康报告](docs/images/tag-health-report.png)
+![AI 增强健康分析](docs/images/ai-health-analysis.png)
 - Generate a read-only tag health report for the current vault.
 - Group health issues such as low-frequency tags, near duplicates, hierarchy inconsistencies, over-broad tags, over-narrow tags, and naming drift.
 - Show evidence, impact, and suggested action for each issue group.
 - Click health report tags to copy and search them in Obsidian.
 - Enhance the report with AI-generated summary and prioritized action items.
 
-**AI, language, and diagnostics**
 
+**Settings**
+![设置](docs/images/settings.png)
 - Support OpenAI-compatible providers such as DeepSeek and OpenAI.
-- Run slow AI requests in the background and show results when ready.
 - Show dev-mode timing for tag recommendations and AI-enhanced health analysis.
 - Support Chinese, English, and `Auto` language mode following Obsidian.
 
