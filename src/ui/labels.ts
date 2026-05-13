@@ -117,6 +117,14 @@ type LabelTree = {
       namingDrift: string;
     };
     noIssues: string;
+    emptyIssueDetails: {
+      lowFrequency: string;
+      nearDuplicates: string;
+      hierarchyInconsistency: string;
+      overBroad: string;
+      overNarrow: string;
+      namingDrift: string;
+    };
     evidence: string;
     impact: string;
     suggestion: string;
@@ -126,8 +134,34 @@ type LabelTree = {
       observe: string;
       deprecate: string;
     };
-    copyTags: string;
-    copied: string;
+    clickTagAction: (tag: string) => string;
+    tagActionDone: (tag: string) => string;
+    tagActionFailed: string;
+    ai: {
+      enhanceButton: string;
+      enhancing: string;
+      title: string;
+      summary: string;
+      priorities: string;
+      severity: {
+        high: string;
+        medium: string;
+        low: string;
+      };
+      confidence: {
+        high: string;
+        medium: string;
+        low: string;
+      };
+      stageTiming: {
+        prepareAiHealthContext: string;
+        requestAiHealthAnalysis: string;
+      };
+      targetTag: string;
+      diagnosis: string;
+      reason: string;
+      riskNote: string;
+    };
   };
 };
 
@@ -249,6 +283,14 @@ const ZH_LABELS: LabelTree = {
       namingDrift: "命名风格不一致"
     },
     noIssues: "暂未发现明显问题。",
+    emptyIssueDetails: {
+      lowFrequency: "规则：检查只出现 1 次的标签。例如：#临时想法 只在一篇笔记中出现时会被列入观察。",
+      nearDuplicates: "规则：检查大小写、分隔符或单复数归一化后很接近的标签。例如：#AI 与 #ai。",
+      hierarchyInconsistency: "规则：检查同一主题是否同时存在平铺标签和层级标签。例如：#AI 与 #AI/工具。",
+      overBroad: "规则：检查覆盖大量文件、区分度可能下降的高频标签。例如：#记录 覆盖了大部分笔记。",
+      overNarrow: "规则：检查只出现一次且像一次性标题或过长描述的标签。例如：#某篇文章完整标题。",
+      namingDrift: "规则：检查语义相近但分隔符或命名风格不一致的标签。例如：#project-ai 与 #project_ai。"
+    },
     evidence: "证据",
     impact: "影响",
     suggestion: "建议动作",
@@ -258,8 +300,34 @@ const ZH_LABELS: LabelTree = {
       observe: "建议保留观察",
       deprecate: "建议废弃"
     },
-    copyTags: "复制标签",
-    copied: "标签已复制。"
+    clickTagAction: (tag) => `复制 #${tag} 并搜索`,
+    tagActionDone: (tag) => `已复制 #${tag} 并打开搜索。`,
+    tagActionFailed: "复制或搜索标签失败。",
+    ai: {
+      enhanceButton: "AI 增强分析",
+      enhancing: "正在后台生成 AI 增强分析...",
+      title: "AI 增强分析",
+      summary: "总体判断",
+      priorities: "优先处理项",
+      severity: {
+        high: "高优先级",
+        medium: "中优先级",
+        low: "低优先级"
+      },
+      confidence: {
+        high: "高置信度",
+        medium: "中置信度",
+        low: "低置信度"
+      },
+      stageTiming: {
+        prepareAiHealthContext: "准备 AI 健康分析上下文",
+        requestAiHealthAnalysis: "请求 AI 健康分析"
+      },
+      targetTag: "目标标签",
+      diagnosis: "诊断",
+      reason: "理由",
+      riskNote: "注意"
+    }
   }
 };
 
@@ -382,6 +450,14 @@ const EN_LABELS: LabelTree = {
       namingDrift: "Naming drift"
     },
     noIssues: "No obvious issues found.",
+    emptyIssueDetails: {
+      lowFrequency: "Rule: checks tags used only once. Example: #temporary-idea appears in one note only.",
+      nearDuplicates: "Rule: checks tags that normalize to similar spelling, separators, or plurals. Example: #AI and #ai.",
+      hierarchyInconsistency: "Rule: checks mixed flat and hierarchical tags for the same topic. Example: #AI and #AI/tools.",
+      overBroad: "Rule: checks high-frequency tags that may cover too many files. Example: #notes appears on most notes.",
+      overNarrow: "Rule: checks one-off tags that look like long titles or descriptions. Example: #full-article-title.",
+      namingDrift: "Rule: checks similar tags with inconsistent separators or style. Example: #project-ai and #project_ai."
+    },
     evidence: "Evidence",
     impact: "Impact",
     suggestion: "Suggested action",
@@ -391,8 +467,34 @@ const EN_LABELS: LabelTree = {
       observe: "Keep under review",
       deprecate: "Deprecate"
     },
-    copyTags: "Copy tags",
-    copied: "Tags copied."
+    clickTagAction: (tag) => `Copy and search #${tag}`,
+    tagActionDone: (tag) => `Copied #${tag} and opened search.`,
+    tagActionFailed: "Failed to copy or search the tag.",
+    ai: {
+      enhanceButton: "Enhance with AI",
+      enhancing: "Generating AI-enhanced analysis in the background...",
+      title: "AI-enhanced analysis",
+      summary: "Summary",
+      priorities: "Priorities",
+      severity: {
+        high: "High priority",
+        medium: "Medium priority",
+        low: "Low priority"
+      },
+      confidence: {
+        high: "High confidence",
+        medium: "Medium confidence",
+        low: "Low confidence"
+      },
+      stageTiming: {
+        prepareAiHealthContext: "Prepare AI health context",
+        requestAiHealthAnalysis: "Request AI health analysis"
+      },
+      targetTag: "Target tag",
+      diagnosis: "Diagnosis",
+      reason: "Reason",
+      riskNote: "Note"
+    }
   }
 };
 

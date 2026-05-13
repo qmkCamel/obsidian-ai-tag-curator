@@ -151,7 +151,8 @@
 }
 
 .tag-curator-health-modal {
-  max-width: min(820px, calc(100vw - 48px));
+  max-width: min(1040px, calc(100vw - 40px));
+  width: min(1040px, calc(100vw - 40px));
 }
 
 .tag-curator-health-modal .modal-content {
@@ -173,11 +174,16 @@
 
 .tag-curator-health__header p,
 .tag-curator-health__meta,
-.tag-curator-health__empty {
+.tag-curator-health__empty,
+.tag-curator-health__empty-detail {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
   line-height: 1.5;
   margin: 0;
+}
+
+.tag-curator-health__empty-detail {
+  margin-top: 4px;
 }
 
 .tag-curator-health__summary {
@@ -194,6 +200,98 @@
   font-size: var(--font-ui-small);
   font-weight: 700;
   padding: 10px 12px;
+}
+
+.tag-curator-health-ai {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.tag-curator-health-ai__header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tag-curator-health-ai h3,
+.tag-curator-health-ai h4 {
+  color: var(--text-normal);
+  margin: 0;
+}
+
+.tag-curator-health-ai h4 {
+  font-size: var(--font-ui-small);
+  margin-top: 12px;
+}
+
+.tag-curator-health-ai__summary,
+.tag-curator-health-ai__field {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+
+.tag-curator-health-ai__summary {
+  margin: 6px 0 0;
+}
+
+.tag-curator-health-ai__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag-curator-health-ai__item {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.tag-curator-health-ai__item-title,
+.tag-curator-health-ai__status-row,
+.tag-curator-health-ai__tag-row {
+  align-items: flex-start;
+  color: var(--text-normal);
+  display: flex;
+  font-weight: 700;
+  gap: 8px;
+  line-height: 1.35;
+}
+
+.tag-curator-health-ai__status-row,
+.tag-curator-health-ai__tag-row {
+  width: 100%;
+}
+
+.tag-curator-health-ai__item-title {
+  flex-direction: column;
+}
+
+.tag-curator-health-ai__badges {
+  margin: 0;
+}
+
+.tag-curator-health-ai__badge {
+  white-space: nowrap;
+}
+
+.tag-curator-health-ai__badge--priority-high {
+  color: var(--text-error);
+}
+
+.tag-curator-health-ai__badge--priority-medium {
+  color: var(--text-warning, var(--text-normal));
+}
+
+.tag-curator-health-ai__badge--priority-low,
+.tag-curator-health-ai__badge--confidence-medium,
+.tag-curator-health-ai__badge--confidence-low {
+  color: var(--text-muted);
 }
 
 .tag-curator-health__section h3 {
@@ -223,14 +321,39 @@
   margin: 8px 0;
 }
 
+.tag-curator-health__tags--compact,
+.tag-curator-health__tags--inline {
+  display: inline-flex;
+  margin: 0;
+  vertical-align: middle;
+}
+
 .tag-curator-health__tag {
-  background: rgba(var(--interactive-accent-rgb), 0.16);
+  appearance: none;
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border-hover);
   border-radius: 999px;
-  color: var(--text-accent);
+  box-shadow: none;
+  color: var(--text-normal);
+  cursor: pointer;
+  font-family: inherit;
   font-size: var(--font-ui-smaller);
   font-weight: 600;
-  line-height: 1;
+  height: auto;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   padding: 4px 8px;
+  text-align: left;
+}
+
+.tag-curator-health__tag:hover,
+.tag-curator-health__tag:focus-visible {
+  background: rgba(var(--interactive-accent-rgb), 0.24);
+  border-color: rgba(var(--interactive-accent-rgb), 0.42);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.12);
+  color: var(--text-accent-hover);
 }
 
 .tag-curator-health__field {
@@ -243,16 +366,6 @@
 .tag-curator-health__field-label {
   color: var(--text-normal);
   font-weight: 700;
-}
-
-.tag-curator-health__actions {
-  border: 0;
-  justify-content: flex-end;
-  padding: 8px 0 0;
-}
-
-.tag-curator-health__actions .setting-item-info {
-  display: none;
 }
 
 .tag-curator-loading-spinner {

@@ -55,7 +55,7 @@ function findLowFrequencyTags(usages: TagUsage[]): TagHealthIssue[] {
   return [
     {
       type: "lowFrequency",
-      title: `低频标签 · ${lowFrequencyTags.length} 个`,
+      title: `${lowFrequencyTags.length} 个标签`,
       tags: lowFrequencyTags.map((usage) => usage.tag),
       evidence: `这些标签均只出现 1 次，共涉及 ${countDistinctFiles(lowFrequencyTags)} 个文件。`,
       impact: "低频标签可能是临时标签、拼写漂移，或尚未形成稳定分类。",
@@ -115,7 +115,7 @@ function findOverNarrowTags(usages: TagUsage[]): TagHealthIssue[] {
   return [
     {
       type: "overNarrow",
-      title: `过细标签 · ${overNarrowTags.length} 个`,
+      title: `${overNarrowTags.length} 个标签`,
       tags: overNarrowTags.map((usage) => usage.tag),
       evidence: "这些标签都只出现一次，且命名更像一次性标题或过长描述。",
       impact: "过细标签通常难以复用，会让标签系统越来越碎片化。",

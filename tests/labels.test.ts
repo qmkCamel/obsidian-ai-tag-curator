@@ -40,6 +40,13 @@ describe("getLabels", () => {
     expect(labels.notices.suggestStarted).toBe("正在后台生成标签推荐，完成后会弹出结果。");
     expect(labels.health.title).toBe("标签健康报告");
     expect(labels.health.sections.lowFrequency).toBe("低频标签");
+    expect(labels.health.clickTagAction("经济基础")).toBe("复制 #经济基础 并搜索");
+    expect(labels.health.tagActionDone("经济基础")).toBe("已复制 #经济基础 并打开搜索。");
+    expect(labels.health.ai.enhanceButton).toBe("AI 增强分析");
+    expect(labels.health.ai.severity.high).toBe("高优先级");
+    expect(labels.health.ai.stageTiming.prepareAiHealthContext).toBe("准备 AI 健康分析上下文");
+    expect(labels.health.ai.stageTiming.requestAiHealthAnalysis).toBe("请求 AI 健康分析");
+    expect(labels.health.emptyIssueDetails.nearDuplicates).toContain("#AI");
   });
 
   it("returns English-only command labels for en", () => {
@@ -60,5 +67,12 @@ describe("getLabels", () => {
     expect(labels.notices.suggestStarted).toBe("Generating tag recommendations in the background. Results will open when ready.");
     expect(labels.health.title).toBe("Tag health report");
     expect(labels.health.sections.lowFrequency).toBe("Low-frequency tags");
+    expect(labels.health.clickTagAction("economics")).toBe("Copy and search #economics");
+    expect(labels.health.tagActionDone("economics")).toBe("Copied #economics and opened search.");
+    expect(labels.health.ai.enhanceButton).toBe("Enhance with AI");
+    expect(labels.health.ai.severity.high).toBe("High priority");
+    expect(labels.health.ai.stageTiming.prepareAiHealthContext).toBe("Prepare AI health context");
+    expect(labels.health.ai.stageTiming.requestAiHealthAnalysis).toBe("Request AI health analysis");
+    expect(labels.health.emptyIssueDetails.nearDuplicates).toContain("#AI");
   });
 });

@@ -2,6 +2,7 @@
 import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
+import { TagHealthAiAnalyzer } from "./health/TagHealthAiAnalyzer";
 import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
 import { buildTagIndex } from "./index/TagIndexBuilder";
 import type { TagIndex } from "./index/TagIndex";
@@ -152,7 +153,30 @@ export default class TagCuratorPlugin extends Plugin {
       const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
       this.tagIndex = index;
       const report = analyzeTagHealth(index);
-      new TagHealthReportModal(this.app, report, this.labels).open();
+      new TagHealthReportModal(this.app, report, this.labels, async () => {
+        if (!this.settings.apiKey) {
+          throw new Error(this.labels.notices.configureApiKey);
+        }
+
+        const timer = this.settings.devMode ? new OperationTimer() : null;
+        timer?.startStage("prepare-ai-health-context");
+        const provider = new OpenAICompatibleProvider(this.settings);
+        const analyzer = new TagHealthAiAnalyzer(provider, {
+          allowNewTags: this.settings.allowNewTags,
+          newTagStrictness: this.settings.newTagStrictness,
+          uiLanguage: this.uiLanguage
+        });
+        timer?.endStage("prepare-ai-health-context");
+
+        timer?.startStage("request-ai-health-analysis");
+        const analysis = await analyzer.analyze(report, index);
+        timer?.endStage("request-ai-health-analysis");
+
+        return {
+          analysis,
+          timingReport: timer?.finish() ?? null
+        };
+      }).open();
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.refreshFailed);
     }
