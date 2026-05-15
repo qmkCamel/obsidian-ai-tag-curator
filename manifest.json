@@ -3,7 +3,7 @@
   "name": "AI Tag Curator",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "AI tag management and governance for Obsidian vaults.",
+  "description": "AI tag management and governance for your vaults.",
   "author": "qmkCamel",
   "authorUrl": "https://github.com/qmkCamel",
   "isDesktopOnly": false
