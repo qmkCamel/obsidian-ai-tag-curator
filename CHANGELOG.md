@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+Release candidate for Obsidian Community Plugins review.
+
+### Fixed
+
+- Updated release metadata after automated review checks.
+- Prepared a new GitHub release version so Obsidian can re-run release checks against fresh assets.
+
 ## 0.1.0
 
 Initial public MVP release.
