@@ -16,7 +16,7 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
     const labels = this.plugin.labels;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: labels.settings.heading });
+    new Setting(containerEl).setName(labels.settings.heading).setHeading();
 
     new Setting(containerEl)
       .setName(labels.settings.languageName)
