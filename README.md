@@ -81,7 +81,7 @@ mkdir -p /path/to/your-vault/.obsidian/plugins/ai-tag-curator
 4. Copy the generated files:
 
 ```bash
-cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
+cp main.js manifest.json styles.css .hotreload /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
 ```
 
 5. Open Obsidian, go to `Settings -> Community plugins`, and enable `AI Tag Curator`.
@@ -91,6 +91,7 @@ Generated plugin files:
 - `main.js`
 - `manifest.json`
 - `styles.css`
+- `.hotreload` for local development with the [Hot Reload](https://github.com/pjeby/hot-reload) plugin
 
 ## Usage
 
@@ -127,13 +128,23 @@ Build:
 npm run build
 ```
 
+OpenSpec workflow:
+
+```bash
+npm run spec:list
+npm run spec:status -- --change add-readonly-cleanup-plan
+npm run spec:validate -- add-readonly-cleanup-plan
+```
+
+For new product work, start with an OpenSpec change proposal before implementation.
+
 ## Current Limitations
 
 - The MVP only writes to the current note's frontmatter `tags`.
 - Inline tags are read for indexing but are not automatically rewritten.
 - Tag health reports are read-only diagnostics.
 - AI-enhanced health analysis only returns a summary and prioritized action items.
-- Cleanup plans, batch previews, batch writes, and batch undo are not implemented yet.
+- Cleanup plans are read-only previews; batch previews, batch writes, and batch undo are not implemented yet.
 - AI responses must be valid structured JSON. If parsing fails, no file is modified.
 
 ## Documentation
@@ -145,3 +156,4 @@ npm run build
 - [Chinese product explanation](docs/product-handoff.zh-CN.md)
 - [Chinese technical design](docs/technical-design.zh-CN.md)
 - [Chinese roadmap](docs/roadmap.zh-CN.md)
+- [OpenSpec project context](openspec/project.md)
