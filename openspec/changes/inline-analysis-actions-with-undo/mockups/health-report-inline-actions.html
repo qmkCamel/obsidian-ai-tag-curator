@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>AI Tag Curator - Inline Health Actions Mockup</title>
+  <style>
+    :root {
+      --bg: #242936;
+      --modal: #2b3140;
+      --panel: #3a4255;
+      --panel-soft: #343b4c;
+      --panel-dark: #272d3b;
+      --border: #4b556c;
+      --border-soft: #414a5e;
+      --text: #f3f5fa;
+      --muted: #b8c0cf;
+      --dim: #909bad;
+      --accent: #d97082;
+      --accent-strong: #e48294;
+      --green: #9fda91;
+      --yellow: #f0c779;
+      --blue: #9db8ff;
+      --shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #171b24;
+      color: var(--text);
+      font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+    }
+
+    .screen {
+      align-items: flex-start;
+      background:
+        linear-gradient(90deg, rgba(16, 18, 24, 0.68), transparent 18%),
+        radial-gradient(circle at 45% 0%, rgba(87, 103, 140, 0.2), transparent 42%),
+        #1f2430;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 28px 0;
+    }
+
+    .modal {
+      background: var(--modal);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      height: 1120px;
+      overflow: hidden;
+      padding: 16px;
+      position: relative;
+      width: 1018px;
+    }
+
+    .close {
+      color: var(--muted);
+      position: absolute;
+      right: 18px;
+      top: 14px;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 18px 0 8px;
+    }
+
+    h3 {
+      font-size: 16px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .summary {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 14px 0 12px;
+    }
+
+    .metric {
+      background: var(--panel-dark);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 10px;
+    }
+
+    .ai-panel,
+    .issue {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 14px;
+    }
+
+    .ai-header,
+    .issue-header,
+    .action-top {
+      align-items: center;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    .btn {
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-weight: 700;
+      padding: 7px 12px;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.26);
+      color: #fff;
+    }
+
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .btn.undo {
+      background: rgba(157, 184, 255, 0.16);
+      border-color: rgba(157, 184, 255, 0.42);
+      color: #cbd8ff;
+    }
+
+    .copy {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .paragraph {
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .priority {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-top: 12px;
+      padding: 12px;
+    }
+
+    .badges,
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .badges {
+      margin-bottom: 8px;
+    }
+
+    .badge,
+    .tag,
+    .status-chip {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 5px 8px;
+    }
+
+    .badge.medium {
+      background: rgba(240, 199, 121, 0.16);
+      color: var(--yellow);
+    }
+
+    .badge.high {
+      background: rgba(159, 218, 145, 0.16);
+      color: var(--green);
+    }
+
+    .tag {
+      background: #303441;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
+      color: #fff;
+      padding: 6px 9px;
+    }
+
+    .issue {
+      background: var(--panel);
+      margin-top: 10px;
+    }
+
+    .issue-header {
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .issue-title {
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .issue-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .analysis-line {
+      margin-top: 10px;
+    }
+
+    .analysis-line b {
+      color: var(--text);
+    }
+
+    .inline-action {
+      background: rgba(33, 38, 50, 0.78);
+      border: 1px solid rgba(157, 184, 255, 0.28);
+      border-radius: 8px;
+      margin-top: 14px;
+      padding: 12px;
+    }
+
+    .action-title {
+      font-weight: 900;
+    }
+
+    .status-chip {
+      background: rgba(157, 184, 255, 0.18);
+      color: #cbd8ff;
+      margin-left: 8px;
+    }
+
+    .status-chip.applied {
+      background: rgba(159, 218, 145, 0.18);
+      color: var(--green);
+    }
+
+    .preview-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 10px;
+    }
+
+    .preview-card {
+      background: rgba(0, 0, 0, 0.13);
+      border: 1px solid var(--border-soft);
+      border-radius: 7px;
+      padding: 9px;
+    }
+
+    .preview-card h4 {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .file-row {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 0;
+    }
+
+    .file-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .file-path {
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .diff {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .action-footer {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .warning {
+      color: var(--yellow);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .applied-banner {
+      align-items: center;
+      background: rgba(159, 218, 145, 0.12);
+      border: 1px solid rgba(159, 218, 145, 0.35);
+      border-radius: 7px;
+      color: #d7f5d2;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding: 10px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-weight: 700;
+      margin: 10px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <section class="modal">
+      <div class="close">×</div>
+      <h1>标签健康报告</h1>
+      <p class="subtle">以下是基于当前库标签索引生成的诊断。应用动作前会显示影响范围，并可回退最近一次清理。</p>
+      <p class="subtle">生成时间：2026/5/17 16:04:31 · 索引时间：2026/5/17 16:04:31</p>
+
+      <section class="summary">
+        <div class="metric">标签数：52</div>
+        <div class="metric">标签使用次数：153</div>
+        <div class="metric">有标签的文件数：79</div>
+        <div class="metric">可执行建议：2</div>
+      </section>
+
+      <section class="ai-panel">
+        <div class="ai-header">
+          <h2 style="margin:0">AI 增强分析</h2>
+          <div class="actions">
+            <button class="btn undo">撤销最近清理</button>
+            <button class="btn primary">AI 增强分析</button>
+          </div>
+        </div>
+        <p class="paragraph">总体判断</p>
+        <p class="paragraph">标签健康报告基于 52 个标签和 153 次使用生成。当前最值得处理的是一次性低频标签，以及少量过细标签。建议先从“保留观察 / 废弃”这类低风险动作开始，不进行全库自动清理。</p>
+
+        <div class="priority">
+          <div class="badges">
+            <span class="badge medium">中优先级</span>
+            <span class="badge high">高置信度</span>
+          </div>
+          <div class="tags">
+            <span class="tag">#数据结构/优先级队列</span>
+          </div>
+          <p class="analysis-line"><b>诊断:</b> 该标签仅出现 1 次，且命名过细，可能造成标签碎片化。</p>
+          <p class="analysis-line"><b>建议:</b> 可废弃该标签，或合并到更通用的父标签，例如 #数据结构。</p>
+
+          <section class="inline-action">
+            <div class="action-top">
+              <div>
+                <span class="action-title">可执行建议：废弃标签</span>
+                <span class="status-chip">待审查</span>
+              </div>
+              <span class="copy">影响 1 个文件</span>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-card">
+                <h4>改动前</h4>
+                <div class="file-row">
+                  <div class="file-path">03-Resource/数据结构与算法/栈与队列.md</div>
+                  <div class="diff">#数据结构/单调队列, #数据结构/优先级队列</div>
+                </div>
+              </div>
+              <div class="preview-card">
+                <h4>建议后</h4>
+                <div class="file-row">
+                  <div class="file-path">03-Resource/数据结构与算法/栈与队列.md</div>
+                  <div class="diff">#数据结构/单调队列</div>
+                </div>
+              </div>
+            </div>
+            <div class="action-footer">
+              <span class="warning">只会改 frontmatter tags；正文 inline tag 不会被改写。</span>
+              <div class="actions">
+                <button class="btn ghost">复制计划</button>
+                <button class="btn">查看影响文件</button>
+                <button class="btn primary">应用此建议</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="priority">
+          <div class="badges">
+            <span class="badge medium">低优先级</span>
+            <span class="badge high">高置信度</span>
+          </div>
+          <div class="tags">
+            <span class="tag">#笔记</span><span class="tag">#程序员效率</span><span class="tag">#创业idea</span><span class="tag">#大语言模型</span><span class="tag">#AI知识库</span><span class="tag">#Rust</span>
+          </div>
+          <p class="analysis-line"><b>诊断:</b> 这些标签均只出现 1 次，共涉及 19 个文件。低频可能是临时用途或命名漂移。</p>
+          <p class="analysis-line"><b>建议:</b> 先进入观察模式，暂不清理；后续可逐项合并或废弃。</p>
+
+          <section class="inline-action">
+            <div class="action-top">
+              <div>
+                <span class="action-title">可执行建议：标记为观察</span>
+                <span class="status-chip applied">已应用</span>
+              </div>
+              <span class="copy">影响 19 个文件 · 16:09 应用</span>
+            </div>
+            <div class="applied-banner">
+              <span>已记录为一次清理操作。没有删除标签；仅保存了审查状态和可回退快照。</span>
+              <button class="btn undo">撤销此操作</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <h2>低频标签</h2>
+      <section class="issue">
+        <div class="issue-header">
+          <div>
+            <div class="issue-title">37 个标签</div>
+            <div class="issue-meta">这些标签均只出现 1 次，共涉及 19 个文件。</div>
+          </div>
+          <span class="status-chip">有可执行建议</span>
+        </div>
+        <div class="tags">
+          <span class="tag">#笔记</span><span class="tag">#程序员效率</span><span class="tag">#创伤心理学</span><span class="tag">#创业记录</span><span class="tag">#创业思路</span><span class="tag">#创业idea</span><span class="tag">#大语言模型</span><span class="tag">#代码工具</span><span class="tag">#电影美学</span><span class="tag">#二战电影推荐</span><span class="tag">#个人成长</span><span class="tag">#Rust</span>
+        </div>
+        <p class="analysis-line"><b>证据:</b> 这些标签均只出现 1 次，共涉及 19 个文件。</p>
+        <p class="analysis-line"><b>影响:</b> 低频标签可能是临时标签、拼写漂移，或尚未形成稳定分类。</p>
+
+        <section class="inline-action">
+          <div class="action-top">
+            <div>
+              <span class="action-title">可执行建议：进入观察清单</span>
+              <span class="status-chip">待审查</span>
+            </div>
+            <span class="copy">不写入 Markdown</span>
+          </div>
+          <p class="empty">此动作只保存审查状态，不会修改笔记标签。后续可从观察清单中逐项合并、废弃或保留。</p>
+          <div class="action-footer">
+            <span class="warning">低风险动作，适合作为第一步。</span>
+            <div class="actions">
+              <button class="btn ghost">跳过</button>
+              <button class="btn primary">加入观察清单</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <h2>近似重复标签</h2>
+      <p class="empty">暂未发现明显问题。规则：检查大小写、分隔符或单复数归一化后很接近的标签。</p>
+    </section>
+  </main>
+</body>
+</html>

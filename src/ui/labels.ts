@@ -138,6 +138,39 @@ type LabelTree = {
     clickTagAction: (tag: string) => string;
     tagActionDone: (tag: string) => string;
     tagActionFailed: string;
+    cleanupPlan: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      copyMarkdown: string;
+      markdownCopied: string;
+      action: string;
+      executableSuggestion: string;
+      status: string;
+      pendingReview: string;
+      appliedStatus: string;
+      applyThisSuggestion: string;
+      undoThisOperation: string;
+      unsupportedWriteAction: string;
+      notApplyReady: string;
+      frontmatterOnlyWarning: string;
+      noWritableChanges: string;
+      noCleanupUndoRecord: string;
+      cleanupApplied: (count: number) => string;
+      cleanupUndone: string;
+      targetTag: string;
+      affectedFiles: (count: number) => string;
+      filePreview: string;
+      noTarget: string;
+      before: string;
+      after: string;
+      actions: {
+        merge: string;
+        rename: string;
+        observe: string;
+        deprecate: string;
+      };
+    };
     ai: {
       enhanceButton: string;
       enhancing: string;
@@ -305,6 +338,39 @@ const ZH_LABELS: LabelTree = {
     clickTagAction: (tag) => `复制 #${tag} 并搜索`,
     tagActionDone: (tag) => `已复制 #${tag} 并打开搜索。`,
     tagActionFailed: "复制或搜索标签失败。",
+    cleanupPlan: {
+      title: "清理审查计划",
+      subtitle: "根据健康报告生成的只读清理预览，用来辅助人工审查；当前不会写入任何 Markdown 文件。",
+      empty: "当前健康报告没有生成可预览的清理项。",
+      copyMarkdown: "复制 Markdown 计划",
+      markdownCopied: "已复制 Markdown 清理计划。",
+      action: "动作",
+      executableSuggestion: "可执行建议",
+      status: "状态",
+      pendingReview: "待审查",
+      appliedStatus: "已应用",
+      applyThisSuggestion: "应用",
+      undoThisOperation: "回退",
+      unsupportedWriteAction: "该动作需要人工确认目标，当前仅生成审查预览。",
+      notApplyReady: "该清理建议暂未开放直接写入。",
+      frontmatterOnlyWarning: "当前只写入 frontmatter tags；正文 inline tags 仍需人工处理。",
+      noWritableChanges: "没有找到可写入的 frontmatter 标签变更。",
+      noCleanupUndoRecord: "没有可回退的清理操作。",
+      cleanupApplied: (count) => `已应用清理，更新 ${count} 个文件。`,
+      cleanupUndone: "已回退最近一次清理。",
+      targetTag: "候选目标标签",
+      affectedFiles: (count) => `影响文件：${count}`,
+      filePreview: "文件预览",
+      noTarget: "需要人工选择目标标签",
+      before: "当前",
+      after: "建议后",
+      actions: {
+        merge: "合并",
+        rename: "重命名",
+        observe: "保留观察",
+        deprecate: "废弃"
+      }
+    },
     ai: {
       enhanceButton: "AI 增强分析",
       enhancing: "正在后台生成 AI 增强分析...",
@@ -473,6 +539,39 @@ const EN_LABELS: LabelTree = {
     clickTagAction: (tag) => `Copy and search #${tag}`,
     tagActionDone: (tag) => `Copied #${tag} and opened search.`,
     tagActionFailed: "Failed to copy or search the tag.",
+    cleanupPlan: {
+      title: "Cleanup review plan",
+      subtitle: "A read-only cleanup preview generated from the health report for manual review. It will not write Markdown files.",
+      empty: "This health report did not produce cleanup items to preview.",
+      copyMarkdown: "Copy Markdown plan",
+      markdownCopied: "Markdown cleanup plan copied.",
+      action: "Action",
+      executableSuggestion: "Executable suggestion",
+      status: "Status",
+      pendingReview: "Pending review",
+      appliedStatus: "Applied",
+      applyThisSuggestion: "Apply",
+      undoThisOperation: "Undo",
+      unsupportedWriteAction: "This action needs a confirmed target, so it is preview-only for now.",
+      notApplyReady: "This cleanup suggestion is not ready for direct writes yet.",
+      frontmatterOnlyWarning: "Only frontmatter tags are written for now; inline body tags still need manual review.",
+      noWritableChanges: "No writable frontmatter tag changes were found.",
+      noCleanupUndoRecord: "No cleanup operation is available to undo.",
+      cleanupApplied: (count) => `Cleanup applied to ${count} files.`,
+      cleanupUndone: "Latest cleanup undone.",
+      targetTag: "Candidate target tag",
+      affectedFiles: (count) => `Affected files: ${count}`,
+      filePreview: "File preview",
+      noTarget: "Choose target tag manually",
+      before: "Current",
+      after: "Suggested",
+      actions: {
+        merge: "Merge",
+        rename: "Rename",
+        observe: "Keep under review",
+        deprecate: "Deprecate"
+      }
+    },
     ai: {
       enhanceButton: "Enhance with AI",
       enhancing: "Generating AI-enhanced analysis in the background...",

@@ -81,7 +81,7 @@ mkdir -p /path/to/your-vault/.obsidian/plugins/ai-tag-curator
 4. 复制构建产物：
 
 ```bash
-cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
+cp main.js manifest.json styles.css .hotreload /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
 ```
 
 5. 打开 Obsidian，进入 `Settings -> Community plugins`，启用 `AI Tag Curator`。
@@ -91,6 +91,7 @@ cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag
 - `main.js`
 - `manifest.json`
 - `styles.css`
+- `.hotreload`，用于配合 [Hot Reload](https://github.com/pjeby/hot-reload) 插件进行本地开发
 
 本地开发时，也可以直接安装到 Obsidian 库：
 
@@ -141,13 +142,23 @@ npm test
 npm run build
 ```
 
+OpenSpec 工作流：
+
+```bash
+npm run spec:list
+npm run spec:status -- --change add-readonly-cleanup-plan
+npm run spec:validate -- add-readonly-cleanup-plan
+```
+
+后续产品功能先创建 OpenSpec change proposal，再进入实现。
+
 ## 当前限制
 
 - MVP 只写入当前笔记的 frontmatter `tags`。
 - inline tags 会被读取用于索引，但不会被自动改写。
 - 标签健康报告是只读诊断。
 - AI 增强健康分析只输出总体判断和优先处理项。
-- 清理计划、批量预览、批量写入和批量撤销还没有实现。
+- 清理计划目前是只读预览；批量预览、批量写入和批量撤销还没有实现。
 - AI 返回内容必须是结构化 JSON，解析失败时不会修改任何文件。
 
 ## 文档
@@ -159,3 +170,4 @@ npm run build
 - [中文产品说明](docs/product-handoff.zh-CN.md)
 - [中文技术方案](docs/technical-design.zh-CN.md)
 - [中文路线图](docs/roadmap.zh-CN.md)
+- [OpenSpec 项目上下文](openspec/project.md)

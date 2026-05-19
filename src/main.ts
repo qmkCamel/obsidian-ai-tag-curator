@@ -1,6 +1,8 @@
 // Obsidian plugin entry point that wires settings, commands, indexing, AI, preview, and undo.
 import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
+import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
+import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
 import { TagHealthAiAnalyzer } from "./health/TagHealthAiAnalyzer";
 import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
@@ -8,7 +10,7 @@ import { buildTagIndex } from "./index/TagIndexBuilder";
 import type { TagIndex } from "./index/TagIndex";
 import { FrontmatterWriter } from "./obsidian/FrontmatterWriter";
 import { VaultReader } from "./obsidian/VaultReader";
-import { OperationLog, type OperationRecord } from "./operations/OperationLog";
+import { OperationLog, type CleanupOperationRecord, type OperationRecord } from "./operations/OperationLog";
 import { UndoService } from "./operations/UndoService";
 import { RecommendationModal } from "./preview/RecommendationModal";
 import { LoadingModal } from "./preview/LoadingModal";
@@ -18,6 +20,7 @@ import { DEFAULT_SETTINGS, mergeSettings, type TagCuratorSettings } from "./sett
 import { TagCuratorSettingsTab } from "./settings/SettingsTab";
 import { getLabels, resolveUiLanguage, type UiLanguage } from "./ui/labels";
 import { OperationTimer } from "./utils/OperationTimer";
+import { normalizeTag } from "./utils/normalizeTag";
 
 interface PluginData {
   settings?: Partial<TagCuratorSettings>;
@@ -153,30 +156,42 @@ export default class TagCuratorPlugin extends Plugin {
       const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
       this.tagIndex = index;
       const report = analyzeTagHealth(index);
-      new TagHealthReportModal(this.app, report, this.labels, async () => {
-        if (!this.settings.apiKey) {
-          throw new Error(this.labels.notices.configureApiKey);
+      const cleanupPlan = buildCleanupPlan(report, index);
+      new TagHealthReportModal(
+        this.app,
+        report,
+        cleanupPlan,
+        this.labels,
+        async () => {
+          if (!this.settings.apiKey) {
+            throw new Error(this.labels.notices.configureApiKey);
+          }
+
+          const timer = this.settings.devMode ? new OperationTimer() : null;
+          timer?.startStage("prepare-ai-health-context");
+          const provider = new OpenAICompatibleProvider(this.settings);
+          const analyzer = new TagHealthAiAnalyzer(provider, {
+            allowNewTags: this.settings.allowNewTags,
+            newTagStrictness: this.settings.newTagStrictness,
+            uiLanguage: this.uiLanguage
+          });
+          timer?.endStage("prepare-ai-health-context");
+
+          timer?.startStage("request-ai-health-analysis");
+          const analysis = await analyzer.analyze(report, index);
+          timer?.endStage("request-ai-health-analysis");
+
+          return {
+            analysis,
+            timingReport: timer?.finish() ?? null
+          };
+        },
+        {
+          latestCleanupRecord: this.operationLog.latestCleanup() ?? null,
+          applyCleanupItem: (item) => this.applyCleanupItem(item),
+          undoLatestCleanup: () => this.undoLatestCleanup()
         }
-
-        const timer = this.settings.devMode ? new OperationTimer() : null;
-        timer?.startStage("prepare-ai-health-context");
-        const provider = new OpenAICompatibleProvider(this.settings);
-        const analyzer = new TagHealthAiAnalyzer(provider, {
-          allowNewTags: this.settings.allowNewTags,
-          newTagStrictness: this.settings.newTagStrictness,
-          uiLanguage: this.uiLanguage
-        });
-        timer?.endStage("prepare-ai-health-context");
-
-        timer?.startStage("request-ai-health-analysis");
-        const analysis = await analyzer.analyze(report, index);
-        timer?.endStage("request-ai-health-analysis");
-
-        return {
-          analysis,
-          timingReport: timer?.finish() ?? null
-        };
-      }).open();
+      ).open();
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.refreshFailed);
     }
@@ -267,4 +282,76 @@ export default class TagCuratorPlugin extends Plugin {
       new Notice(error instanceof Error ? error.message : this.labels.notices.undoFailed);
     }
   }
+
+  private async applyCleanupItem(item: CleanupPlanItem): Promise<CleanupOperationRecord> {
+    if (item.action !== "deprecate") {
+      throw new Error(this.labels.health.cleanupPlan.notApplyReady);
+    }
+
+    const removableTags = new Set(item.tags.map(normalizeTag).filter(Boolean));
+    const files: CleanupOperationRecord["files"] = [];
+
+    for (const preview of item.files) {
+      const target = this.app.vault.getAbstractFileByPath(preview.path);
+      if (!(target instanceof TFile)) {
+        continue;
+      }
+
+      const change = await this.frontmatterWriter.applyTagTransform(target, (beforeTags) =>
+        beforeTags.filter((tag) => !removableTags.has(normalizeTag(tag)))
+      );
+
+      if (!sameTagList(change.beforeTags, change.afterTags)) {
+        files.push({
+          notePath: target.path,
+          beforeTags: change.beforeTags,
+          afterTags: change.afterTags
+        });
+      }
+    }
+
+    if (files.length === 0) {
+      throw new Error(this.labels.health.cleanupPlan.noWritableChanges);
+    }
+
+    const record = this.operationLog.addCleanup(
+      {
+        itemId: item.id,
+        title: item.title,
+        action: item.action,
+        files
+      },
+      this.settings.operationLogLimit
+    );
+
+    await this.buildAndSaveTagIndex();
+    return record;
+  }
+
+  private async undoLatestCleanup(): Promise<void> {
+    const record = this.operationLog.latestCleanup();
+    if (!record) {
+      throw new Error(this.labels.health.cleanupPlan.noCleanupUndoRecord);
+    }
+
+    for (const fileChange of record.files) {
+      const target = this.app.vault.getAbstractFileByPath(fileChange.notePath);
+      if (!(target instanceof TFile)) {
+        throw new Error(this.labels.notices.noteMissing);
+      }
+
+      await this.frontmatterWriter.replaceTagsIfCurrent(target, fileChange.afterTags, fileChange.beforeTags);
+    }
+
+    this.operationLog.remove(record.id);
+    await this.buildAndSaveTagIndex();
+  }
+}
+
+function sameTagList(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((tag, index) => normalizeTag(tag) === normalizeTag(right[index]));
 }

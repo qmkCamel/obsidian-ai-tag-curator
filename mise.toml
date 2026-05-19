@@ -1,0 +1,3 @@
+[tools]
+node = "20.20.2"
+python = "latest"
