@@ -1,6 +1,7 @@
 // Turns read-only tag health findings into a reviewable cleanup plan.
 import type { TagHealthIssueType, TagHealthReport, TagHealthSuggestion } from "../health/TagHealthReport";
 import type { TagIndex, TagUsage } from "../index/TagIndex";
+import { resolveCleanupActionCapability } from "./CleanupActionCapability";
 import type { CleanupPlan, CleanupPlanFilePreview, CleanupPlanItem } from "./CleanupPlan";
 
 const SECTION_ORDER: TagHealthIssueType[] = [
@@ -47,8 +48,10 @@ function buildCleanupPlanItem(
 
   return {
     id: `${type}-${issueIndex + 1}`,
+    issueType: type,
     title,
     action,
+    capability: resolveCleanupActionCapability(type, action),
     tags,
     targetTag,
     rationale,

@@ -166,8 +166,8 @@
 }
 
 .tag-curator-health-modal {
-  max-width: min(1040px, calc(100vw - 40px));
-  width: min(1040px, calc(100vw - 40px));
+  max-width: min(1180px, calc(100vw - 40px));
+  width: min(1180px, calc(100vw - 40px));
 }
 
 .tag-curator-health-modal .modal-content {
@@ -215,6 +215,155 @@
   font-size: var(--font-ui-small);
   font-weight: 700;
   padding: 10px 12px;
+}
+
+.tag-curator-health__layer-note {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  padding: 9px 12px;
+}
+
+.tag-curator-health-actions,
+.tag-curator-health-evidence {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.tag-curator-health-actions__header,
+.tag-curator-health-evidence__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tag-curator-health-actions__header h3,
+.tag-curator-health-evidence__header h3 {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  margin: 0 0 6px;
+}
+
+.tag-curator-health-actions__header p,
+.tag-curator-health-evidence__header p,
+.tag-curator-health-actions__summary {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tag-curator-health-actions__header-controls,
+.tag-curator-health-action-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tag-curator-health-ai-state {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin-top: 10px;
+  padding: 12px 14px;
+}
+
+.tag-curator-health-ai-state--loading {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+}
+
+.tag-curator-health-ai-state h4 {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  margin: 0 0 6px;
+}
+
+.tag-curator-health-ai-state p,
+.tag-curator-health-ai-state li,
+.tag-curator-health-ai-state__hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+
+.tag-curator-health-ai-state ul,
+.tag-curator-health-ai-state ol {
+  margin: 8px 0 10px 18px;
+  padding: 0;
+}
+
+.tag-curator-health-ai-state__stages li.is-active {
+  color: var(--text-accent);
+  font-weight: 700;
+}
+
+.tag-curator-health-actions__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tag-curator-health-action-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.tag-curator-health-action-card__top {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.tag-curator-health-action-card__badges {
+  margin: 0;
+}
+
+.tag-curator-health-action-card__controls {
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.tag-curator-health-evidence__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tag-curator-health-evidence__tabs button {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  height: auto;
+  padding: 5px 10px;
+}
+
+.tag-curator-health-evidence__tabs button.is-active {
+  background: rgba(var(--interactive-accent-rgb), 0.18);
+  border-color: rgba(var(--interactive-accent-rgb), 0.38);
+  color: var(--text-accent);
+}
+
+.tag-curator-health-evidence__list {
+  margin-top: 10px;
 }
 
 .tag-curator-cleanup-plan {
@@ -496,10 +645,36 @@
   justify-content: flex-end;
 }
 
+.tag-curator-inline-action__badges {
+  margin: 6px 0 0;
+}
+
+.tag-curator-inline-action__badge--availability-previewOnly {
+  color: var(--text-accent);
+}
+
+.tag-curator-inline-action__badge--availability-observeOnly,
+.tag-curator-inline-action__badge--availability-manualReview {
+  color: var(--text-muted);
+}
+
+.tag-curator-inline-action__badge--risk-high {
+  color: var(--text-error);
+}
+
+.tag-curator-inline-action__badge--risk-medium {
+  color: var(--text-warning, var(--text-normal));
+}
+
+.tag-curator-inline-action__badge--risk-low {
+  color: var(--text-success);
+}
+
 .tag-curator-inline-action__status,
 .tag-curator-inline-action__meta,
 .tag-curator-inline-action__note,
-.tag-curator-inline-action__diff {
+.tag-curator-inline-action__diff,
+.tag-curator-inline-action__ai {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
   line-height: 1.5;
@@ -514,6 +689,26 @@
 
 .tag-curator-inline-action__note {
   margin-top: 6px;
+}
+
+.tag-curator-inline-action__ai {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+
+.tag-curator-inline-action__ai-title {
+  color: var(--text-normal);
+  font-weight: 700;
+}
+
+.tag-curator-inline-action__ai-target {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .tag-curator-inline-action__files {

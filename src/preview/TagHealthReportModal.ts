@@ -1,7 +1,9 @@
-// Shows a read-only diagnosis of tag taxonomy health without applying changes.
+// Shows tag taxonomy health and guarded cleanup actions derived from the report.
 import { Modal, Notice } from "obsidian";
 import type { CleanupPlan, CleanupPlanFilePreview, CleanupPlanItem } from "../cleanup/CleanupPlan";
-import type { TagHealthAiAnalysis, TagHealthAiPriority } from "../health/TagHealthAiAnalysis";
+import { applyAiAssistanceToCleanupPlan } from "../cleanup/CleanupPlanAiAssistance";
+import { buildTagHealthReportViewModel, type HealthActionItemView, type HealthEvidenceSectionView } from "../health/TagHealthReportViewModel";
+import type { TagHealthAiAnalysis } from "../health/TagHealthAiAnalysis";
 import type { TagHealthIssue, TagHealthIssueType, TagHealthReport } from "../health/TagHealthReport";
 import type { CleanupOperationRecord } from "../operations/OperationLog";
 import type { getLabels } from "../ui/labels";
@@ -9,6 +11,7 @@ import { formatDuration } from "../utils/formatDuration";
 import type { OperationStageTiming, OperationTimingReport } from "../utils/OperationTimer";
 import { renderClickableTag } from "./ClickableTag";
 import { formatHealthAiBadgeClass } from "./HealthAiBadgeClasses";
+import { formatTagClipboardText } from "./TagHealthTagActions";
 
 type Labels = ReturnType<typeof getLabels>;
 interface TagHealthAiAnalysisResult {
@@ -35,7 +38,7 @@ export class TagHealthReportModal extends Modal {
   constructor(
     app: ConstructorParameters<typeof Modal>[0],
     private readonly report: TagHealthReport,
-    private readonly cleanupPlan: CleanupPlan,
+    private cleanupPlan: CleanupPlan,
     private readonly labels: Labels,
     private readonly requestAiAnalysis: RequestAiAnalysis,
     private readonly cleanupActions: CleanupActionHandlers
@@ -47,9 +50,11 @@ export class TagHealthReportModal extends Modal {
   private aiTimingReport: OperationTimingReport | null = null;
   private aiLoading = false;
   private latestCleanupRecord: CleanupOperationRecord | null = null;
+  private activeEvidenceSection: TagHealthIssueType = "nearDuplicates";
 
   onOpen(): void {
     this.latestCleanupRecord = this.cleanupActions.latestCleanupRecord;
+    this.activeEvidenceSection = this.findInitialEvidenceSection();
     this.render();
   }
 
@@ -72,94 +77,45 @@ export class TagHealthReportModal extends Modal {
       )}`
     });
 
-    this.renderSummary(contentEl);
-    this.renderAiPanel(contentEl);
-
-    for (const sectionType of SECTION_ORDER) {
-      this.renderSection(contentEl, sectionType);
-    }
-  }
-
-  private renderSummary(parent: HTMLElement): void {
-    const summary = parent.createDiv({ cls: "tag-curator-health__summary" });
-    summary.createDiv({ text: this.labels.health.summary.totalTags(this.report.summary.totalTags) });
-    summary.createDiv({ text: this.labels.health.summary.totalUsages(this.report.summary.totalUsages) });
-    summary.createDiv({ text: this.labels.health.summary.totalFiles(this.report.summary.totalFiles) });
-    summary.createDiv({ text: this.labels.health.summary.riskItems(this.report.summary.riskItemCount) });
-  }
-
-  private renderCleanupPlan(parent: HTMLElement): void {
-    const plan = parent.createDiv({ cls: "tag-curator-cleanup-plan" });
-    const header = plan.createDiv({ cls: "tag-curator-cleanup-plan__header" });
-    const title = header.createDiv();
-    title.createEl("h3", { text: this.labels.health.cleanupPlan.title });
-    title.createEl("p", { text: this.labels.health.cleanupPlan.subtitle });
-
-    const copyButton = header.createEl("button", {
-      text: this.labels.health.cleanupPlan.copyMarkdown
+    const view = buildTagHealthReportViewModel(this.report, this.cleanupPlan, {
+      aiAnalysis: this.aiAnalysis,
+      aiLoading: this.aiLoading
     });
-    copyButton.type = "button";
-    copyButton.disabled = this.cleanupPlan.items.length === 0;
-    copyButton.onClickEvent(() => {
+    this.renderSummary(contentEl, view.overview);
+    this.renderActionLayer(contentEl, view.actionItems);
+    this.renderEvidenceLayer(contentEl, view.evidenceSections);
+  }
+
+  private findInitialEvidenceSection(): TagHealthIssueType {
+    return SECTION_ORDER.find((type) => this.report.sections[type].items.length > 0) ?? "lowFrequency";
+  }
+
+  private renderSummary(parent: HTMLElement, overview: ReturnType<typeof buildTagHealthReportViewModel>["overview"]): void {
+    const summary = parent.createDiv({ cls: "tag-curator-health__summary" });
+    summary.createDiv({ text: this.labels.health.summary.totalTags(overview.totalTags) });
+    summary.createDiv({ text: this.labels.health.summary.totalUsages(overview.totalUsages) });
+    summary.createDiv({ text: this.labels.health.summary.riskItems(overview.riskItemCount) });
+    summary.createDiv({ text: this.labels.health.summary.executableItems(overview.executableItemCount) });
+    parent.createDiv({ cls: "tag-curator-health__layer-note", text: this.labels.health.workflow.layerNote });
+  }
+
+  private renderActionLayer(parent: HTMLElement, actionItems: HealthActionItemView[]): void {
+    const section = parent.createDiv({ cls: "tag-curator-health-actions" });
+    const header = section.createDiv({ cls: "tag-curator-health-actions__header" });
+    const title = header.createDiv();
+    title.createEl("h3", { text: this.labels.health.workflow.actionTitle });
+    title.createEl("p", { text: this.labels.health.workflow.actionSubtitle });
+
+    const controls = header.createDiv({ cls: "tag-curator-health-actions__header-controls" });
+    const copyReportButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.copyMarkdown });
+    copyReportButton.type = "button";
+    copyReportButton.onClickEvent(() => {
       void this.copyCleanupPlanMarkdown();
     });
 
-    if (this.cleanupPlan.items.length === 0) {
-      plan.createDiv({ cls: "tag-curator-health__empty", text: this.labels.health.cleanupPlan.empty });
-      return;
-    }
-
-    const summary = plan.createDiv({ cls: "tag-curator-cleanup-plan__summary" });
-    summary.createSpan({ text: this.labels.health.cleanupPlan.affectedFiles(this.cleanupPlan.affectedFileCount) });
-
-    const list = plan.createDiv({ cls: "tag-curator-cleanup-plan__list" });
-    for (const item of this.cleanupPlan.items) {
-      this.renderCleanupPlanItem(list, item);
-    }
-  }
-
-  private renderCleanupPlanItem(parent: HTMLElement, item: CleanupPlanItem): void {
-    const card = parent.createDiv({ cls: "tag-curator-cleanup-plan__item" });
-    card.createDiv({ cls: "tag-curator-cleanup-plan__item-title", text: item.title });
-
-    const meta = card.createDiv({ cls: "tag-curator-cleanup-plan__meta" });
-    meta.createSpan({
-      text: `${this.labels.health.cleanupPlan.action}: ${this.labels.health.cleanupPlan.actions[item.action]}`
-    });
-    meta.createSpan({ text: this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount) });
-
-    const tags = card.createDiv({ cls: "tag-curator-health__tags" });
-    for (const tag of item.tags) {
-      this.renderTagButton(tags, tag);
-    }
-
-    const target = item.targetTag ? formatTagClipboardText(item.targetTag) : this.labels.health.cleanupPlan.noTarget;
-    this.renderField(card, this.labels.health.cleanupPlan.targetTag, target);
-    this.renderField(card, this.labels.health.impact, item.rationale);
-
-    card.createEl("h4", { text: this.labels.health.cleanupPlan.filePreview });
-    const files = card.createDiv({ cls: "tag-curator-cleanup-plan__files" });
-    for (const file of item.files) {
-      this.renderCleanupFilePreview(files, file);
-    }
-  }
-
-  private renderCleanupFilePreview(parent: HTMLElement, file: CleanupPlanFilePreview): void {
-    const row = parent.createDiv({ cls: "tag-curator-cleanup-plan__file" });
-    row.createDiv({ cls: "tag-curator-cleanup-plan__path", text: file.path });
-    row.createDiv({
-      cls: "tag-curator-cleanup-plan__diff",
-      text: `${this.labels.health.cleanupPlan.before}: ${formatTagList(file.beforeTags)} -> ${this.labels.health.cleanupPlan.after}: ${formatTagList(file.afterTags)}`
-    });
-  }
-
-  private renderAiPanel(parent: HTMLElement): void {
-    const panel = parent.createDiv({ cls: "tag-curator-health-ai" });
-    const header = panel.createDiv({ cls: "tag-curator-health-ai__header" });
-    header.createEl("h3", { text: this.labels.health.ai.title });
-    const button = header.createEl("button", {
+    const button = controls.createEl("button", {
       cls: "mod-cta",
-      text: this.aiLoading ? this.labels.health.ai.enhancing : this.labels.health.ai.enhanceButton
+      text: this.aiLoading ? this.labels.health.workflow.aiRunningButton : this.labels.health.workflow.generateAiButton
     });
     button.type = "button";
     button.disabled = this.aiLoading;
@@ -167,81 +123,183 @@ export class TagHealthReportModal extends Modal {
       void this.enhanceWithAi();
     });
 
-    if (this.aiAnalysis) {
-      panel.createEl("h4", { text: this.labels.health.ai.summary });
-      panel.createEl("p", { cls: "tag-curator-health-ai__summary", text: this.aiAnalysis.summary });
-      this.renderAiPriorities(panel, this.aiAnalysis.priorities);
-      if (this.aiTimingReport) {
-        this.renderTimingReport(panel, this.aiTimingReport);
-      }
-    }
-  }
-
-  private renderAiPriorities(parent: HTMLElement, priorities: TagHealthAiPriority[]): void {
-    if (priorities.length === 0) {
+    if (this.aiLoading) {
+      this.renderAiLoadingState(section);
       return;
     }
 
-    parent.createEl("h4", { text: this.labels.health.ai.priorities });
-    const list = parent.createDiv({ cls: "tag-curator-health-ai__list" });
-    for (const priority of priorities) {
-      const item = list.createDiv({ cls: "tag-curator-health-ai__item" });
-      const statusRow = item.createDiv({ cls: "tag-curator-health-ai__status-row" });
-      const badges = statusRow.createDiv({ cls: "tag-curator-health-ai__badges tag-curator-recommendation__badges" });
-      badges.createSpan({
-        cls: formatHealthAiBadgeClass("priority", priority.severity),
-        text: this.labels.health.ai.severity[priority.severity]
-      });
-      badges.createSpan({
-        cls: formatHealthAiBadgeClass("confidence", priority.confidence),
-        text: this.labels.health.ai.confidence[priority.confidence]
-      });
+    if (!this.aiAnalysis) {
+      this.renderAiInitialState(section);
+      return;
+    }
 
-      const tagRow = item.createDiv({ cls: "tag-curator-health-ai__tag-row" });
-      const tags = tagRow.createDiv({ cls: "tag-curator-health__tags tag-curator-health__tags--compact" });
-      for (const tag of priority.tags) {
-        this.renderTagButton(tags, tag);
-      }
-      this.renderAiField(item, this.labels.health.ai.diagnosis, priority.diagnosis);
-      this.renderAiField(item, this.labels.health.ai.reason, priority.reason);
-      if (priority.targetTag) {
-        this.renderAiTagField(item, this.labels.health.ai.targetTag, priority.targetTag);
-      }
-      if (priority.riskNote) {
-        this.renderAiField(item, this.labels.health.ai.riskNote, priority.riskNote);
-      }
+    if (this.aiAnalysis.summary) {
+      section.createDiv({ cls: "tag-curator-health-actions__summary", text: this.aiAnalysis.summary });
+    }
+
+    if (actionItems.length === 0) {
+      section.createDiv({ cls: "tag-curator-health__empty", text: this.labels.health.workflow.noActionItems });
+      return;
+    }
+
+    const list = section.createDiv({ cls: "tag-curator-health-actions__list" });
+    for (const item of actionItems) {
+      this.renderActionItem(list, item);
+    }
+
+    if (this.aiTimingReport) {
+      this.renderTimingReport(section, this.aiTimingReport);
     }
   }
 
-  private renderAiField(parent: HTMLElement, label: string, value: string): void {
-    const field = parent.createDiv({ cls: "tag-curator-health-ai__field" });
-    field.createSpan({ cls: "tag-curator-health__field-label", text: `${label}: ` });
-    field.createSpan({ text: value });
+  private renderAiInitialState(parent: HTMLElement): void {
+    const empty = parent.createDiv({ cls: "tag-curator-health-ai-state" });
+    empty.createEl("h4", { text: this.labels.health.workflow.initialTitle });
+    empty.createEl("p", { text: this.labels.health.workflow.initialDescription });
+    const list = empty.createEl("ul");
+    for (const item of this.labels.health.workflow.initialBullets) {
+      list.createEl("li", { text: item });
+    }
+    const button = empty.createEl("button", { cls: "mod-cta", text: this.labels.health.workflow.generateAiButton });
+    button.type = "button";
+    button.onClickEvent(() => {
+      void this.enhanceWithAi();
+    });
+  }
+
+  private renderAiLoadingState(parent: HTMLElement): void {
+    const loading = parent.createDiv({ cls: "tag-curator-health-ai-state tag-curator-health-ai-state--loading" });
+    loading.createDiv({ cls: "tag-curator-loading-spinner" });
+    const body = loading.createDiv();
+    body.createEl("h4", { text: this.labels.health.workflow.loadingTitle });
+    body.createEl("p", { text: this.labels.health.workflow.loadingDescription });
+    const stages = body.createEl("ol", { cls: "tag-curator-health-ai-state__stages" });
+    stages.createEl("li", { text: this.labels.health.workflow.loadingStages.rules });
+    stages.createEl("li", { cls: "is-active", text: this.labels.health.workflow.loadingStages.merge });
+    stages.createEl("li", { text: this.labels.health.workflow.loadingStages.suggest });
+    body.createDiv({ cls: "tag-curator-health-ai-state__hint", text: this.labels.health.workflow.loadingHint });
+  }
+
+  private renderActionItem(parent: HTMLElement, item: HealthActionItemView): void {
+    const card = parent.createDiv({ cls: "tag-curator-health-action-card" });
+    const statusRow = card.createDiv({ cls: "tag-curator-health-ai__status-row tag-curator-health-action-card__status-row" });
+    const badges = statusRow.createDiv({ cls: "tag-curator-health-action-card__badges tag-curator-recommendation__badges" });
+    badges.createSpan({
+      cls: formatHealthAiBadgeClass("priority", item.priority),
+      text: this.labels.health.ai.severity[item.priority]
+    });
+    badges.createSpan({
+      cls: formatHealthAiBadgeClass("confidence", item.confidence),
+      text: this.labels.health.ai.confidence[item.confidence]
+    });
+    badges.createSpan({
+      cls: `tag-curator-recommendation__badge tag-curator-inline-action__badge tag-curator-inline-action__badge--availability-${item.capability.availability}`,
+      text: this.labels.health.cleanupPlan.availability[item.capability.availability]
+    });
+
+    const tagRow = card.createDiv({ cls: "tag-curator-health-ai__tag-row tag-curator-health-action-card__tag-row" });
+    const tags = tagRow.createDiv({ cls: "tag-curator-health__tags tag-curator-health__tags--compact" });
+    for (const tag of item.tags) {
+      this.renderTagButton(tags, tag);
+    }
+
+    this.renderField(card, this.labels.health.ai.diagnosis, item.diagnosis);
+    this.renderField(card, this.labels.health.ai.reason, item.reason);
+    if (item.targetTag) {
+      this.renderAiTagField(card, this.labels.health.ai.targetTag, item.targetTag);
+    }
+    this.renderField(
+      card,
+      this.labels.health.workflow.ruleEvidence,
+      item.evidenceTypes.map((type) => this.labels.health.sections[type]).join(" / ")
+    );
+    if (item.riskNote) {
+      this.renderField(card, this.labels.health.ai.riskNote, item.riskNote);
+    }
+
+    const controls = card.createDiv({ cls: "tag-curator-health-action-card__controls" });
+    const copyButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.copyMarkdown });
+    copyButton.type = "button";
+    copyButton.onClickEvent(() => {
+      if (item.cleanupItem) {
+        void this.copyCleanupItemMarkdown(item.cleanupItem);
+        return;
+      }
+
+      void this.copyActionItemMarkdown(item);
+    });
+
+    if (item.cleanupItem) {
+      const previewButton = controls.createEl("button", { text: this.labels.health.workflow.viewFilePreview });
+      previewButton.type = "button";
+      previewButton.onClickEvent(() => {
+        this.activeEvidenceSection = item.cleanupItem?.issueType ?? this.activeEvidenceSection;
+        this.render();
+      });
+    }
+
+    if (item.cleanupItem && item.capability.availability === "executable") {
+      const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.cleanupItem.id;
+      const actionButton = controls.createEl("button", {
+        cls: latestAppliesToItem ? "" : "mod-cta",
+        text: latestAppliesToItem ? this.labels.health.cleanupPlan.undoThisOperation : this.labels.health.cleanupPlan.applyThisSuggestion
+      });
+      actionButton.type = "button";
+      actionButton.onClickEvent(() => {
+        if (!item.cleanupItem) {
+          return;
+        }
+
+        if (latestAppliesToItem) {
+          void this.undoCleanupItem();
+          return;
+        }
+
+        void this.applyCleanupItem(item.cleanupItem);
+      });
+    }
+  }
+
+  private renderEvidenceLayer(parent: HTMLElement, sections: HealthEvidenceSectionView[]): void {
+    const layer = parent.createDiv({ cls: "tag-curator-health-evidence" });
+    const header = layer.createDiv({ cls: "tag-curator-health-evidence__header" });
+    header.createEl("h3", { text: this.labels.health.workflow.evidenceTitle });
+    header.createEl("p", { text: this.labels.health.workflow.evidenceDescription });
+
+    const tabs = layer.createDiv({ cls: "tag-curator-health-evidence__tabs" });
+    for (const section of sections) {
+      const button = tabs.createEl("button", {
+        cls: section.type === this.activeEvidenceSection ? "is-active" : "",
+        text: this.labels.health.sections[section.type]
+      });
+      button.type = "button";
+      button.onClickEvent(() => {
+        this.activeEvidenceSection = section.type;
+        this.render();
+      });
+    }
+
+    const active = sections.find((section) => section.type === this.activeEvidenceSection) ?? sections[0];
+    this.renderEvidenceSection(layer, active);
+  }
+
+  private renderEvidenceSection(parent: HTMLElement, section: HealthEvidenceSectionView): void {
+    const list = parent.createDiv({ cls: "tag-curator-health-evidence__list" });
+    if (section.items.length === 0) {
+      list.createDiv({ cls: "tag-curator-health__empty", text: this.labels.health.noIssues });
+      list.createDiv({ cls: "tag-curator-health__empty-detail", text: this.labels.health.emptyIssueDetails[section.type] });
+      return;
+    }
+
+    section.items.forEach((issue, issueIndex) => {
+      this.renderIssue(list, issue, `${section.type}-${issueIndex + 1}`);
+    });
   }
 
   private renderAiTagField(parent: HTMLElement, label: string, tag: string): void {
     const field = parent.createDiv({ cls: "tag-curator-health-ai__field" });
     field.createSpan({ cls: "tag-curator-health__field-label", text: `${label}: ` });
     this.renderTagButton(field, tag);
-  }
-
-  private renderSection(parent: HTMLElement, sectionType: TagHealthIssueType): void {
-    const section = this.report.sections[sectionType];
-    const container = parent.createDiv({ cls: "tag-curator-health__section" });
-    container.createEl("h3", { text: this.labels.health.sections[sectionType] });
-
-    if (section.items.length === 0) {
-      container.createDiv({ cls: "tag-curator-health__empty", text: this.labels.health.noIssues });
-      container.createDiv({
-        cls: "tag-curator-health__empty-detail",
-        text: this.labels.health.emptyIssueDetails[sectionType]
-      });
-      return;
-    }
-
-    section.items.forEach((issue, issueIndex) => {
-      this.renderIssue(container, issue, `${sectionType}-${issueIndex + 1}`);
-    });
   }
 
   private renderIssue(parent: HTMLElement, issue: TagHealthIssue, cleanupItemId: string): void {
@@ -267,11 +325,12 @@ export class TagHealthReportModal extends Modal {
     const panel = parent.createDiv({ cls: "tag-curator-inline-action" });
     const header = panel.createDiv({ cls: "tag-curator-inline-action__header" });
     const title = header.createDiv();
-    title.createEl("h4", { text: this.labels.health.cleanupPlan.executableSuggestion });
+    title.createEl("h4", { text: this.labels.health.cleanupPlan.actionCapability });
     title.createDiv({
       cls: "tag-curator-inline-action__status",
       text: `${this.labels.health.cleanupPlan.status}: ${this.getCleanupStatusLabel(item)}`
     });
+    this.renderCapabilityBadges(title, item);
 
     const controls = header.createDiv({ cls: "tag-curator-inline-action__controls" });
     const copyButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.copyMarkdown });
@@ -280,21 +339,19 @@ export class TagHealthReportModal extends Modal {
       void this.copyCleanupItemMarkdown(item);
     });
 
-    const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.id;
-    if (latestAppliesToItem) {
-      const undoButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.undoThisOperation });
-      undoButton.type = "button";
-      undoButton.onClickEvent(() => {
-        void this.undoCleanupItem();
+    if (item.capability.availability === "executable") {
+      const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.id;
+      const actionButton = controls.createEl("button", {
+        cls: latestAppliesToItem ? "" : "mod-cta",
+        text: latestAppliesToItem ? this.labels.health.cleanupPlan.undoThisOperation : this.labels.health.cleanupPlan.applyThisSuggestion
       });
-    } else {
-      const applyButton = controls.createEl("button", {
-        cls: item.action === "deprecate" ? "mod-cta" : "",
-        text: this.labels.health.cleanupPlan.applyThisSuggestion
-      });
-      applyButton.type = "button";
-      applyButton.disabled = item.action !== "deprecate";
-      applyButton.onClickEvent(() => {
+      actionButton.type = "button";
+      actionButton.onClickEvent(() => {
+        if (latestAppliesToItem) {
+          void this.undoCleanupItem();
+          return;
+        }
+
         void this.applyCleanupItem(item);
       });
     }
@@ -308,6 +365,7 @@ export class TagHealthReportModal extends Modal {
     meta.createSpan({ text: `${this.labels.health.cleanupPlan.targetTag}: ${target}` });
 
     panel.createDiv({ cls: "tag-curator-inline-action__note", text: this.getCleanupActionNote(item) });
+    this.renderAiAssistance(panel, item);
 
     const files = panel.createDiv({ cls: "tag-curator-inline-action__files" });
     for (const file of item.files.slice(0, 4)) {
@@ -345,29 +403,48 @@ export class TagHealthReportModal extends Modal {
 
   private formatCleanupPlanMarkdown(): string {
     const lines = [`# ${this.labels.health.cleanupPlan.title}`, ""];
-    lines.push(this.labels.health.cleanupPlan.affectedFiles(this.cleanupPlan.affectedFileCount), "");
+    const view = buildTagHealthReportViewModel(this.report, this.cleanupPlan, {
+      aiAnalysis: this.aiAnalysis,
+      aiLoading: this.aiLoading
+    });
 
-    for (const item of this.cleanupPlan.items) {
-      lines.push(`## ${item.title}`);
-      lines.push(`- ${this.labels.health.cleanupPlan.action}: ${this.labels.health.cleanupPlan.actions[item.action]}`);
-      lines.push(
-        `- ${this.labels.health.cleanupPlan.targetTag}: ${
-          item.targetTag ? formatTagClipboardText(item.targetTag) : this.labels.health.cleanupPlan.noTarget
-        }`
-      );
-      lines.push(`- ${this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount)}`);
-      lines.push(`- ${this.labels.health.impact}: ${item.rationale}`);
-      lines.push("");
+    if (!this.aiAnalysis) {
+      lines.push(this.labels.health.workflow.initialTitle, "");
+    } else {
+      lines.push(`## ${this.labels.health.workflow.actionTitle}`, "");
+      for (const item of view.actionItems) {
+        this.appendActionItemMarkdown(lines, item);
+        lines.push("");
+      }
+    }
 
-      for (const file of item.files) {
-        lines.push(
-          `  - ${file.path}: ${formatTagList(file.beforeTags)} -> ${formatTagList(file.afterTags)}`
-        );
+    lines.push(`## ${this.labels.health.workflow.evidenceTitle}`, "");
+    for (const section of view.evidenceSections) {
+      lines.push(`### ${this.labels.health.sections[section.type]}`);
+      if (section.items.length === 0) {
+        lines.push(`- ${this.labels.health.noIssues}`);
+        lines.push("");
+        continue;
+      }
+
+      for (const issue of section.items) {
+        lines.push(`- ${issue.title}: ${formatTagList(issue.tags)} · ${this.labels.health.suggestions[issue.suggestion]}`);
       }
       lines.push("");
     }
 
     return lines.join("\n").trim();
+  }
+
+  private async copyActionItemMarkdown(item: HealthActionItemView): Promise<void> {
+    try {
+      const lines = [`## ${this.labels.health.workflow.actionTitle}`];
+      this.appendActionItemMarkdown(lines, item);
+      await navigator.clipboard.writeText(lines.join("\n").trim());
+      new Notice(this.labels.health.cleanupPlan.markdownCopied);
+    } catch (error) {
+      new Notice(error instanceof Error ? error.message : this.labels.health.tagActionFailed);
+    }
   }
 
   private async copyCleanupItemMarkdown(item: CleanupPlanItem): Promise<void> {
@@ -382,6 +459,7 @@ export class TagHealthReportModal extends Modal {
   private formatCleanupItemMarkdown(item: CleanupPlanItem): string {
     const lines = [`## ${item.title}`];
     lines.push(`- ${this.labels.health.cleanupPlan.action}: ${this.labels.health.cleanupPlan.actions[item.action]}`);
+    this.appendCapabilityMarkdown(lines, item);
     lines.push(
       `- ${this.labels.health.cleanupPlan.targetTag}: ${
         item.targetTag ? formatTagClipboardText(item.targetTag) : this.labels.health.cleanupPlan.noTarget
@@ -389,6 +467,7 @@ export class TagHealthReportModal extends Modal {
     );
     lines.push(`- ${this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount)}`);
     lines.push(`- ${this.labels.health.impact}: ${item.rationale}`);
+    this.appendAiAssistanceMarkdown(lines, item);
     lines.push("");
 
     for (const file of item.files) {
@@ -399,15 +478,27 @@ export class TagHealthReportModal extends Modal {
   }
 
   private getCleanupStatusLabel(item: CleanupPlanItem): string {
-    return this.latestCleanupRecord?.itemId === item.id
-      ? this.labels.health.cleanupPlan.appliedStatus
-      : this.labels.health.cleanupPlan.pendingReview;
+    if (this.latestCleanupRecord?.itemId === item.id) {
+      return this.labels.health.cleanupPlan.appliedStatus;
+    }
+
+    return this.labels.health.cleanupPlan.availability[item.capability.availability];
   }
 
   private getCleanupActionNote(item: CleanupPlanItem): string {
-    return item.action === "deprecate"
-      ? this.labels.health.cleanupPlan.frontmatterOnlyWarning
-      : this.labels.health.cleanupPlan.unsupportedWriteAction;
+    if (item.capability.availability === "executable") {
+      return this.labels.health.cleanupPlan.frontmatterOnlyWarning;
+    }
+
+    if (item.capability.availability === "previewOnly") {
+      return this.labels.health.cleanupPlan.previewOnlyNote;
+    }
+
+    if (item.capability.availability === "observeOnly") {
+      return this.labels.health.cleanupPlan.observeOnlyNote;
+    }
+
+    return this.labels.health.cleanupPlan.manualReviewNote;
   }
 
   private async applyCleanupItem(item: CleanupPlanItem): Promise<void> {
@@ -442,6 +533,7 @@ export class TagHealthReportModal extends Modal {
       this.render();
       const result = await this.requestAiAnalysis();
       this.aiAnalysis = result.analysis;
+      this.cleanupPlan = applyAiAssistanceToCleanupPlan(this.cleanupPlan, result.analysis);
       this.aiTimingReport = result.timingReport;
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.suggestFailed);
@@ -482,6 +574,92 @@ export class TagHealthReportModal extends Modal {
       formatTime(stage.endedAt),
       formatDuration(stage.durationMs)
     )}`;
+  }
+
+  private renderCapabilityBadges(parent: HTMLElement, item: CleanupPlanItem): void {
+    const badges = parent.createDiv({ cls: "tag-curator-inline-action__badges tag-curator-recommendation__badges" });
+    badges.createSpan({
+      cls: "tag-curator-recommendation__badge tag-curator-inline-action__badge",
+      text: this.labels.health.cleanupPlan.kind[item.capability.kind]
+    });
+    badges.createSpan({
+      cls: `tag-curator-recommendation__badge tag-curator-inline-action__badge tag-curator-inline-action__badge--availability-${item.capability.availability}`,
+      text: this.labels.health.cleanupPlan.availability[item.capability.availability]
+    });
+    badges.createSpan({
+      cls: `tag-curator-recommendation__badge tag-curator-inline-action__badge tag-curator-inline-action__badge--risk-${item.capability.riskLevel}`,
+      text: this.labels.health.cleanupPlan.risk[item.capability.riskLevel]
+    });
+  }
+
+  private renderAiAssistance(parent: HTMLElement, item: CleanupPlanItem): void {
+    if (!item.aiAssistance) {
+      return;
+    }
+
+    const ai = parent.createDiv({ cls: "tag-curator-inline-action__ai" });
+    ai.createDiv({ cls: "tag-curator-inline-action__ai-title", text: this.labels.health.cleanupPlan.aiAssistance });
+    ai.createDiv({ text: `${this.labels.health.ai.priorities}: ${this.labels.health.ai.severity[item.aiAssistance.priorityHint]} · ${this.labels.health.ai.confidence[item.aiAssistance.confidence]}` });
+    ai.createDiv({ text: `${this.labels.health.ai.reason}: ${item.aiAssistance.reason}` });
+    if (item.aiAssistance.targetTagCandidate) {
+      const target = ai.createDiv({ cls: "tag-curator-inline-action__ai-target" });
+      target.createSpan({ text: `${this.labels.health.cleanupPlan.aiTargetTagCandidate}: ` });
+      this.renderTagButton(target, item.aiAssistance.targetTagCandidate);
+    }
+    if (item.aiAssistance.riskNote) {
+      ai.createDiv({ text: `${this.labels.health.ai.riskNote}: ${item.aiAssistance.riskNote}` });
+    }
+  }
+
+  private appendCapabilityMarkdown(lines: string[], item: CleanupPlanItem): void {
+    lines.push(`- ${this.labels.health.cleanupPlan.actionKind}: ${this.labels.health.cleanupPlan.kind[item.capability.kind]}`);
+    lines.push(
+      `- ${this.labels.health.cleanupPlan.availabilityLabel}: ${this.labels.health.cleanupPlan.availability[item.capability.availability]}`
+    );
+    lines.push(`- ${this.labels.health.cleanupPlan.riskLabel}: ${this.labels.health.cleanupPlan.risk[item.capability.riskLevel]}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.requiresTargetTag}: ${this.formatBoolean(item.capability.requiresTargetTag)}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.requiresFilePreview}: ${this.formatBoolean(item.capability.requiresFilePreview)}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.supportsBatch}: ${this.formatBoolean(item.capability.supportsBatch)}`);
+  }
+
+  private appendActionItemMarkdown(lines: string[], item: HealthActionItemView): void {
+    lines.push(`- ${this.labels.health.workflow.ruleEvidence}: ${item.evidenceTypes.map((type) => this.labels.health.sections[type]).join(" / ")}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.status}: ${this.labels.health.ai.severity[item.priority]} · ${this.labels.health.ai.confidence[item.confidence]}`);
+    lines.push(`- ${this.labels.health.ai.diagnosis}: ${item.diagnosis}`);
+    lines.push(`- ${this.labels.health.ai.reason}: ${item.reason}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.action}: ${this.labels.health.cleanupPlan.actions[item.suggestedAction]}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.availabilityLabel}: ${this.labels.health.cleanupPlan.availability[item.capability.availability]}`);
+    if (item.targetTag) {
+      lines.push(`- ${this.labels.health.ai.targetTag}: ${formatTagClipboardText(item.targetTag)}`);
+    }
+    if (item.riskNote) {
+      lines.push(`- ${this.labels.health.ai.riskNote}: ${item.riskNote}`);
+    }
+    if (item.cleanupItem) {
+      lines.push(`- ${this.labels.health.cleanupPlan.affectedFiles(item.cleanupItem.affectedFileCount)}`);
+    }
+    lines.push(`- ${this.labels.health.workflow.relatedTags}: ${formatTagList(item.tags)}`);
+  }
+
+  private appendAiAssistanceMarkdown(lines: string[], item: CleanupPlanItem): void {
+    if (!item.aiAssistance) {
+      return;
+    }
+
+    lines.push(`- ${this.labels.health.cleanupPlan.aiAssistance}: ${item.aiAssistance.reason}`);
+    lines.push(`- ${this.labels.health.cleanupPlan.aiPriorityHint}: ${this.labels.health.ai.severity[item.aiAssistance.priorityHint]}`);
+    if (item.aiAssistance.targetTagCandidate) {
+      lines.push(
+        `- ${this.labels.health.cleanupPlan.aiTargetTagCandidate}: ${formatTagClipboardText(item.aiAssistance.targetTagCandidate)}`
+      );
+    }
+    if (item.aiAssistance.riskNote) {
+      lines.push(`- ${this.labels.health.ai.riskNote}: ${item.aiAssistance.riskNote}`);
+    }
+  }
+
+  private formatBoolean(value: boolean): string {
+    return value ? this.labels.health.cleanupPlan.booleanYes : this.labels.health.cleanupPlan.booleanNo;
   }
 }
 

@@ -26,13 +26,14 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Run slow AI requests in the background and show results when ready.
 
 **Vault-level tag health report**
-![标签健康报告](docs/images/tag-health-report.png)
-![AI 增强健康分析](docs/images/ai-health-analysis.png)
-- Generate a read-only tag health report for the current vault.
+- Organize vault-level tag health into overview, AI priority actions, and rule evidence details.
 - Group health issues such as low-frequency tags, near duplicates, hierarchy inconsistencies, over-broad tags, over-narrow tags, and naming drift.
-- Show evidence, impact, and suggested action for each issue group.
+- Use rule analysis for factual evidence and action safety boundaries; use AI assistance for merging related issues, explaining rationale, ranking priorities, and adding risk notes.
+- Executable merge/rename suggestions can show file previews, be applied manually, and be undone. Observation, broad split, deprecation, and removal suggestions stay read-only or manual-review.
 - Click health report tags to copy and search them in Obsidian.
-- Enhance the report with AI-generated summary and prioritized action items.
+![Health report initial concept](docs/images/tag-health-report-initial-concept.png)
+![AI analysis loading concept](docs/images/tag-health-report-ai-loading-concept.png)
+![AI analysis results concept](docs/images/tag-health-report-ai-results-concept.png)
 
 
 **Settings**
@@ -155,10 +156,10 @@ For new product work, start with an OpenSpec change proposal before implementati
 ## Current Limitations
 
 - The MVP only writes to the current note's frontmatter `tags`.
-- Inline tags are read for indexing but are not automatically rewritten.
-- Tag health reports are read-only diagnostics.
+- Inline tags are read for indexing but are not automatically rewritten yet: body tags may appear in quotes, code blocks, links, or prose, so safe writes need position-level diffs, operation logs, and conflict detection.
+- Rule evidence in tag health reports is read-only. Executable cleanup items require file previews and explicit manual confirmation.
 - AI-enhanced health analysis only returns a summary and prioritized action items.
-- Cleanup plans are read-only previews; batch previews, batch writes, and batch undo are not implemented yet.
+- Cleanup plans label action capabilities. Executable merge/rename items can be applied manually and undone; other items remain preview-only, observe-only, or manual-review.
 - AI responses must be valid structured JSON. If parsing fails, no file is modified.
 
 ## Documentation

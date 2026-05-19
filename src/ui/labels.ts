@@ -108,6 +108,7 @@ type LabelTree = {
       totalUsages: (count: number) => string;
       totalFiles: (count: number) => string;
       riskItems: (count: number) => string;
+      executableItems: (count: number) => string;
     };
     sections: {
       lowFrequency: string;
@@ -138,6 +139,30 @@ type LabelTree = {
     clickTagAction: (tag: string) => string;
     tagActionDone: (tag: string) => string;
     tagActionFailed: string;
+    workflow: {
+      layerNote: string;
+      actionTitle: string;
+      actionSubtitle: string;
+      generateAiButton: string;
+      aiRunningButton: string;
+      initialTitle: string;
+      initialDescription: string;
+      initialBullets: string[];
+      loadingTitle: string;
+      loadingDescription: string;
+      loadingStages: {
+        rules: string;
+        merge: string;
+        suggest: string;
+      };
+      loadingHint: string;
+      noActionItems: string;
+      ruleEvidence: string;
+      relatedTags: string;
+      viewFilePreview: string;
+      evidenceTitle: string;
+      evidenceDescription: string;
+    };
     cleanupPlan: {
       title: string;
       subtitle: string;
@@ -145,6 +170,15 @@ type LabelTree = {
       copyMarkdown: string;
       markdownCopied: string;
       action: string;
+      actionCapability: string;
+      actionKind: string;
+      availabilityLabel: string;
+      riskLabel: string;
+      requiresTargetTag: string;
+      requiresFilePreview: string;
+      supportsBatch: string;
+      booleanYes: string;
+      booleanNo: string;
       executableSuggestion: string;
       status: string;
       pendingReview: string;
@@ -158,6 +192,12 @@ type LabelTree = {
       noCleanupUndoRecord: string;
       cleanupApplied: (count: number) => string;
       cleanupUndone: string;
+      previewOnlyNote: string;
+      observeOnlyNote: string;
+      manualReviewNote: string;
+      aiAssistance: string;
+      aiPriorityHint: string;
+      aiTargetTagCandidate: string;
       targetTag: string;
       affectedFiles: (count: number) => string;
       filePreview: string;
@@ -169,6 +209,25 @@ type LabelTree = {
         rename: string;
         observe: string;
         deprecate: string;
+      };
+      kind: {
+        mergeTags: string;
+        renameTag: string;
+        removeTag: string;
+        observeOnly: string;
+        splitBroadTag: string;
+        manualReview: string;
+      };
+      availability: {
+        executable: string;
+        previewOnly: string;
+        observeOnly: string;
+        manualReview: string;
+      };
+      risk: {
+        high: string;
+        medium: string;
+        low: string;
       };
     };
     ai: {
@@ -300,14 +359,15 @@ const ZH_LABELS: LabelTree = {
   },
   health: {
     title: "标签健康报告",
-    subtitle: "以下是基于当前库标签索引生成的只读诊断，不会修改任何 Markdown 文件。",
+    subtitle: "规则分析负责生成事实证据，AI 辅助分析负责合并、解释和排序，不直接决定可执行性。",
     generatedAt: (value) => `生成时间：${value}`,
     indexUpdatedAt: (value) => `索引时间：${value}`,
     summary: {
       totalTags: (count) => `标签数：${count}`,
       totalUsages: (count) => `标签使用次数：${count}`,
       totalFiles: (count) => `有标签的文件数：${count}`,
-      riskItems: (count) => `风险分组：${count}`
+      riskItems: (count) => `风险分组：${count}`,
+      executableItems: (count) => `可执行建议：${count}`
     },
     sections: {
       lowFrequency: "低频标签",
@@ -338,13 +398,46 @@ const ZH_LABELS: LabelTree = {
     clickTagAction: (tag) => `复制 #${tag} 并搜索`,
     tagActionDone: (tag) => `已复制 #${tag} 并打开搜索。`,
     tagActionFailed: "复制或搜索标签失败。",
+    workflow: {
+      layerNote: "规则是证据层，AI 是行动建议层；动作是否可执行始终由本地规则决定。",
+      actionTitle: "优先处理项",
+      actionSubtitle: "AI 会把跨规则的同一主题问题合并为更少的行动建议。",
+      generateAiButton: "生成 AI 辅助分析",
+      aiRunningButton: "正在分析...",
+      initialTitle: "尚未生成 AI 辅助分析",
+      initialDescription: "当前只展示规则检测到的证据。运行 AI 后，会把低频、重复、过宽、过细、层级和命名问题合并为更少的行动建议。",
+      initialBullets: ["合并跨规则的同一主题问题", "判断哪些应优先处理，哪些继续观察", "补充目标标签与风险提示"],
+      loadingTitle: "正在生成 AI 辅助分析",
+      loadingDescription: "正在合并同一主题下的规则问题，并判断哪些建议应优先处理。",
+      loadingStages: {
+        rules: "已完成：整理规则证据",
+        merge: "进行中：合并相关标签问题",
+        suggest: "等待中：生成行动建议与风险提示"
+      },
+      loadingHint: "你可以继续查看下方规则证据明细。",
+      noActionItems: "AI 没有返回可展示的优先处理项。",
+      ruleEvidence: "规则证据",
+      relatedTags: "相关标签",
+      viewFilePreview: "查看文件预览",
+      evidenceTitle: "规则证据明细",
+      evidenceDescription: "规则明细只说明发现了什么，不直接代表必须处理。"
+    },
     cleanupPlan: {
       title: "清理审查计划",
-      subtitle: "根据健康报告生成的只读清理预览，用来辅助人工审查；当前不会写入任何 Markdown 文件。",
+      subtitle: "根据健康报告生成的清理预览；只有标记为可执行的项目可手动应用，并会记录操作用于回退。",
       empty: "当前健康报告没有生成可预览的清理项。",
       copyMarkdown: "复制 Markdown 计划",
       markdownCopied: "已复制 Markdown 清理计划。",
       action: "动作",
+      actionCapability: "动作能力",
+      actionKind: "动作类型",
+      availabilityLabel: "可用性",
+      riskLabel: "风险等级",
+      requiresTargetTag: "需要目标标签",
+      requiresFilePreview: "需要文件预览",
+      supportsBatch: "支持批量",
+      booleanYes: "是",
+      booleanNo: "否",
       executableSuggestion: "可执行建议",
       status: "状态",
       pendingReview: "待审查",
@@ -353,11 +446,17 @@ const ZH_LABELS: LabelTree = {
       undoThisOperation: "回退",
       unsupportedWriteAction: "该动作需要人工确认目标，当前仅生成审查预览。",
       notApplyReady: "该清理建议暂未开放直接写入。",
-      frontmatterOnlyWarning: "当前只写入 frontmatter tags；正文 inline tags 仍需人工处理。",
+      frontmatterOnlyWarning: "应用前请确认文件预览。当前只写入 frontmatter tags；正文 inline tags 仍需人工处理，操作会记录用于回退。",
       noWritableChanges: "没有找到可写入的 frontmatter 标签变更。",
       noCleanupUndoRecord: "没有可回退的清理操作。",
       cleanupApplied: (count) => `已应用清理，更新 ${count} 个文件。`,
       cleanupUndone: "已回退最近一次清理。",
+      previewOnlyNote: "该动作当前仅提供预览和导出，不会写入 Markdown。",
+      observeOnlyNote: "该问题当前仅建议继续观察，低频本身不足以证明应该修改。",
+      manualReviewNote: "该问题需要人工判断，当前不会提供一键处理能力。",
+      aiAssistance: "AI 辅助建议",
+      aiPriorityHint: "AI 优先级提示",
+      aiTargetTagCandidate: "AI 候选目标标签",
       targetTag: "候选目标标签",
       affectedFiles: (count) => `影响文件：${count}`,
       filePreview: "文件预览",
@@ -369,6 +468,25 @@ const ZH_LABELS: LabelTree = {
         rename: "重命名",
         observe: "保留观察",
         deprecate: "废弃"
+      },
+      kind: {
+        mergeTags: "合并标签",
+        renameTag: "重命名标签",
+        removeTag: "移除标签",
+        observeOnly: "仅观察",
+        splitBroadTag: "拆分过宽标签",
+        manualReview: "人工判断"
+      },
+      availability: {
+        executable: "可执行",
+        previewOnly: "仅预览",
+        observeOnly: "仅观察",
+        manualReview: "需人工判断"
+      },
+      risk: {
+        high: "高风险",
+        medium: "中风险",
+        low: "低风险"
       }
     },
     ai: {
@@ -501,14 +619,15 @@ const EN_LABELS: LabelTree = {
   },
   health: {
     title: "Tag health report",
-    subtitle: "This read-only diagnosis is based on the current vault tag index and will not modify Markdown files.",
+    subtitle: "Rules provide factual evidence; AI assistance merges, explains, and ranks issues without deciding executability.",
     generatedAt: (value) => `Generated: ${value}`,
     indexUpdatedAt: (value) => `Index updated: ${value}`,
     summary: {
       totalTags: (count) => `Tags: ${count}`,
       totalUsages: (count) => `Tag usages: ${count}`,
       totalFiles: (count) => `Files with tags: ${count}`,
-      riskItems: (count) => `Risk groups: ${count}`
+      riskItems: (count) => `Risk groups: ${count}`,
+      executableItems: (count) => `Executable suggestions: ${count}`
     },
     sections: {
       lowFrequency: "Low-frequency tags",
@@ -539,13 +658,46 @@ const EN_LABELS: LabelTree = {
     clickTagAction: (tag) => `Copy and search #${tag}`,
     tagActionDone: (tag) => `Copied #${tag} and opened search.`,
     tagActionFailed: "Failed to copy or search the tag.",
+    workflow: {
+      layerNote: "Rules are the evidence layer; AI is the action guidance layer. Local rules always decide executability.",
+      actionTitle: "Priority actions",
+      actionSubtitle: "AI merges related rule findings into fewer action-oriented suggestions.",
+      generateAiButton: "Generate AI analysis",
+      aiRunningButton: "Analyzing...",
+      initialTitle: "AI analysis has not been generated",
+      initialDescription: "Only rule evidence is shown right now. After AI runs, low-frequency, duplicate, broad, narrow, hierarchy, and naming issues are merged into fewer action suggestions.",
+      initialBullets: ["Merge same-topic issues across rules", "Rank what to handle first and what to observe", "Add target tag candidates and risk notes"],
+      loadingTitle: "Generating AI analysis",
+      loadingDescription: "Merging related rule findings and deciding which suggestions deserve priority.",
+      loadingStages: {
+        rules: "Done: organize rule evidence",
+        merge: "In progress: merge related tag issues",
+        suggest: "Waiting: generate action suggestions and risk notes"
+      },
+      loadingHint: "You can keep reviewing the rule evidence below.",
+      noActionItems: "AI did not return priority actions to display.",
+      ruleEvidence: "Rule evidence",
+      relatedTags: "Related tags",
+      viewFilePreview: "View file preview",
+      evidenceTitle: "Rule evidence details",
+      evidenceDescription: "Rule details explain what was found; they do not mean every item must be handled."
+    },
     cleanupPlan: {
       title: "Cleanup review plan",
-      subtitle: "A read-only cleanup preview generated from the health report for manual review. It will not write Markdown files.",
+      subtitle: "A cleanup preview generated from the health report. Only executable items can be applied manually, and each write is logged for undo.",
       empty: "This health report did not produce cleanup items to preview.",
       copyMarkdown: "Copy Markdown plan",
       markdownCopied: "Markdown cleanup plan copied.",
       action: "Action",
+      actionCapability: "Action capability",
+      actionKind: "Action kind",
+      availabilityLabel: "Availability",
+      riskLabel: "Risk level",
+      requiresTargetTag: "Requires target tag",
+      requiresFilePreview: "Requires file preview",
+      supportsBatch: "Supports batch",
+      booleanYes: "Yes",
+      booleanNo: "No",
       executableSuggestion: "Executable suggestion",
       status: "Status",
       pendingReview: "Pending review",
@@ -554,11 +706,17 @@ const EN_LABELS: LabelTree = {
       undoThisOperation: "Undo",
       unsupportedWriteAction: "This action needs a confirmed target, so it is preview-only for now.",
       notApplyReady: "This cleanup suggestion is not ready for direct writes yet.",
-      frontmatterOnlyWarning: "Only frontmatter tags are written for now; inline body tags still need manual review.",
+      frontmatterOnlyWarning: "Review the file preview before applying. Only frontmatter tags are written for now; inline body tags still need manual review, and the operation is logged for undo.",
       noWritableChanges: "No writable frontmatter tag changes were found.",
       noCleanupUndoRecord: "No cleanup operation is available to undo.",
       cleanupApplied: (count) => `Cleanup applied to ${count} files.`,
       cleanupUndone: "Latest cleanup undone.",
+      previewOnlyNote: "This action is preview-only for now and will not write Markdown.",
+      observeOnlyNote: "This issue is observation-only; low usage alone is not enough evidence for modification.",
+      manualReviewNote: "This issue requires manual review and will not expose one-click processing.",
+      aiAssistance: "AI assistance",
+      aiPriorityHint: "AI priority hint",
+      aiTargetTagCandidate: "AI candidate target tag",
       targetTag: "Candidate target tag",
       affectedFiles: (count) => `Affected files: ${count}`,
       filePreview: "File preview",
@@ -570,6 +728,25 @@ const EN_LABELS: LabelTree = {
         rename: "Rename",
         observe: "Keep under review",
         deprecate: "Deprecate"
+      },
+      kind: {
+        mergeTags: "Merge tags",
+        renameTag: "Rename tag",
+        removeTag: "Remove tag",
+        observeOnly: "Observe only",
+        splitBroadTag: "Split broad tag",
+        manualReview: "Manual review"
+      },
+      availability: {
+        executable: "Executable",
+        previewOnly: "Preview only",
+        observeOnly: "Observe only",
+        manualReview: "Manual review"
+      },
+      risk: {
+        high: "High risk",
+        medium: "Medium risk",
+        low: "Low risk"
       }
     },
     ai: {

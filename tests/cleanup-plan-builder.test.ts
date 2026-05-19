@@ -4,7 +4,7 @@ import type { TagHealthReport } from "../src/health/TagHealthReport";
 import type { TagIndex, TagUsage } from "../src/index/TagIndex";
 
 describe("buildCleanupPlan", () => {
-  it("builds a read-only cleanup preview with canonical targets and affected files", () => {
+  it("builds a cleanup preview with canonical executable targets and affected files", () => {
     const index: TagIndex = {
       updatedAt: "2026-05-12T00:00:00.000Z",
       tags: {
@@ -67,6 +67,10 @@ describe("buildCleanupPlan", () => {
 
     const mergeItem = plan.items.find((item) => item.action === "merge");
     expect(mergeItem?.targetTag).toBe("AI");
+    expect(mergeItem?.capability).toMatchObject({
+      kind: "mergeTags",
+      availability: "executable"
+    });
     expect(mergeItem?.files).toEqual([
       { path: "notes/a.md", beforeTags: ["AI"], afterTags: ["AI"] },
       { path: "notes/b.md", beforeTags: ["ai"], afterTags: ["AI"] },
@@ -74,6 +78,10 @@ describe("buildCleanupPlan", () => {
     ]);
 
     const observeItem = plan.items.find((item) => item.action === "observe");
+    expect(observeItem?.capability).toMatchObject({
+      kind: "observeOnly",
+      availability: "observeOnly"
+    });
     expect(observeItem?.files).toEqual([{ path: "notes/orphan.md", beforeTags: ["orphan"], afterTags: ["orphan"] }]);
   });
 });

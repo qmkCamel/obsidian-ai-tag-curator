@@ -16,6 +16,7 @@ AI Tag Curator is an Obsidian Community Plugin for tag governance. It helps user
 
 - Prefer read-only analysis before any feature that can modify Markdown files.
 - Any write flow must have preview, explicit confirmation, operation logging, and undo support.
+- Write OpenSpec proposals, designs, tasks, and requirement specs in Chinese by default.
 - Keep UI copy centralized in `src/ui/labels.ts` with Simplified Chinese and English labels.
 - Keep rules and data models small, deterministic, and unit tested before introducing AI behavior.
 - Use Obsidian-native CSS variables and compact modal layouts.

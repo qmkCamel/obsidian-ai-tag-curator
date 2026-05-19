@@ -3,6 +3,7 @@ import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
 import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
 import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
+import { applyCleanupPreviewToFrontmatterTags } from "./cleanup/CleanupTagTransform";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
 import { TagHealthAiAnalyzer } from "./health/TagHealthAiAnalyzer";
 import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
@@ -20,7 +21,6 @@ import { DEFAULT_SETTINGS, mergeSettings, type TagCuratorSettings } from "./sett
 import { TagCuratorSettingsTab } from "./settings/SettingsTab";
 import { getLabels, resolveUiLanguage, type UiLanguage } from "./ui/labels";
 import { OperationTimer } from "./utils/OperationTimer";
-import { normalizeTag } from "./utils/normalizeTag";
 
 interface PluginData {
   settings?: Partial<TagCuratorSettings>;
@@ -284,11 +284,10 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private async applyCleanupItem(item: CleanupPlanItem): Promise<CleanupOperationRecord> {
-    if (item.action !== "deprecate") {
+    if (item.capability.availability !== "executable") {
       throw new Error(this.labels.health.cleanupPlan.notApplyReady);
     }
 
-    const removableTags = new Set(item.tags.map(normalizeTag).filter(Boolean));
     const files: CleanupOperationRecord["files"] = [];
 
     for (const preview of item.files) {
@@ -298,7 +297,7 @@ export default class TagCuratorPlugin extends Plugin {
       }
 
       const change = await this.frontmatterWriter.applyTagTransform(target, (beforeTags) =>
-        beforeTags.filter((tag) => !removableTags.has(normalizeTag(tag)))
+        applyCleanupPreviewToFrontmatterTags(beforeTags, preview)
       );
 
       if (!sameTagList(change.beforeTags, change.afterTags)) {
@@ -353,5 +352,5 @@ function sameTagList(left: string[], right: string[]): boolean {
     return false;
   }
 
-  return left.every((tag, index) => normalizeTag(tag) === normalizeTag(right[index]));
+  return left.every((tag, index) => tag === right[index]);
 }

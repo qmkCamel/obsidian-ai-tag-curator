@@ -13,12 +13,12 @@ describe("formatHealthAiBadgeClass", () => {
     );
   });
 
-  it("stacks status badges above health tags", () => {
+  it("stacks action status badges above health tags", () => {
     const css = readFileSync("styles.css", "utf8");
     const source = readFileSync("src/preview/TagHealthReportModal.ts", "utf8");
 
-    expect(source).toContain('item.createDiv({ cls: "tag-curator-health-ai__status-row" })');
-    expect(source).toContain('item.createDiv({ cls: "tag-curator-health-ai__tag-row" })');
+    expect(source).toContain("tag-curator-health-action-card__status-row");
+    expect(source).toContain("tag-curator-health-action-card__tag-row");
     expect(source.indexOf("tag-curator-health-ai__status-row")).toBeLessThan(
       source.indexOf("tag-curator-health-ai__tag-row")
     );
