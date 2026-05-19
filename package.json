@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
+    "local:install": "npm run build && node scripts/install-local.mjs",
+    "local:install-dev": "npm run build && node scripts/install-local.mjs --dev",
     "test": "vitest run"
   },
   "keywords": [

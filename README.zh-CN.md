@@ -92,6 +92,20 @@ cp main.js manifest.json styles.css /path/to/your-vault/.obsidian/plugins/ai-tag
 - `manifest.json`
 - `styles.css`
 
+本地开发时，也可以直接安装到 Obsidian 库：
+
+```bash
+npm run local:install
+```
+
+如果要和插件市场版本并排安装，使用 dev 版本：
+
+```bash
+npm run local:install-dev
+```
+
+默认会安装到 `/Users/edge/personal/edge-notes`。如需换库，可以设置 `OBSIDIAN_VAULT_PATH=/path/to/vault`。
+
 ## 使用流程
 
 1. 配置 OpenAI-compatible API base URL、API key 和 model。

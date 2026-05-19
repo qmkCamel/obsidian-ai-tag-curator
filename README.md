@@ -92,6 +92,20 @@ Generated plugin files:
 - `manifest.json`
 - `styles.css`
 
+For local development, you can install directly into an Obsidian vault:
+
+```bash
+npm run local:install
+```
+
+To install a side-by-side development copy without replacing the Marketplace plugin:
+
+```bash
+npm run local:install-dev
+```
+
+By default these commands target `/Users/edge/personal/edge-notes`. Override it with `OBSIDIAN_VAULT_PATH=/path/to/vault`.
+
 ## Usage
 
 1. Configure an OpenAI-compatible API base URL, API key, and model.

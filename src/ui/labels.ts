@@ -77,6 +77,7 @@ type LabelTree = {
     hierarchical: (count: number) => string;
     topTags: string;
     topTagItem: (tag: string, count: number, fileCount: number) => string;
+    topTagStats: (count: number, fileCount: number) => string;
   };
   recommendations: {
     title: string;
@@ -237,7 +238,8 @@ const ZH_LABELS: LabelTree = {
     files: (count) => `有标签的文件数：${count}`,
     hierarchical: (count) => `层级标签数：${count}`,
     topTags: "高频标签",
-    topTagItem: (tag, count, fileCount) => `#${tag} · ${count} 次使用 · ${fileCount} 个文件`
+    topTagItem: (tag, count, fileCount) => `#${tag} · ${count} 次使用 · ${fileCount} 个文件`,
+    topTagStats: (count, fileCount) => `${count} 次使用 · ${fileCount} 个文件`
   },
   recommendations: {
     title: "标签推荐",
@@ -403,7 +405,8 @@ const EN_LABELS: LabelTree = {
     files: (count) => `Files with tags: ${count}`,
     hierarchical: (count) => `Hierarchical tags: ${count}`,
     topTags: "Top tags",
-    topTagItem: (tag, count, fileCount) => `#${tag} · ${count} usages · ${fileCount} files`
+    topTagItem: (tag, count, fileCount) => `#${tag} · ${count} usages · ${fileCount} files`,
+    topTagStats: (count, fileCount) => `${count} usages · ${fileCount} files`
   },
   recommendations: {
     title: "Tag recommendations",

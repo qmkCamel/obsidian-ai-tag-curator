@@ -151,6 +151,20 @@
   margin-top: 8px;
 }
 
+.tag-curator-summary-tags li {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.tag-curator-summary-tag-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: 600;
+}
+
 .tag-curator-health-modal {
   max-width: min(1040px, calc(100vw - 40px));
   width: min(1040px, calc(100vw - 40px));

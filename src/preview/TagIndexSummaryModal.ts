@@ -3,6 +3,7 @@ import { Modal } from "obsidian";
 import { summarizeTagIndex } from "../index/TagIndexSummary";
 import type { TagIndex } from "../index/TagIndex";
 import type { getLabels } from "../ui/labels";
+import { renderClickableTag } from "./ClickableTag";
 
 type Labels = ReturnType<typeof getLabels>;
 
@@ -35,8 +36,11 @@ export class TagIndexSummaryModal extends Modal {
     const list = contentEl.createEl("ol", { cls: "tag-curator-summary-tags" });
 
     for (const item of summary.topTags) {
-      list.createEl("li", {
-        text: this.labels.summary.topTagItem(item.tag, item.count, item.fileCount)
+      const listItem = list.createEl("li");
+      renderClickableTag(this.app, listItem, item.tag, this.labels);
+      listItem.createSpan({
+        cls: "tag-curator-summary-tag-meta",
+        text: this.labels.summary.topTagStats(item.count, item.fileCount)
       });
     }
   }

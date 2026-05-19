@@ -5,11 +5,10 @@ import type { TagHealthIssue, TagHealthIssueType, TagHealthReport } from "../hea
 import type { getLabels } from "../ui/labels";
 import { formatDuration } from "../utils/formatDuration";
 import type { OperationStageTiming, OperationTimingReport } from "../utils/OperationTimer";
+import { renderClickableTag } from "./ClickableTag";
 import { formatHealthAiBadgeClass } from "./HealthAiBadgeClasses";
-import { formatTagClipboardText, formatTagSearchQuery } from "./TagHealthTagActions";
 
 type Labels = ReturnType<typeof getLabels>;
-type SearchViewLike = { setQuery?: (query: string) => void };
 interface TagHealthAiAnalysisResult {
   analysis: TagHealthAiAnalysis;
   timingReport: OperationTimingReport | null;
@@ -190,25 +189,7 @@ export class TagHealthReportModal extends Modal {
   }
 
   private renderTagButton(parent: HTMLElement, tag: string): void {
-    const tagButton = parent.createEl("button", {
-      cls: "tag-curator-health__tag",
-      text: formatTagClipboardText(tag)
-    });
-    tagButton.type = "button";
-    tagButton.setAttr("title", this.labels.health.clickTagAction(tag));
-    tagButton.onClickEvent(() => {
-      void this.copyAndSearchTag(tag);
-    });
-  }
-
-  private async copyAndSearchTag(tag: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(formatTagClipboardText(tag));
-      await this.openSearch(formatTagSearchQuery(tag));
-      new Notice(this.labels.health.tagActionDone(tag));
-    } catch (error) {
-      new Notice(error instanceof Error ? error.message : this.labels.health.tagActionFailed);
-    }
+    renderClickableTag(this.app, parent, tag, this.labels);
   }
 
   private async enhanceWithAi(): Promise<void> {
@@ -227,21 +208,6 @@ export class TagHealthReportModal extends Modal {
     } finally {
       this.aiLoading = false;
       this.render();
-    }
-  }
-
-  private async openSearch(query: string): Promise<void> {
-    const leaf = this.app.workspace.getLeavesOfType("search")[0] ?? this.app.workspace.getLeftLeaf(false);
-    if (!leaf) {
-      return;
-    }
-
-    await leaf.setViewState({ type: "search", state: { query }, active: true });
-    await this.app.workspace.revealLeaf(leaf);
-
-    const searchView = leaf.view as SearchViewLike;
-    if (typeof searchView.setQuery === "function") {
-      searchView.setQuery(query);
     }
   }
 
