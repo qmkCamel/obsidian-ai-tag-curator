@@ -147,8 +147,8 @@ OpenSpec workflow:
 
 ```bash
 npm run spec:list
-npm run spec:status -- --change add-readonly-cleanup-plan
-npm run spec:validate -- add-readonly-cleanup-plan
+npm run spec:status -- --change <change-name>
+npm run spec:validate -- <change-name>
 ```
 
 For new product work, start with an OpenSpec change proposal before implementation.

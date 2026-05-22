@@ -147,8 +147,8 @@ OpenSpec 工作流：
 
 ```bash
 npm run spec:list
-npm run spec:status -- --change add-readonly-cleanup-plan
-npm run spec:validate -- add-readonly-cleanup-plan
+npm run spec:status -- --change <change-name>
+npm run spec:validate -- <change-name>
 ```
 
 后续产品功能先创建 OpenSpec change proposal，再进入实现。

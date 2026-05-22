@@ -30,4 +30,4 @@ AI Tag Curator is an Obsidian Community Plugin for tag governance. It helps user
 
 ## Current Product Direction
 
-The next product increment is OpenSpec-tracked 0.2 work: generate read-only tag cleanup review plans from tag health reports. Batch writes remain out of scope until review plans and previews are proven useful.
+The current product increment is OpenSpec-tracked 0.2 work: make tag health reports actionable without losing safety. Rule evidence remains the source of truth, AI only helps summarize and prioritize, and only deterministic merge/rename cleanup items may be manually applied after file preview and explicit confirmation. Broader batch writes, inline tag rewrites, removals, and automatic background cleanup remain out of scope until previews, operation logs, and undo flows are proven reliable.
