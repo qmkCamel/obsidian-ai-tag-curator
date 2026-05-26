@@ -29,11 +29,15 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 - 按“总览、AI 优先处理项、规则证据明细”三层组织库级标签健康报告。
 - 识别低频标签、近似重复标签、层级不一致、过宽标签、过细标签和命名风格漂移等问题。
 - 规则分析负责提供事实证据和动作安全边界；AI 辅助分析负责合并问题、解释原因、排序优先级和补充风险提示。
+- AI 行动建议会展示面向用户的优先级、置信度、可执行状态、诊断、原因、目标标签、规则证据和注意事项。
+- 按当前标签索引缓存 AI 增强分析，重新打开报告时展示上次分析时间。
 - 可执行的合并/重命名建议支持查看文件预览、手动应用和回退；低频观察、过宽拆分、废弃/移除类建议保持只读或人工判断。
+- 支持把 AI 行动建议和清理建议复制为 Markdown，方便外部审查。
 - 健康报告中的标签支持点击复制并搜索。
-![健康报告初始态概念图](docs/images/tag-health-report-initial-concept.png)
-![AI 分析中概念图](docs/images/tag-health-report-ai-loading-concept.png)
-![AI 结果态概念图](docs/images/tag-health-report-ai-results-concept.png)
+- 长报告会在稳定的 Modal 布局内部滚动，避免内容导致窗口尺寸跳动。
+![AI 行动建议](docs/images/tag-health-report-ai-actions.png)
+![AI 建议应用后回退](docs/images/tag-health-report-ai-actions-applied.png)
+![规则证据明细](docs/images/tag-health-report-rule-evidence.png)
 
 
 **设置**
@@ -158,7 +162,7 @@ npm run spec:validate -- <change-name>
 - MVP 只写入当前笔记的 frontmatter `tags`。
 - inline tags 会被读取用于索引，但暂不自动改写：正文标签可能出现在引用、代码块、链接或语义文本中，安全写入需要位置级 diff、操作日志和冲突检测。
 - 标签健康报告中的规则证据是只读诊断；可执行清理项必须经过文件预览和用户手动确认。
-- AI 增强健康分析只输出总体判断和优先处理项。
+- AI 增强健康分析只提供总体判断和行动建议说明，不能改变本地动作能力，也不能直接执行变更。
 - 清理计划会标记动作能力；可执行的合并/重命名项可以手动应用并回退，其他项保持仅预览、仅观察或需人工判断。
 - AI 返回内容必须是结构化 JSON，解析失败时不会修改任何文件。
 

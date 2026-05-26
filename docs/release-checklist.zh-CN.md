@@ -84,3 +84,33 @@ Obsidian 安装插件时会根据 `manifest.json` 中的版本号查找同名 Gi
 4. 创建同版本 GitHub Release。
 
 Obsidian 客户端会从 GitHub Release 拉取新版本。
+
+## 7. 0.1.2 发布验收记录
+
+版本信息：
+
+- `package.json`：`0.1.2`
+- `manifest.json`：`0.1.2`
+- `versions.json`：包含 `0.1.2 -> 1.8.7`
+
+发布资产：
+
+- `main.js`
+- `manifest.json`
+- `styles.css`
+
+自动验证：
+
+- `openspec validate --all`
+- `npm test`
+- `npm run build`
+- `git diff --check`
+
+真实 Obsidian 库手动验收：
+
+- 标签健康报告能展示中文总览、生成时间、索引时间、标签数、使用次数、风险分组和可执行建议数。
+- AI 行动建议能展示上次分析时间、诊断说明、原因、目标标签、规则证据、注意事项、优先级、置信度和可执行状态。
+- 可执行合并/重命名建议能显示 `应用`，应用后能显示 `回退`。
+- `复制 Markdown 计划` 在 AI 行动层和规则证据层均可见。
+- 规则证据明细能切换问题类型，并展示相关文件示例与当前标签。
+- 长内容在报告内部滚动，Modal 尺寸保持稳定。

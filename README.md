@@ -29,11 +29,15 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Organize vault-level tag health into overview, AI priority actions, and rule evidence details.
 - Group health issues such as low-frequency tags, near duplicates, hierarchy inconsistencies, over-broad tags, over-narrow tags, and naming drift.
 - Use rule analysis for factual evidence and action safety boundaries; use AI assistance for merging related issues, explaining rationale, ranking priorities, and adding risk notes.
+- Show user-facing AI action cards with priority, confidence, actionability, diagnosis, rationale, target tags, rule evidence, and caution notes.
+- Cache AI-enhanced analysis for the current tag index and show the last analysis time when reopening the report.
 - Executable merge/rename suggestions can show file previews, be applied manually, and be undone. Observation, broad split, deprecation, and removal suggestions stay read-only or manual-review.
+- Copy AI action and cleanup suggestions as Markdown for external review.
 - Click health report tags to copy and search them in Obsidian.
-![Health report initial concept](docs/images/tag-health-report-initial-concept.png)
-![AI analysis loading concept](docs/images/tag-health-report-ai-loading-concept.png)
-![AI analysis results concept](docs/images/tag-health-report-ai-results-concept.png)
+- Keep long reports scrollable inside a stable modal layout.
+![AI action suggestions](docs/images/tag-health-report-ai-actions.png)
+![Applied AI action with undo](docs/images/tag-health-report-ai-actions-applied.png)
+![Rule evidence details](docs/images/tag-health-report-rule-evidence.png)
 
 
 **Settings**
@@ -158,7 +162,7 @@ For new product work, start with an OpenSpec change proposal before implementati
 - The MVP only writes to the current note's frontmatter `tags`.
 - Inline tags are read for indexing but are not automatically rewritten yet: body tags may appear in quotes, code blocks, links, or prose, so safe writes need position-level diffs, operation logs, and conflict detection.
 - Rule evidence in tag health reports is read-only. Executable cleanup items require file previews and explicit manual confirmation.
-- AI-enhanced health analysis only returns a summary and prioritized action items.
+- AI-enhanced health analysis provides summary and action guidance only; it cannot change local action capability or execute changes.
 - Cleanup plans label action capabilities. Executable merge/rename items can be applied manually and undone; other items remain preview-only, observe-only, or manual-review.
 - AI responses must be valid structured JSON. If parsing fails, no file is modified.
 
