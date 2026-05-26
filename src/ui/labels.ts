@@ -24,7 +24,6 @@ type LabelTree = {
     indexed: (count: number) => string;
     refreshFailed: string;
     noTagIndex: string;
-    tagHealthStarted: string;
     openMarkdownForSuggest: string;
     configureApiKey: string;
     suggestStarted: string;
@@ -143,6 +142,7 @@ type LabelTree = {
       layerNote: string;
       actionTitle: string;
       actionSubtitle: string;
+      lastAnalyzedAt: (value: string) => string;
       generateAiButton: string;
       aiRunningButton: string;
       initialTitle: string;
@@ -159,9 +159,10 @@ type LabelTree = {
       noActionItems: string;
       ruleEvidence: string;
       relatedTags: string;
-      viewFilePreview: string;
       evidenceTitle: string;
       evidenceDescription: string;
+      evidenceFileExamples: string;
+      evidenceFileExamplesDescription: string;
     };
     cleanupPlan: {
       title: string;
@@ -278,7 +279,6 @@ const ZH_LABELS: LabelTree = {
     indexed: (count) => `已索引 ${count} 个标签。`,
     refreshFailed: "刷新标签索引失败。",
     noTagIndex: "还没有标签索引，请先运行“刷新标签索引”。",
-    tagHealthStarted: "正在分析标签健康度，完成后会弹出报告。",
     openMarkdownForSuggest: "请先打开一篇 Markdown 笔记再请求标签推荐。",
     configureApiKey: "请先在 AI Tag Curator 设置中配置 API key。",
     suggestStarted: "正在后台生成标签推荐，完成后会弹出结果。",
@@ -400,8 +400,9 @@ const ZH_LABELS: LabelTree = {
     tagActionFailed: "复制或搜索标签失败。",
     workflow: {
       layerNote: "规则是证据层，AI 是行动建议层；动作是否可执行始终由本地规则决定。",
-      actionTitle: "优先处理项",
+      actionTitle: "AI 行动建议",
       actionSubtitle: "AI 会把跨规则的同一主题问题合并为更少的行动建议。",
+      lastAnalyzedAt: (value) => `上次分析：${value}`,
       generateAiButton: "生成 AI 辅助分析",
       aiRunningButton: "正在分析...",
       initialTitle: "尚未生成 AI 辅助分析",
@@ -415,12 +416,13 @@ const ZH_LABELS: LabelTree = {
         suggest: "等待中：生成行动建议与风险提示"
       },
       loadingHint: "你可以继续查看下方规则证据明细。",
-      noActionItems: "AI 没有返回可展示的优先处理项。",
+      noActionItems: "AI 没有返回可展示的行动建议。",
       ruleEvidence: "规则证据",
       relatedTags: "相关标签",
-      viewFilePreview: "查看文件预览",
       evidenceTitle: "规则证据明细",
-      evidenceDescription: "规则明细只说明发现了什么，不直接代表必须处理。"
+      evidenceDescription: "规则明细只说明发现了什么，不直接代表必须处理。",
+      evidenceFileExamples: "相关文件示例",
+      evidenceFileExamplesDescription: "最多展示前 4 个相关文件示例；点击文件名可打开笔记。"
     },
     cleanupPlan: {
       title: "清理审查计划",
@@ -537,7 +539,6 @@ const EN_LABELS: LabelTree = {
     indexed: (count) => `Indexed ${count} tags.`,
     refreshFailed: "Failed to refresh tag index.",
     noTagIndex: "No tag index yet. Run Refresh vault tag index first.",
-    tagHealthStarted: "Analyzing tag health in the background. The report will open when ready.",
     openMarkdownForSuggest: "Open a Markdown note before requesting tag suggestions.",
     configureApiKey: "Configure an API key in AI Tag Curator settings first.",
     suggestStarted: "Generating tag recommendations in the background. Results will open when ready.",
@@ -660,8 +661,9 @@ const EN_LABELS: LabelTree = {
     tagActionFailed: "Failed to copy or search the tag.",
     workflow: {
       layerNote: "Rules are the evidence layer; AI is the action guidance layer. Local rules always decide executability.",
-      actionTitle: "Priority actions",
+      actionTitle: "AI action suggestions",
       actionSubtitle: "AI merges related rule findings into fewer action-oriented suggestions.",
+      lastAnalyzedAt: (value) => `Last analyzed: ${value}`,
       generateAiButton: "Generate AI analysis",
       aiRunningButton: "Analyzing...",
       initialTitle: "AI analysis has not been generated",
@@ -675,12 +677,13 @@ const EN_LABELS: LabelTree = {
         suggest: "Waiting: generate action suggestions and risk notes"
       },
       loadingHint: "You can keep reviewing the rule evidence below.",
-      noActionItems: "AI did not return priority actions to display.",
+      noActionItems: "AI did not return action suggestions to display.",
       ruleEvidence: "Rule evidence",
       relatedTags: "Related tags",
-      viewFilePreview: "View file preview",
       evidenceTitle: "Rule evidence details",
-      evidenceDescription: "Rule details explain what was found; they do not mean every item must be handled."
+      evidenceDescription: "Rule details explain what was found; they do not mean every item must be handled.",
+      evidenceFileExamples: "Related file examples",
+      evidenceFileExamplesDescription: "Shows up to 4 related file examples; click a file name to open the note."
     },
     cleanupPlan: {
       title: "Cleanup review plan",

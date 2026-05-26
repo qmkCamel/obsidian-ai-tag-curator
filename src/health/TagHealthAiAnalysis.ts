@@ -9,6 +9,12 @@ export interface TagHealthAiAnalysis {
   priorities: TagHealthAiPriority[];
 }
 
+export interface CachedTagHealthAiAnalysis {
+  analysis: TagHealthAiAnalysis;
+  analyzedAt: string;
+  indexUpdatedAt: string;
+}
+
 export interface TagHealthAiPriority {
   issueType: TagHealthIssueType;
   tags: string[];

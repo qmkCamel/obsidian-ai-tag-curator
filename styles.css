@@ -166,14 +166,20 @@
 }
 
 .tag-curator-health-modal {
+  display: flex;
+  flex-direction: column;
+  height: min(760px, calc(100vh - 80px));
   max-width: min(1180px, calc(100vw - 40px));
   width: min(1180px, calc(100vw - 40px));
 }
 
 .tag-curator-health-modal .modal-content {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .tag-curator-health__header {
@@ -253,11 +259,16 @@
 
 .tag-curator-health-actions__header p,
 .tag-curator-health-evidence__header p,
+.tag-curator-health-actions__last-analyzed,
 .tag-curator-health-actions__summary {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
   line-height: 1.5;
   margin: 0;
+}
+
+.tag-curator-health-actions__last-analyzed {
+  margin-top: 4px;
 }
 
 .tag-curator-health-actions__header-controls,
@@ -728,6 +739,23 @@
   font-size: var(--font-ui-small);
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.tag-curator-inline-action__path-button {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  height: auto;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.tag-curator-inline-action__path-button:hover,
+.tag-curator-inline-action__path-button:focus-visible {
+  color: var(--text-accent);
+  text-decoration: underline;
 }
 
 .tag-curator-loading-spinner {

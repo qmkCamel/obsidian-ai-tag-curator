@@ -745,7 +745,7 @@ class FakeWorkspace {
   private readonly searchLeaf = new FakeSearchLeaf();
   searchQueries: string[] = [];
 
-  constructor(vault: FakeVault, activeFilePath: string | null) {
+  constructor(private readonly vault: FakeVault, activeFilePath: string | null) {
     this.activeFile = activeFilePath ? vault.getAbstractFileByPath(activeFilePath) : null;
   }
 
@@ -763,6 +763,15 @@ class FakeWorkspace {
 
   getLeftLeaf(_split: boolean): FakeSearchLeaf {
     return this.searchLeaf;
+  }
+
+  async openLinkText(linktext: string, _sourcePath: string, _newLeaf?: boolean): Promise<void> {
+    const file = this.vault.getAbstractFileByPath(linktext);
+    if (!file) {
+      throw new Error(`Missing fake note: ${linktext}`);
+    }
+
+    this.activeFile = file;
   }
 
   async revealLeaf(_leaf: FakeSearchLeaf): Promise<void> {}

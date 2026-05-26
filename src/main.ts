@@ -5,6 +5,7 @@ import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
 import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
 import { applyCleanupPreviewToFrontmatterTags } from "./cleanup/CleanupTagTransform";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
+import type { CachedTagHealthAiAnalysis } from "./health/TagHealthAiAnalysis";
 import { TagHealthAiAnalyzer } from "./health/TagHealthAiAnalyzer";
 import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
 import { buildTagIndex } from "./index/TagIndexBuilder";
@@ -26,6 +27,7 @@ interface PluginData {
   settings?: Partial<TagCuratorSettings>;
   operations?: OperationRecord[];
   tagIndex?: TagIndex;
+  healthAiAnalysisCache?: CachedTagHealthAiAnalysis;
 }
 
 export default class TagCuratorPlugin extends Plugin {
@@ -36,6 +38,7 @@ export default class TagCuratorPlugin extends Plugin {
   private frontmatterWriter!: FrontmatterWriter;
   private operationLog = new OperationLog();
   private tagIndex: TagIndex | undefined;
+  private healthAiAnalysisCache: CachedTagHealthAiAnalysis | undefined;
 
   async onload(): Promise<void> {
     await this.loadPluginData();
@@ -96,13 +99,15 @@ export default class TagCuratorPlugin extends Plugin {
     this.settings = mergeSettings(data?.settings);
     this.operationLog = new OperationLog(data?.operations ?? []);
     this.tagIndex = data?.tagIndex;
+    this.healthAiAnalysisCache = data?.healthAiAnalysisCache;
   }
 
   async savePluginData(): Promise<void> {
     await this.saveData({
       settings: this.settings,
       operations: this.operationLog.toJSON(),
-      tagIndex: this.tagIndex
+      tagIndex: this.tagIndex,
+      healthAiAnalysisCache: this.healthAiAnalysisCache
     } satisfies PluginData);
   }
 
@@ -128,6 +133,7 @@ export default class TagCuratorPlugin extends Plugin {
       this.tagIndex = buildTagIndex(notes, new Date(), {
         includeInlineTags: this.settings.readInlineTags
       });
+      this.healthAiAnalysisCache = undefined;
       await this.savePluginData();
 
       if (showNotice) {
@@ -152,11 +158,11 @@ export default class TagCuratorPlugin extends Plugin {
 
   private async analyzeTagHealth(): Promise<void> {
     try {
-      new Notice(this.labels.notices.tagHealthStarted);
       const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
       this.tagIndex = index;
       const report = analyzeTagHealth(index);
       const cleanupPlan = buildCleanupPlan(report, index);
+      const cachedAnalysis = this.getHealthAiAnalysisCache(report.indexUpdatedAt);
       new TagHealthReportModal(
         this.app,
         report,
@@ -180,9 +186,17 @@ export default class TagCuratorPlugin extends Plugin {
           timer?.startStage("request-ai-health-analysis");
           const analysis = await analyzer.analyze(report, index);
           timer?.endStage("request-ai-health-analysis");
+          const analyzedAt = new Date().toISOString();
+          this.healthAiAnalysisCache = {
+            analysis,
+            analyzedAt,
+            indexUpdatedAt: report.indexUpdatedAt
+          };
+          await this.savePluginData();
 
           return {
             analysis,
+            analyzedAt,
             timingReport: timer?.finish() ?? null
           };
         },
@@ -190,7 +204,8 @@ export default class TagCuratorPlugin extends Plugin {
           latestCleanupRecord: this.operationLog.latestCleanup() ?? null,
           applyCleanupItem: (item) => this.applyCleanupItem(item),
           undoLatestCleanup: () => this.undoLatestCleanup()
-        }
+        },
+        cachedAnalysis
       ).open();
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.refreshFailed);
@@ -249,8 +264,17 @@ export default class TagCuratorPlugin extends Plugin {
       includeInlineTags: this.settings.readInlineTags
     });
     this.tagIndex = index;
+    this.healthAiAnalysisCache = undefined;
     await this.savePluginData();
     return index;
+  }
+
+  private getHealthAiAnalysisCache(indexUpdatedAt: string): CachedTagHealthAiAnalysis | null {
+    if (this.healthAiAnalysisCache?.indexUpdatedAt !== indexUpdatedAt) {
+      return null;
+    }
+
+    return this.healthAiAnalysisCache;
   }
 
   private async undoLastChangeForCurrentNote(): Promise<void> {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TagCuratorSettings } from "../../src/settings/PluginSettings";
+import type { TagHealthAiAnalysis } from "../../src/health/TagHealthAiAnalysis";
 import { getLabels } from "../../src/ui/labels";
 import {
   createDeferred,
@@ -36,6 +37,11 @@ type PluginDataSnapshot = {
   operations?: unknown[];
   tagIndex?: {
     tags: Record<string, unknown>;
+  };
+  healthAiAnalysisCache?: {
+    analysis: TagHealthAiAnalysis;
+    analyzedAt: string;
+    indexUpdatedAt: string;
   };
 };
 
@@ -230,7 +236,10 @@ describe("plugin e2e workflows", () => {
 
     runCommand(plugin, "analyze-tag-health");
     await waitForText(labels.health.title);
-    expect(notices).toContain(labels.notices.tagHealthStarted);
+    expect(notices).toHaveLength(0);
+    expect(pageText()).toContain("AI 行动建议");
+    expect(pageText()).not.toContain("优先处理项");
+    expect(findButtons(labels.health.workflow.generateAiButton)).toHaveLength(1);
 
     const aiGate = createDeferred<void>();
     queueAiResponse(
@@ -257,11 +266,31 @@ describe("plugin e2e workflows", () => {
     await waitForText(labels.health.workflow.loadingTitle);
     expect(pageText()).toContain(labels.health.workflow.evidenceTitle);
     clickButton(labels.health.sections.nearDuplicates);
-    expect(pageText()).toContain("#ml_notes / #ml-notes");
+    expect(evidenceLayerText()).toContain(labels.health.workflow.evidenceFileExamples);
+    expect(evidenceLayerText()).toContain(labels.health.workflow.evidenceFileExamplesDescription);
+    expect(evidenceLayerText()).toContain("#ml_notes / #ml-notes");
+    expect(evidenceLayerText()).toContain("notes/hyphen.md");
+    expect(evidenceLayerText()).not.toContain(labels.health.cleanupPlan.actionCapability);
+    expect(evidenceLayerText()).not.toContain(labels.health.cleanupPlan.after);
+    clickButton("notes/hyphen.md");
+    expect(app.workspace.getActiveFile()?.path).toBe("notes/hyphen.md");
 
     aiGate.resolve();
     await waitForText("Merge duplicate AI tags first.");
+    const firstRequestCount = requestUrlMock.mock.calls.length;
+    const cache = (app.savedData as PluginDataSnapshot).healthAiAnalysisCache;
+    expect(cache?.analysis.summary).toBe("Merge duplicate AI tags first.");
+    expect(pageText()).toContain(labels.health.workflow.lastAnalyzedAt(formatMonthDayTime(cache?.analyzedAt ?? "")));
+    expect(evidenceLayerText()).not.toContain(labels.health.cleanupPlan.aiAssistance);
+    expect(evidenceLayerText()).not.toContain(labels.health.cleanupPlan.actionCapability);
+    expect(evidenceLayerText()).not.toContain(labels.health.cleanupPlan.after);
     expect(pageText()).toContain(labels.recommendations.devTimingTitle);
+    expect(findButtons("查看文件预览")).toHaveLength(0);
+
+    runCommand(plugin, "analyze-tag-health");
+    await waitForText("Merge duplicate AI tags first.");
+    expect(pageText()).toContain(labels.health.workflow.lastAnalyzedAt(formatMonthDayTime(cache?.analyzedAt ?? "")));
+    expect(requestUrlMock).toHaveBeenCalledTimes(firstRequestCount);
 
     clickButton(labels.health.cleanupPlan.applyThisSuggestion);
     await waitFor(() => {
@@ -393,6 +422,16 @@ async function waitFor(assertion: () => void, timeoutMs = 1500): Promise<void> {
 
 function pageText(): string {
   return document.body.textContent ?? "";
+}
+
+function formatMonthDayTime(value: string): string {
+  const date = new Date(value);
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function evidenceLayerText(): string {
+  const layer = requiredElement(document.querySelector(".tag-curator-health-evidence"));
+  return layer.textContent ?? "";
 }
 
 function clickButton(text: string): HTMLButtonElement {

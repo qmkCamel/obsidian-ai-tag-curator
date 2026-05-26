@@ -3,7 +3,7 @@ import { Modal, Notice } from "obsidian";
 import type { CleanupPlan, CleanupPlanFilePreview, CleanupPlanItem } from "../cleanup/CleanupPlan";
 import { applyAiAssistanceToCleanupPlan } from "../cleanup/CleanupPlanAiAssistance";
 import { buildTagHealthReportViewModel, type HealthActionItemView, type HealthEvidenceSectionView } from "../health/TagHealthReportViewModel";
-import type { TagHealthAiAnalysis } from "../health/TagHealthAiAnalysis";
+import type { CachedTagHealthAiAnalysis, TagHealthAiAnalysis } from "../health/TagHealthAiAnalysis";
 import type { TagHealthIssue, TagHealthIssueType, TagHealthReport } from "../health/TagHealthReport";
 import type { CleanupOperationRecord } from "../operations/OperationLog";
 import type { getLabels } from "../ui/labels";
@@ -16,6 +16,7 @@ import { formatTagClipboardText } from "./TagHealthTagActions";
 type Labels = ReturnType<typeof getLabels>;
 interface TagHealthAiAnalysisResult {
   analysis: TagHealthAiAnalysis;
+  analyzedAt: string;
   timingReport: OperationTimingReport | null;
 }
 type RequestAiAnalysis = () => Promise<TagHealthAiAnalysisResult>;
@@ -41,12 +42,14 @@ export class TagHealthReportModal extends Modal {
     private cleanupPlan: CleanupPlan,
     private readonly labels: Labels,
     private readonly requestAiAnalysis: RequestAiAnalysis,
-    private readonly cleanupActions: CleanupActionHandlers
+    private readonly cleanupActions: CleanupActionHandlers,
+    private readonly cachedAiAnalysis: CachedTagHealthAiAnalysis | null = null
   ) {
     super(app);
   }
 
   private aiAnalysis: TagHealthAiAnalysis | null = null;
+  private lastAnalyzedAt: string | null = null;
   private aiTimingReport: OperationTimingReport | null = null;
   private aiLoading = false;
   private latestCleanupRecord: CleanupOperationRecord | null = null;
@@ -54,6 +57,11 @@ export class TagHealthReportModal extends Modal {
 
   onOpen(): void {
     this.latestCleanupRecord = this.cleanupActions.latestCleanupRecord;
+    if (this.cachedAiAnalysis) {
+      this.aiAnalysis = this.cachedAiAnalysis.analysis;
+      this.lastAnalyzedAt = this.cachedAiAnalysis.analyzedAt;
+      this.cleanupPlan = applyAiAssistanceToCleanupPlan(this.cleanupPlan, this.cachedAiAnalysis.analysis);
+    }
     this.activeEvidenceSection = this.findInitialEvidenceSection();
     this.render();
   }
@@ -105,6 +113,12 @@ export class TagHealthReportModal extends Modal {
     const title = header.createDiv();
     title.createEl("h3", { text: this.labels.health.workflow.actionTitle });
     title.createEl("p", { text: this.labels.health.workflow.actionSubtitle });
+    if (this.lastAnalyzedAt) {
+      title.createDiv({
+        cls: "tag-curator-health-actions__last-analyzed",
+        text: this.labels.health.workflow.lastAnalyzedAt(formatMonthDayTime(this.lastAnalyzedAt))
+      });
+    }
 
     const controls = header.createDiv({ cls: "tag-curator-health-actions__header-controls" });
     const copyReportButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.copyMarkdown });
@@ -160,11 +174,6 @@ export class TagHealthReportModal extends Modal {
     for (const item of this.labels.health.workflow.initialBullets) {
       list.createEl("li", { text: item });
     }
-    const button = empty.createEl("button", { cls: "mod-cta", text: this.labels.health.workflow.generateAiButton });
-    button.type = "button";
-    button.onClickEvent(() => {
-      void this.enhanceWithAi();
-    });
   }
 
   private renderAiLoadingState(parent: HTMLElement): void {
@@ -228,15 +237,6 @@ export class TagHealthReportModal extends Modal {
 
       void this.copyActionItemMarkdown(item);
     });
-
-    if (item.cleanupItem) {
-      const previewButton = controls.createEl("button", { text: this.labels.health.workflow.viewFilePreview });
-      previewButton.type = "button";
-      previewButton.onClickEvent(() => {
-        this.activeEvidenceSection = item.cleanupItem?.issueType ?? this.activeEvidenceSection;
-        this.render();
-      });
-    }
 
     if (item.cleanupItem && item.capability.availability === "executable") {
       const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.cleanupItem.id;
@@ -317,69 +317,52 @@ export class TagHealthReportModal extends Modal {
 
     const cleanupItem = this.cleanupPlan.items.find((item) => item.id === cleanupItemId);
     if (cleanupItem) {
-      this.renderInlineCleanupAction(card, cleanupItem);
+      this.renderEvidenceFilePreview(card, cleanupItem);
     }
   }
 
-  private renderInlineCleanupAction(parent: HTMLElement, item: CleanupPlanItem): void {
+  private renderEvidenceFilePreview(parent: HTMLElement, item: CleanupPlanItem): void {
     const panel = parent.createDiv({ cls: "tag-curator-inline-action" });
     const header = panel.createDiv({ cls: "tag-curator-inline-action__header" });
     const title = header.createDiv();
-    title.createEl("h4", { text: this.labels.health.cleanupPlan.actionCapability });
+    title.createEl("h4", { text: this.labels.health.workflow.evidenceFileExamples });
     title.createDiv({
       cls: "tag-curator-inline-action__status",
-      text: `${this.labels.health.cleanupPlan.status}: ${this.getCleanupStatusLabel(item)}`
+      text: this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount)
     });
-    this.renderCapabilityBadges(title, item);
-
-    const controls = header.createDiv({ cls: "tag-curator-inline-action__controls" });
-    const copyButton = controls.createEl("button", { text: this.labels.health.cleanupPlan.copyMarkdown });
-    copyButton.type = "button";
-    copyButton.onClickEvent(() => {
-      void this.copyCleanupItemMarkdown(item);
+    title.createDiv({
+      cls: "tag-curator-inline-action__note",
+      text: this.labels.health.workflow.evidenceFileExamplesDescription
     });
-
-    if (item.capability.availability === "executable") {
-      const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.id;
-      const actionButton = controls.createEl("button", {
-        cls: latestAppliesToItem ? "" : "mod-cta",
-        text: latestAppliesToItem ? this.labels.health.cleanupPlan.undoThisOperation : this.labels.health.cleanupPlan.applyThisSuggestion
-      });
-      actionButton.type = "button";
-      actionButton.onClickEvent(() => {
-        if (latestAppliesToItem) {
-          void this.undoCleanupItem();
-          return;
-        }
-
-        void this.applyCleanupItem(item);
-      });
-    }
-
-    const meta = panel.createDiv({ cls: "tag-curator-inline-action__meta" });
-    meta.createSpan({
-      text: `${this.labels.health.cleanupPlan.action}: ${this.labels.health.cleanupPlan.actions[item.action]}`
-    });
-    meta.createSpan({ text: this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount) });
-    const target = item.targetTag ? formatTagClipboardText(item.targetTag) : this.labels.health.cleanupPlan.noTarget;
-    meta.createSpan({ text: `${this.labels.health.cleanupPlan.targetTag}: ${target}` });
-
-    panel.createDiv({ cls: "tag-curator-inline-action__note", text: this.getCleanupActionNote(item) });
-    this.renderAiAssistance(panel, item);
 
     const files = panel.createDiv({ cls: "tag-curator-inline-action__files" });
     for (const file of item.files.slice(0, 4)) {
-      this.renderInlineCleanupFilePreview(files, file);
+      this.renderEvidenceFileExample(files, file);
     }
   }
 
-  private renderInlineCleanupFilePreview(parent: HTMLElement, file: CleanupPlanFilePreview): void {
+  private renderEvidenceFileExample(parent: HTMLElement, file: CleanupPlanFilePreview): void {
     const row = parent.createDiv({ cls: "tag-curator-inline-action__file" });
-    row.createDiv({ cls: "tag-curator-inline-action__path", text: file.path });
+    const pathButton = row.createEl("button", {
+      cls: "tag-curator-inline-action__path tag-curator-inline-action__path-button",
+      text: file.path
+    });
+    pathButton.type = "button";
+    pathButton.onClickEvent(() => {
+      void this.openEvidenceFile(file.path);
+    });
     row.createDiv({
       cls: "tag-curator-inline-action__diff",
-      text: `${this.labels.health.cleanupPlan.before}: ${formatTagList(file.beforeTags)} -> ${this.labels.health.cleanupPlan.after}: ${formatTagList(file.afterTags)}`
+      text: `${this.labels.health.cleanupPlan.before}: ${formatTagList(file.beforeTags)}`
     });
+  }
+
+  private async openEvidenceFile(path: string): Promise<void> {
+    try {
+      await this.app.workspace.openLinkText(path, "", false);
+    } catch (error) {
+      new Notice(error instanceof Error ? error.message : this.labels.health.tagActionFailed);
+    }
   }
 
   private renderField(parent: HTMLElement, label: string, value: string): void {
@@ -477,30 +460,6 @@ export class TagHealthReportModal extends Modal {
     return lines.join("\n").trim();
   }
 
-  private getCleanupStatusLabel(item: CleanupPlanItem): string {
-    if (this.latestCleanupRecord?.itemId === item.id) {
-      return this.labels.health.cleanupPlan.appliedStatus;
-    }
-
-    return this.labels.health.cleanupPlan.availability[item.capability.availability];
-  }
-
-  private getCleanupActionNote(item: CleanupPlanItem): string {
-    if (item.capability.availability === "executable") {
-      return this.labels.health.cleanupPlan.frontmatterOnlyWarning;
-    }
-
-    if (item.capability.availability === "previewOnly") {
-      return this.labels.health.cleanupPlan.previewOnlyNote;
-    }
-
-    if (item.capability.availability === "observeOnly") {
-      return this.labels.health.cleanupPlan.observeOnlyNote;
-    }
-
-    return this.labels.health.cleanupPlan.manualReviewNote;
-  }
-
   private async applyCleanupItem(item: CleanupPlanItem): Promise<void> {
     try {
       const record = await this.cleanupActions.applyCleanupItem(item);
@@ -535,6 +494,7 @@ export class TagHealthReportModal extends Modal {
       this.aiAnalysis = result.analysis;
       this.cleanupPlan = applyAiAssistanceToCleanupPlan(this.cleanupPlan, result.analysis);
       this.aiTimingReport = result.timingReport;
+      this.lastAnalyzedAt = result.analyzedAt;
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.suggestFailed);
     } finally {
@@ -574,41 +534,6 @@ export class TagHealthReportModal extends Modal {
       formatTime(stage.endedAt),
       formatDuration(stage.durationMs)
     )}`;
-  }
-
-  private renderCapabilityBadges(parent: HTMLElement, item: CleanupPlanItem): void {
-    const badges = parent.createDiv({ cls: "tag-curator-inline-action__badges tag-curator-recommendation__badges" });
-    badges.createSpan({
-      cls: "tag-curator-recommendation__badge tag-curator-inline-action__badge",
-      text: this.labels.health.cleanupPlan.kind[item.capability.kind]
-    });
-    badges.createSpan({
-      cls: `tag-curator-recommendation__badge tag-curator-inline-action__badge tag-curator-inline-action__badge--availability-${item.capability.availability}`,
-      text: this.labels.health.cleanupPlan.availability[item.capability.availability]
-    });
-    badges.createSpan({
-      cls: `tag-curator-recommendation__badge tag-curator-inline-action__badge tag-curator-inline-action__badge--risk-${item.capability.riskLevel}`,
-      text: this.labels.health.cleanupPlan.risk[item.capability.riskLevel]
-    });
-  }
-
-  private renderAiAssistance(parent: HTMLElement, item: CleanupPlanItem): void {
-    if (!item.aiAssistance) {
-      return;
-    }
-
-    const ai = parent.createDiv({ cls: "tag-curator-inline-action__ai" });
-    ai.createDiv({ cls: "tag-curator-inline-action__ai-title", text: this.labels.health.cleanupPlan.aiAssistance });
-    ai.createDiv({ text: `${this.labels.health.ai.priorities}: ${this.labels.health.ai.severity[item.aiAssistance.priorityHint]} · ${this.labels.health.ai.confidence[item.aiAssistance.confidence]}` });
-    ai.createDiv({ text: `${this.labels.health.ai.reason}: ${item.aiAssistance.reason}` });
-    if (item.aiAssistance.targetTagCandidate) {
-      const target = ai.createDiv({ cls: "tag-curator-inline-action__ai-target" });
-      target.createSpan({ text: `${this.labels.health.cleanupPlan.aiTargetTagCandidate}: ` });
-      this.renderTagButton(target, item.aiAssistance.targetTagCandidate);
-    }
-    if (item.aiAssistance.riskNote) {
-      ai.createDiv({ text: `${this.labels.health.ai.riskNote}: ${item.aiAssistance.riskNote}` });
-    }
   }
 
   private appendCapabilityMarkdown(lines: string[], item: CleanupPlanItem): void {
@@ -669,4 +594,9 @@ function formatTagList(tags: string[]): string {
 
 function formatTime(value: string): string {
   return new Date(value).toLocaleTimeString();
+}
+
+function formatMonthDayTime(value: string): string {
+  const date = new Date(value);
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
