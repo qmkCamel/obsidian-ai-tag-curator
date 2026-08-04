@@ -66,6 +66,9 @@ type LabelTree = {
     refreshIndexOnLoadDesc: string;
     devModeName: string;
     devModeDesc: string;
+    feedbackName: string;
+    feedbackDesc: string;
+    feedbackButton: string;
   };
   summary: {
     title: string;
@@ -320,7 +323,10 @@ const ZH_LABELS: LabelTree = {
     refreshIndexOnLoadName: "启动时刷新索引",
     refreshIndexOnLoadDesc: "默认关闭，避免大型库启动时扫描过慢。",
     devModeName: "开发模式",
-    devModeDesc: "开启后，推荐结果底部会显示开始时间、结束时间和各阶段耗时。"
+    devModeDesc: "开启后，推荐结果底部会显示开始时间、结束时间和各阶段耗时。",
+    feedbackName: "反馈与建议",
+    feedbackDesc: "报告问题或分享使用体验。点击后会在浏览器中打开 GitHub Issues。",
+    feedbackButton: "提供反馈"
   },
   summary: {
     title: "标签索引摘要",
@@ -580,7 +586,10 @@ const EN_LABELS: LabelTree = {
     refreshIndexOnLoadName: "Refresh index on load",
     refreshIndexOnLoadDesc: "Off by default to avoid scanning large vaults during startup.",
     devModeName: "Dev mode",
-    devModeDesc: "When enabled, recommendation results show start time, end time, and per-stage durations."
+    devModeDesc: "When enabled, recommendation results show start time, end time, and per-stage durations.",
+    feedbackName: "Feedback and suggestions",
+    feedbackDesc: "Report an issue or share your experience. Opens GitHub Issues in your browser.",
+    feedbackButton: "Send feedback"
   },
   summary: {
     title: "Tag index summary",

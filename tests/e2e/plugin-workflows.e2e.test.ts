@@ -90,6 +90,9 @@ describe("plugin e2e workflows", () => {
     const tab = plugin.settingTabs[0];
     tab.display();
 
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackName);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackButton);
+
     const language = requiredElement(tab.containerEl.querySelector<HTMLSelectElement>("select"));
     setSelectValue(language, "zh-CN");
     await waitFor(() => expect(plugin.settings.uiLanguage).toBe("zh-CN"));
@@ -129,6 +132,20 @@ describe("plugin e2e workflows", () => {
         devMode: true
       });
     });
+
+    const feedbackButton = requiredElement(
+      Array.from(tab.containerEl.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent === getLabels("zh-CN").settings.feedbackButton
+      )
+    );
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    feedbackButton.click();
+
+    expect(openSpy).toHaveBeenCalledWith(
+      "https://github.com/qmkCamel/obsidian-ai-tag-curator/issues/new",
+      "_blank",
+      "noopener,noreferrer"
+    );
   });
 
   it("refreshes the tag index, shows progress, opens the summary, and supports tag click actions", async () => {
