@@ -33,6 +33,6 @@
 - 需要增加纯数据组合逻辑，把 AI priorities 与本地 cleanup plan 合并为 UI 可用的 action items。
 - 需要增加测试，覆盖状态选择、AI/规则合并、不可执行动作不显示应用控件、规则明细仍可访问。
 - 需要以设计稿为视觉参考：
-  - `docs/images/tag-health-report-initial-concept.png`
-  - `docs/images/tag-health-report-ai-loading-concept.png`
-  - `docs/images/tag-health-report-ai-results-concept.png`
+  - `docs/concept/tag-health-report-initial-concept.png`
+  - `docs/concept/tag-health-report-ai-loading-concept.png`
+  - `docs/concept/tag-health-report-ai-results-concept.png`

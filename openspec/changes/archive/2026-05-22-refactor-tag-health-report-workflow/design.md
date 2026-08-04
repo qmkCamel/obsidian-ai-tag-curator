@@ -142,9 +142,9 @@ interface HealthActionItemView {
 
 本 change 的 UI 参考图保存在：
 
-- 初始态：`docs/images/tag-health-report-initial-concept.png`
-- AI 分析中：`docs/images/tag-health-report-ai-loading-concept.png`
-- AI 结果态：`docs/images/tag-health-report-ai-results-concept.png`
+- 初始态：`docs/concept/tag-health-report-initial-concept.png`
+- AI 分析中：`docs/concept/tag-health-report-ai-loading-concept.png`
+- AI 结果态：`docs/concept/tag-health-report-ai-results-concept.png`
 
 这些图是方向参考，不要求逐像素复刻。实现时应优先保证信息层级、状态清晰和 Obsidian 原生质感。
 

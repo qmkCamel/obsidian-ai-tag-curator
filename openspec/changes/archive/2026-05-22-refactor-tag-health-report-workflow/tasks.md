@@ -42,7 +42,7 @@
 
 - [x] 6.1 更新 README 截图占位或说明，描述新的健康报告三层结构。
 - [x] 6.2 更新 `docs/roadmap.zh-CN.md`，把健康报告重构标记为 0.2 体验整理项。
-- [x] 6.3 保留本 change 的三张 UI 参考图在 `docs/images/`。
+- [x] 6.3 保留本 change 的三张 UI 参考图在 `docs/concept/`。
 
 ## 7. 验证
 

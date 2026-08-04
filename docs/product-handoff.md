@@ -1,6 +1,6 @@
 # Obsidian AI Tag Curator Product Handoff
 
-Updated: 2026-05-11
+Updated: 2026-08-04
 
 ## Context
 
@@ -130,13 +130,15 @@ Obsidian users who rely on tags eventually face taxonomy drift:
 
 The product can win by making tag changes trustworthy, inspectable, and reversible.
 
-## MVP Recommendation
+## Current Capabilities and Next Stage
 
-Build a narrow MVP around three commands.
+Version `0.1.2` has completed the two core loops for current-note recommendations and vault-level tag health. Safe folder-level batch preview is not implemented yet and is the next product priority.
 
 ### 1. Suggest Tags for Current Note
 
 Goal: improve the current note while respecting the existing vault taxonomy.
+
+Status: shipped. It prefers existing tags, constrains new-tag suggestions through settings, explains structured recommendations, requires confirmation before writing frontmatter, and can undo the latest operation.
 
 Expected behavior:
 
@@ -157,6 +159,8 @@ Key differentiation:
 
 Goal: give the user a vault-level diagnosis.
 
+Status: shipped. It provides rule evidence, AI action guidance, a cleanup review plan, and constrained merge/rename actions with file previews, operation logging, and conflict-safe undo.
+
 Expected output:
 
 - duplicate or near-duplicate tags;
@@ -175,6 +179,8 @@ Key differentiation:
 ### 3. Batch Tag Folder With Preview
 
 Goal: safely backfill and clean tags across a folder or vault subset.
+
+Status: not implemented. This is the current priority for roadmap version `0.3`.
 
 Expected behavior:
 
@@ -200,36 +206,31 @@ Key differentiation:
 - Treat tags as a living taxonomy, not disposable metadata.
 - Make undo and recovery visible.
 
-## Technical Notes To Explore
+## Technical Status and Next Directions
 
-Potential implementation areas:
+Implemented:
 
 - scan Markdown files for inline tags and frontmatter tags;
 - build a tag index with usage count, file paths, and representative snippets;
-- optionally embed tag contexts for semantic matching;
-- use provider abstraction for OpenAI-compatible APIs, Ollama, or local endpoints;
-- store pending batch operations as a reviewable plan;
+- connect providers such as DeepSeek and OpenAI through an OpenAI-compatible API abstraction;
+- store deterministic cleanup operations as a reviewable plan with file-level previews;
 - write frontmatter changes through a YAML-aware parser instead of string replacement;
-- keep a reversible operation log.
+- keep a reversible operation log and block undo from overwriting files that changed afterward.
 
-Open technical decisions:
+Established product and technical boundaries:
 
-- whether MVP should support both inline tags and frontmatter tags;
-- whether to introduce embeddings in v1 or start with LLM-only reasoning;
-- whether to support local LLMs in the first release;
-- whether tag audit should run eagerly, manually, or on a cached schedule;
-- how to keep performance acceptable on large vaults.
+- inline tags participate in indexing, while automatic writes remain limited to frontmatter tags;
+- the current version does not use embeddings and combines local rules, the tag index, and structured LLM output;
+- tag audits are manually triggered, and AI health analysis is cached by tag-index timestamp;
+- AI may add explanations, priority hints, and candidate targets but cannot raise local action capability;
+- low-frequency observation, broad-tag splitting, and deprecate/remove actions remain read-only or require manual judgment.
 
-## Suggested First Build Sequence
+Still to advance:
 
-1. Scaffold a minimal Obsidian plugin.
-2. Implement vault tag scanning and a tag usage index.
-3. Add current-note tag suggestion using existing tags only.
-4. Add optional new-tag suggestions.
-5. Add preview/apply flow for the current note.
-6. Add tag health report.
-7. Add folder-level batch preview.
-8. Add reversible operation log and undo.
+- safe folder-level batch preview, per-note/per-tag approval, and batch undo;
+- a complete operation history with per-operation inspection and undo;
+- incremental indexing, stale-index state, refresh progress, and large-vault safeguards;
+- explicit Ollama/local endpoint support, common provider presets, connection testing, and privacy guidance.
 
 ## Success Criteria
 
@@ -250,13 +251,16 @@ The MVP is not differentiated enough if users describe it mainly as:
 
 ## Current Product Decision
 
-Proceed only if the product is built as AI tag governance, not generic AI tag generation.
+Continue positioning the product as AI tag governance, not generic AI tag generation.
 
-The first implementation should prioritize:
+Version `0.1.2` has delivered:
 
 1. vault tag index;
 2. current-note suggestions that strongly prefer existing tags;
 3. explainable recommendations;
-4. safe preview before writes.
+4. safe preview before writes;
+5. vault-level tag health reports;
+6. layered AI action guidance and rule evidence;
+7. file preview, manual apply, and undo for deterministic merge/rename actions.
 
-Batch editing, tag health reports, and merge/rename workflows should follow once the first loop feels trustworthy.
+The next stage should focus only on safe folder-level batch preview. Full operation history, incremental indexing, and local/multi-provider experience remain sequenced behind it in the roadmap.
