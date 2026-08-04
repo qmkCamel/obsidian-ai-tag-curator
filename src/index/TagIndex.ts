@@ -3,6 +3,10 @@ export interface IndexedNote {
   path: string;
   content: string;
   frontmatterTags: string[];
+  inlineTags: string[];
+  allTags: string[];
+  sourceContentHash: string;
+  /** Legacy compatibility for persisted/test inputs created before source-aware inventories. */
   metadataTags?: string[];
 }
 

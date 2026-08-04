@@ -27,8 +27,12 @@ export function parseRecommendationResult(raw: string, context: RecommendationPa
 
   return {
     notePath: context.notePath,
-    existingTags: context.existingTags,
-    recommendations: filterExistingRecommendations(parsed.recommendations.map(parseRecommendation), context.existingTags),
+    existingTags: context.frontmatterTags,
+    frontmatterTags: context.frontmatterTags,
+    inlineTags: context.inlineTags,
+    allTags: context.allTags,
+    sourceContentHash: context.sourceContentHash,
+    recommendations: filterExistingRecommendations(parsed.recommendations.map(parseRecommendation), context.allTags),
     warnings: parseWarnings(parsed.warnings)
   };
 }

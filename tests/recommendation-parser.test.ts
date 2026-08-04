@@ -19,7 +19,10 @@ describe("parseRecommendationResult", () => {
       }),
       {
         notePath: "notes/ai.md",
-        existingTags: ["research"]
+        frontmatterTags: ["research"],
+        inlineTags: ["workflow"],
+        allTags: ["research", "workflow"],
+        sourceContentHash: "a".repeat(64)
       }
     );
 
@@ -49,7 +52,10 @@ describe("parseRecommendationResult", () => {
       }),
       {
         notePath: "notes/parenting.md",
-        existingTags: ["clippings", "育儿"]
+        frontmatterTags: ["clippings"],
+        inlineTags: ["育儿"],
+        allTags: ["clippings", "育儿"],
+        sourceContentHash: "b".repeat(64)
       }
     );
 
@@ -57,15 +63,24 @@ describe("parseRecommendationResult", () => {
   });
 
   it("rejects malformed JSON and incomplete recommendations", () => {
-    expect(() => parseRecommendationResult("{bad json", { notePath: "x.md", existingTags: [] })).toThrow(
+    expect(() => parseRecommendationResult("{bad json", emptyContext())).toThrow(
       /valid JSON/
     );
 
     expect(() =>
       parseRecommendationResult(JSON.stringify({ recommendations: [{ tag: "x" }] }), {
-        notePath: "x.md",
-        existingTags: []
+        ...emptyContext()
       })
     ).toThrow(/recommendation/i);
   });
 });
+
+function emptyContext() {
+  return {
+    notePath: "x.md",
+    frontmatterTags: [],
+    inlineTags: [],
+    allTags: [],
+    sourceContentHash: "c".repeat(64)
+  };
+}

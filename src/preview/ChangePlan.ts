@@ -4,7 +4,11 @@ import { normalizeTag } from "../utils/normalizeTag";
 export interface CreateChangePlanInput {
   notePath: string;
   beforeTags: string[];
-  selectedTags: string[];
+  sourceContentHash: string;
+  selectedInlineTags?: string[];
+  selectedAiTags?: string[];
+  /** Compatibility input for recommendation records created before source separation. */
+  selectedTags?: string[];
   createdAt?: Date;
 }
 
@@ -13,31 +17,30 @@ export interface ChangePlan {
   beforeTags: string[];
   afterTags: string[];
   addedTags: string[];
+  syncedInlineTags: string[];
+  aiAddedTags: string[];
   unchangedTags: string[];
   skippedTags: string[];
+  sourceContentHash: string;
   createdAt: string;
 }
 
 export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
   const beforeTags = normalizeTagList(input.beforeTags);
-  const selectedTags = normalizeTagList(input.selectedTags);
+  const selectedInlineTags = normalizeTagList(input.selectedInlineTags ?? []);
+  const selectedAiTags = normalizeTagList(input.selectedAiTags ?? input.selectedTags ?? []);
   const beforeSet = new Set(beforeTags);
   const afterTags = [...beforeTags];
   const addedTags: string[] = [];
+  const syncedInlineTags: string[] = [];
+  const aiAddedTags: string[] = [];
   const skippedTags: string[] = [];
 
-  for (const tag of selectedTags) {
-    if (beforeSet.has(tag)) {
-      continue;
-    }
+  appendSelectedTags(selectedInlineTags, syncedInlineTags);
+  appendSelectedTags(selectedAiTags, aiAddedTags);
 
-    if (afterTags.includes(tag)) {
-      skippedTags.push(tag);
-      continue;
-    }
-
-    afterTags.push(tag);
-    addedTags.push(tag);
+  if (!beforeTags.every((tag) => afterTags.includes(tag))) {
+    throw new Error("A tag change plan may only add frontmatter tags.");
   }
 
   return {
@@ -45,10 +48,31 @@ export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
     beforeTags,
     afterTags,
     addedTags,
+    syncedInlineTags,
+    aiAddedTags,
     unchangedTags: beforeTags,
     skippedTags,
+    sourceContentHash: input.sourceContentHash,
     createdAt: (input.createdAt ?? new Date()).toISOString()
   };
+
+  function appendSelectedTags(tags: string[], destination: string[]): void {
+    for (const tag of tags) {
+      if (beforeSet.has(tag)) {
+        skippedTags.push(tag);
+        continue;
+      }
+
+      if (afterTags.includes(tag)) {
+        skippedTags.push(tag);
+        continue;
+      }
+
+      afterTags.push(tag);
+      addedTags.push(tag);
+      destination.push(tag);
+    }
+  }
 }
 
 function normalizeTagList(tags: string[]): string[] {

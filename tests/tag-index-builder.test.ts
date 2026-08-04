@@ -8,12 +8,18 @@ describe("buildTagIndex", () => {
       {
         path: "notes/ai.md",
         content: "This note is about semantic search and #project/ai workflows.",
-        frontmatterTags: ["project/ai", "research"]
+        frontmatterTags: ["project/ai", "research"],
+        inlineTags: ["project/ai"],
+        allTags: ["project/ai", "research"],
+        sourceContentHash: "a".repeat(64)
       },
       {
         path: "notes/search.md",
         content: "Search quality notes mention #Research and retrieval.",
-        frontmatterTags: []
+        frontmatterTags: [],
+        inlineTags: ["research"],
+        allTags: ["research"],
+        sourceContentHash: "b".repeat(64)
       }
     ]);
 
@@ -24,18 +30,20 @@ describe("buildTagIndex", () => {
     expect(index.tags.research.examples[0].snippet.length).toBeGreaterThan(0);
   });
 
-  it("uses Obsidian metadata tags as the source of truth when available", () => {
+  it("uses the explicit source-aware inline inventory when available", () => {
     const index = buildTagIndex([
       {
         path: "notes/ai.md",
         content: "This body has #inline-only but Obsidian metadata already resolved tags.",
         frontmatterTags: [],
-        metadataTags: ["AI生成", "数据结构/单调队列"]
+        inlineTags: ["AI生成", "数据结构/单调队列"],
+        allTags: ["AI生成", "数据结构/单调队列"],
+        sourceContentHash: "c".repeat(64)
       }
     ]);
 
-    expect(Object.keys(index.tags)).toEqual(["AI生成", "数据结构/单调队列"]);
-    expect(index.tags["AI生成"].files[0].sources).toEqual(["metadata"]);
+    expect(Object.keys(index.tags)).toEqual(["ai生成", "数据结构/单调队列"]);
+    expect(index.tags["ai生成"].files[0].sources).toEqual(["inline"]);
     expect(index.tags["inline-only"]).toBeUndefined();
   });
 });

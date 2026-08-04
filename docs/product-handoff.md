@@ -132,7 +132,7 @@ The product can win by making tag changes trustworthy, inspectable, and reversib
 
 ## Current Capabilities and Next Stage
 
-Version `0.1.2` has completed the two core loops for current-note recommendations and vault-level tag health. Safe folder-level batch preview is not implemented yet and is the next product priority.
+The product now has three completed loops: current-note recommendations, vault-level tag health, and the `0.3` safe folder-level batch preview. The next stage is `0.4` full operation history, not a broader set of batch write actions.
 
 ### 1. Suggest Tags for Current Note
 
@@ -180,7 +180,7 @@ Key differentiation:
 
 Goal: safely backfill and clean tags across a folder or vault subset.
 
-Status: not implemented. This is the current priority for roadmap version `0.3`.
+Status: shipped. It supports explicit scope, whole-note tag consolidation, bounded generation, per-item risk review, second confirmation, transactional writes, fixed-target recovery, and whole-batch undo across reloads.
 
 Expected behavior:
 
@@ -216,10 +216,15 @@ Implemented:
 - store deterministic cleanup operations as a reviewable plan with file-level previews;
 - write frontmatter changes through a YAML-aware parser instead of string replacement;
 - keep a reversible operation log and block undo from overwriting files that changed afterward.
+- consolidate frontmatter and inline tags for current-note and folder review without rewriting inline body positions;
+- default folder scope to the active note's parent, allow any folder or vault root, and enforce a configurable complete-batch limit of 1-200 files (default 50);
+- run at most two AI requests concurrently with immediate cancellation, late-result discard, local inline sync after AI failure, and failed-item retry;
+- apply folder batches with full preflight, per-file content/tag CAS, reverse compensation, and fixed before/after recovery targets;
+- undo a successful batch across plugin reloads and block new batch writes while recovery is unresolved.
 
 Established product and technical boundaries:
 
-- inline tags participate in indexing, while automatic writes remain limited to frontmatter tags;
+- inline tags participate in the whole-note inventory; reviewed missing tags may be copied into frontmatter, while body text is never deleted, moved, or rewritten;
 - the current version does not use embeddings and combines local rules, the tag index, and structured LLM output;
 - tag audits are manually triggered, and AI health analysis is cached by tag-index timestamp;
 - AI may add explanations, priority hints, and candidate targets but cannot raise local action capability;
@@ -227,7 +232,6 @@ Established product and technical boundaries:
 
 Still to advance:
 
-- safe folder-level batch preview, per-note/per-tag approval, and batch undo;
 - a complete operation history with per-operation inspection and undo;
 - incremental indexing, stale-index state, refresh progress, and large-vault safeguards;
 - explicit Ollama/local endpoint support, common provider presets, connection testing, and privacy guidance.
@@ -253,7 +257,7 @@ The MVP is not differentiated enough if users describe it mainly as:
 
 Continue positioning the product as AI tag governance, not generic AI tag generation.
 
-Version `0.1.2` has delivered:
+The product has delivered:
 
 1. vault tag index;
 2. current-note suggestions that strongly prefer existing tags;
@@ -262,5 +266,6 @@ Version `0.1.2` has delivered:
 5. vault-level tag health reports;
 6. layered AI action guidance and rule evidence;
 7. file preview, manual apply, and undo for deterministic merge/rename actions.
+8. safe folder batch preview, per-note/per-tag approval, transactional recovery, and cross-reload batch undo.
 
-The next stage should focus only on safe folder-level batch preview. Full operation history, incremental indexing, and local/multi-provider experience remain sequenced behind it in the roadmap.
+The next stage should focus only on `0.4` full operation history. Incremental indexing and local/multi-provider experience remain sequenced behind it in the roadmap.

@@ -10,7 +10,9 @@ type LabelTree = {
     showTagIndexSummary: string;
     analyzeTagHealth: string;
     suggestTagsForCurrentNote: string;
+    suggestTagsForFolder: string;
     undoLastChangeForCurrentNote: string;
+    undoLastFolderBatch: string;
   };
   loading: {
     refreshTitle: string;
@@ -37,6 +39,13 @@ type LabelTree = {
     tagsUpdated: string;
     updateFailed: string;
     languageChanged: string;
+    openMarkdownForFolderBatch: string;
+    folderBatchApplied: (fileCount: number, tagCount: number) => string;
+    folderBatchFailed: string;
+    noFolderBatchUndo: string;
+    folderBatchUndone: string;
+    unresolvedBatchBlocked: string;
+    indexRefreshFailed: (message: string) => string;
   };
   settings: {
     heading: string;
@@ -53,6 +62,8 @@ type LabelTree = {
     modelDesc: string;
     maxRecommendationsName: string;
     maxRecommendationsDesc: string;
+    maxFolderBatchFilesName: string;
+    maxFolderBatchFilesDesc: string;
     allowNewTagsName: string;
     allowNewTagsDesc: string;
     newTagStrictnessName: string;
@@ -84,6 +95,12 @@ type LabelTree = {
   recommendations: {
     title: string;
     subtitle: string;
+    frontmatterSource: string;
+    inlineSource: string;
+    aiSource: string;
+    inlineSyncReason: string;
+    emptySource: string;
+    aiFailed: (message: string) => string;
     candidateLabel: (index: number) => string;
     reasonTitle: string;
     alternativesTitle: string;
@@ -99,6 +116,71 @@ type LabelTree = {
       requestAiRecommendations: string;
     };
     timingRow: (startedAt: string, endedAt: string, duration: string) => string;
+  };
+  folderBatch: {
+    rootFolder: string;
+    scopeTitle: string;
+    scopeSubtitle: string;
+    folderName: string;
+    chooseFolder: string;
+    includeSubfolders: string;
+    includeSubfoldersDesc: string;
+    fileCount: (count: number) => string;
+    requestCount: (count: number) => string;
+    providerNotice: string;
+    maxLimit: (limit: number) => string;
+    emptyScope: string;
+    overLimit: (count: number, limit: number) => string;
+    start: string;
+    cancel: string;
+    progressTitle: string;
+    progressSummary: (completed: number, total: number) => string;
+    sourceProgress: (ready: number, failed: number) => string;
+    aiProgress: (ready: number, failed: number) => string;
+    planProgress: (ready: number, noChange: number) => string;
+    cancelledCount: (count: number) => string;
+    cancelBillingNotice: string;
+    minimize: string;
+    previewTitle: string;
+    previewSubtitle: string;
+    summaryFiles: (count: number) => string;
+    summaryTags: (count: number) => string;
+    summaryRisk: (low: number, medium: number, high: number) => string;
+    filterRisk: string;
+    filterAll: string;
+    riskLow: string;
+    riskMedium: string;
+    riskHigh: string;
+    selectAllLow: string;
+    clearAll: string;
+    retryFailed: string;
+    apply: string;
+    frontmatterSource: string;
+    inlineSource: string;
+    aiSource: string;
+    beforeTags: string;
+    afterTags: string;
+    noTags: string;
+    sourceFailed: string;
+    aiFailed: (message: string) => string;
+    aiCancelled: string;
+    noChange: string;
+    confirmTitle: string;
+    confirmMessage: (fileCount: number, tagCount: number) => string;
+    confirmApply: string;
+    resultTitle: string;
+    appliedResult: string;
+    removedResult: string;
+    noResult: string;
+    rolledBackResult: string;
+    conflictResult: string;
+    recoveryResult: (target: "before" | "after") => string;
+    conflictMissing: string;
+    conflictTagsChanged: string;
+    conflictContentChanged: string;
+    undo: string;
+    retryRecovery: string;
+    close: string;
   };
   health: {
     title: string;
@@ -268,7 +350,9 @@ const ZH_LABELS: LabelTree = {
     showTagIndexSummary: "查看标签索引摘要",
     analyzeTagHealth: "分析标签健康度",
     suggestTagsForCurrentNote: "为当前笔记推荐标签",
-    undoLastChangeForCurrentNote: "撤销当前笔记最近标签修改"
+    suggestTagsForFolder: "为文件夹批量生成标签建议",
+    undoLastChangeForCurrentNote: "撤销当前笔记最近标签修改",
+    undoLastFolderBatch: "撤销最近一次文件夹批量标签操作"
   },
   loading: {
     refreshTitle: "正在刷新标签索引",
@@ -294,7 +378,14 @@ const ZH_LABELS: LabelTree = {
     undoFailed: "撤销标签修改失败。",
     tagsUpdated: "标签已更新。",
     updateFailed: "更新标签失败。",
-    languageChanged: "语言设置已保存。命令面板名称会在重载插件后更新。"
+    languageChanged: "语言设置已保存。命令面板名称会在重载插件后更新。",
+    openMarkdownForFolderBatch: "请先打开一篇 Markdown 笔记，以确定默认文件夹范围。",
+    folderBatchApplied: (fileCount, tagCount) => `文件夹批次已应用：更新 ${fileCount} 篇笔记，新增 ${tagCount} 个标签。`,
+    folderBatchFailed: "文件夹批次执行失败。",
+    noFolderBatchUndo: "没有可撤销的文件夹批量标签操作。",
+    folderBatchUndone: "最近一次文件夹批量标签操作已撤销。",
+    unresolvedBatchBlocked: "存在尚未恢复的文件夹批次，请先完成固定目标恢复。",
+    indexRefreshFailed: (message) => `文件已稳定，但标签索引刷新失败：${message}`
   },
   settings: {
     heading: "AI Tag Curator 设置",
@@ -311,6 +402,8 @@ const ZH_LABELS: LabelTree = {
     modelDesc: "OpenAI-compatible provider 的模型名，例如 deepseek-v4-flash。",
     maxRecommendationsName: "推荐数量上限",
     maxRecommendationsDesc: "预览中最多展示多少个标签。",
+    maxFolderBatchFilesName: "单批最多文件数",
+    maxFolderBatchFilesDesc: "文件夹批次必须完整落在该上限内，不会静默截断。可设置为 1–200，默认 50。",
     allowNewTagsName: "允许新标签",
     allowNewTagsDesc: "关闭时，推荐必须复用当前库已有标签。",
     newTagStrictnessName: "新标签严格程度",
@@ -342,6 +435,12 @@ const ZH_LABELS: LabelTree = {
   recommendations: {
     title: "标签推荐",
     subtitle: "以下是按相关性排序的候选标签。每一项都是独立建议，“相近但未选”只是说明为什么没有选择另一个相似标签。",
+    frontmatterSource: "当前 frontmatter 标签",
+    inlineSource: "正文 inline 标签",
+    aiSource: "AI 建议",
+    inlineSyncReason: "同步正文已有标签到 frontmatter；正文原位置不会改变。",
+    emptySource: "无",
+    aiFailed: (message) => `AI 建议失败：${message}。仍可审查本地确定的正文标签同步项。`,
     candidateLabel: (index) => `候选 ${index}`,
     reasonTitle: "推荐理由",
     alternativesTitle: "相近但未选",
@@ -362,6 +461,71 @@ const ZH_LABELS: LabelTree = {
       requestAiRecommendations: "请求 AI 推荐"
     },
     timingRow: (startedAt, endedAt, duration) => `开始：${startedAt} · 结束：${endedAt} · 耗时：${duration}`
+  },
+  folderBatch: {
+    rootFolder: "库根目录",
+    scopeTitle: "确认文件夹批次范围",
+    scopeSubtitle: "范围确认阶段只枚举 Markdown 文件，不读取正文、不构建索引、也不发起 AI 请求。",
+    folderName: "文件夹",
+    chooseFolder: "选择文件夹",
+    includeSubfolders: "包含子文件夹",
+    includeSubfoldersDesc: "默认开启；关闭后只处理该文件夹的直接 Markdown 子文件。",
+    fileCount: (count) => `Markdown 文件：${count}`,
+    requestCount: (count) => `预计 AI 请求：${count}`,
+    providerNotice: "每篇笔记单独请求当前配置的 provider；已发出的请求在取消后仍可能计费。",
+    maxLimit: (limit) => `当前单批上限：${limit}`,
+    emptyScope: "当前范围没有 Markdown 文件，无法开始。",
+    overLimit: (count, limit) => `当前范围有 ${count} 篇，超过上限 ${limit}；不会静默截断。请缩小范围或调整设置。`,
+    start: "开始生成",
+    cancel: "立即取消",
+    progressTitle: "正在生成文件夹标签建议",
+    progressSummary: (completed, total) => `总体进度：${completed}/${total}`,
+    sourceProgress: (ready, failed) => `读取：成功 ${ready} · 失败 ${failed}`,
+    aiProgress: (ready, failed) => `AI：完成 ${ready} · 失败 ${failed}`,
+    planProgress: (ready, noChange) => `计划：可审查 ${ready} · 无需变更 ${noChange}`,
+    cancelledCount: (count) => `已取消：${count}`,
+    cancelBillingNotice: "取消会立即停止领取新任务并丢弃晚到结果；取消前已经发出的 provider 请求仍可能计费。",
+    minimize: "最小化",
+    previewTitle: "审查文件夹标签批次",
+    previewSubtitle: "审查期间不会写文件。低风险项默认选中；新标签为中风险，必须逐项选择；高风险项不可执行。",
+    summaryFiles: (count) => `将修改文件：${count}`,
+    summaryTags: (count) => `选中新增标签：${count}`,
+    summaryRisk: (low, medium, high) => `风险项：低 ${low} · 中 ${medium} · 高 ${high}`,
+    filterRisk: "风险筛选",
+    filterAll: "全部",
+    riskLow: "低风险",
+    riskMedium: "中风险",
+    riskHigh: "高风险（不可执行）",
+    selectAllLow: "选择全部低风险",
+    clearAll: "清除全部",
+    retryFailed: "仅重试失败项",
+    apply: "应用选中计划",
+    frontmatterSource: "frontmatter",
+    inlineSource: "inline 正文",
+    aiSource: "AI",
+    beforeTags: "应用前",
+    afterTags: "应用后",
+    noTags: "无",
+    sourceFailed: "笔记读取失败，不能生成本地项或 AI 建议。",
+    aiFailed: (message) => `AI 建议失败：${message}；仍保留本地 inline 同步项。`,
+    aiCancelled: "AI 建议已取消；本地已读取的同步项仍可审查。",
+    noChange: "读取和 AI 均成功，没有可写候选项。",
+    confirmTitle: "确认应用文件夹批次",
+    confirmMessage: (fileCount, tagCount) => `将修改 ${fileCount} 篇笔记并向 frontmatter 新增 ${tagCount} 个标签。正文不会改写。`,
+    confirmApply: "确认应用",
+    resultTitle: "文件夹批次结果",
+    appliedResult: "批次已完整应用，并保留一条可整体回退的操作记录。",
+    removedResult: "文件已完整回到应用前快照，批次操作记录已移除。",
+    noResult: "没有可执行的文件夹批次操作。",
+    rolledBackResult: "应用中途失败；已完整补偿，所有文件恢复到应用前状态。",
+    conflictResult: "预检发现冲突，本批次保持零写入。",
+    recoveryResult: (target) => `补偿未完整完成；新批次已阻断。固定恢复目标：${target === "before" ? "应用前" : "应用后"}。`,
+    conflictMissing: "文件缺失",
+    conflictTagsChanged: "frontmatter tags 已变化，请重新生成预览",
+    conflictContentChanged: "完整 Markdown 内容已变化，请重新生成预览",
+    undo: "整体回退批次",
+    retryRecovery: "重试固定目标恢复",
+    close: "关闭"
   },
   health: {
     title: "标签健康报告",
@@ -531,7 +695,9 @@ const EN_LABELS: LabelTree = {
     showTagIndexSummary: "Show tag index summary",
     analyzeTagHealth: "Analyze tag health",
     suggestTagsForCurrentNote: "Suggest tags for current note",
-    undoLastChangeForCurrentNote: "Undo last tag curator change"
+    suggestTagsForFolder: "Generate tag suggestions for folder",
+    undoLastChangeForCurrentNote: "Undo last tag curator change",
+    undoLastFolderBatch: "Undo latest folder batch tag operation"
   },
   loading: {
     refreshTitle: "Refreshing tag index",
@@ -557,7 +723,14 @@ const EN_LABELS: LabelTree = {
     undoFailed: "Failed to undo tag change.",
     tagsUpdated: "Tags updated.",
     updateFailed: "Failed to update tags.",
-    languageChanged: "Language setting saved. Command palette names update after reloading the plugin."
+    languageChanged: "Language setting saved. Command palette names update after reloading the plugin.",
+    openMarkdownForFolderBatch: "Open a Markdown note first so the default folder scope can be determined.",
+    folderBatchApplied: (fileCount, tagCount) => `Folder batch applied: ${fileCount} notes updated and ${tagCount} tags added.`,
+    folderBatchFailed: "Folder batch failed.",
+    noFolderBatchUndo: "No folder batch tag operation is available to undo.",
+    folderBatchUndone: "The latest folder batch tag operation was undone.",
+    unresolvedBatchBlocked: "An unresolved folder batch must reach its fixed recovery target before another batch can write.",
+    indexRefreshFailed: (message) => `Files are stable, but the tag index refresh failed: ${message}`
   },
   settings: {
     heading: "AI Tag Curator Settings",
@@ -574,6 +747,9 @@ const EN_LABELS: LabelTree = {
     modelDesc: "Model name for your OpenAI-compatible provider, for example deepseek-v4-flash.",
     maxRecommendationsName: "Maximum recommendations",
     maxRecommendationsDesc: "Upper bound for tags shown in the preview.",
+    maxFolderBatchFilesName: "Maximum files per batch",
+    maxFolderBatchFilesDesc:
+      "A folder batch must fit completely within this 1–200 limit and is never silently truncated. Default: 50.",
     allowNewTagsName: "Allow new tags",
     allowNewTagsDesc: "When off, recommendations must reuse existing vault tags.",
     newTagStrictnessName: "New tag strictness",
@@ -606,6 +782,12 @@ const EN_LABELS: LabelTree = {
     title: "Tag recommendations",
     subtitle:
       "These candidates are ordered by relevance. Each item is an independent suggestion; close alternatives explain why a similar tag was not selected.",
+    frontmatterSource: "Current frontmatter tags",
+    inlineSource: "Inline body tags",
+    aiSource: "AI suggestions",
+    inlineSyncReason: "Sync an existing inline tag to frontmatter; its body position will not change.",
+    emptySource: "None",
+    aiFailed: (message) => `AI suggestions failed: ${message}. Locally derived inline sync items remain available for review.`,
     candidateLabel: (index) => `Candidate ${index}`,
     reasonTitle: "Why this tag",
     alternativesTitle: "Close alternatives not selected",
@@ -626,6 +808,71 @@ const EN_LABELS: LabelTree = {
       requestAiRecommendations: "Request AI recommendations"
     },
     timingRow: (startedAt, endedAt, duration) => `Start: ${startedAt} · End: ${endedAt} · Duration: ${duration}`
+  },
+  folderBatch: {
+    rootFolder: "Vault root",
+    scopeTitle: "Confirm folder batch scope",
+    scopeSubtitle: "Scope confirmation only enumerates Markdown files; it does not read note content, build the index, or send AI requests.",
+    folderName: "Folder",
+    chooseFolder: "Choose folder",
+    includeSubfolders: "Include subfolders",
+    includeSubfoldersDesc: "On by default. Turn off to process only direct Markdown children.",
+    fileCount: (count) => `Markdown files: ${count}`,
+    requestCount: (count) => `Estimated AI requests: ${count}`,
+    providerNotice: "Each note uses one request to the configured provider. Requests already sent may still be billed after cancellation.",
+    maxLimit: (limit) => `Current per-batch limit: ${limit}`,
+    emptyScope: "This scope contains no Markdown files and cannot start.",
+    overLimit: (count, limit) => `This scope has ${count} notes, above the ${limit} limit. Nothing will be silently truncated; narrow the scope or change settings.`,
+    start: "Start generation",
+    cancel: "Cancel immediately",
+    progressTitle: "Generating folder tag suggestions",
+    progressSummary: (completed, total) => `Overall progress: ${completed}/${total}`,
+    sourceProgress: (ready, failed) => `Read: ${ready} ready · ${failed} failed`,
+    aiProgress: (ready, failed) => `AI: ${ready} ready · ${failed} failed`,
+    planProgress: (ready, noChange) => `Plans: ${ready} reviewable · ${noChange} no change`,
+    cancelledCount: (count) => `Cancelled: ${count}`,
+    cancelBillingNotice: "Cancellation stops new work immediately and discards late results. Provider requests sent before cancellation may still be billed.",
+    minimize: "Minimize",
+    previewTitle: "Review folder tag batch",
+    previewSubtitle: "Reviewing does not write files. Low-risk items start selected; new tags are medium risk and require individual selection; high-risk items are not executable.",
+    summaryFiles: (count) => `Files to modify: ${count}`,
+    summaryTags: (count) => `Selected tag additions: ${count}`,
+    summaryRisk: (low, medium, high) => `Risk items: ${low} low · ${medium} medium · ${high} high`,
+    filterRisk: "Risk filter",
+    filterAll: "All",
+    riskLow: "Low risk",
+    riskMedium: "Medium risk",
+    riskHigh: "High risk (not executable)",
+    selectAllLow: "Select all low risk",
+    clearAll: "Clear all",
+    retryFailed: "Retry failed items only",
+    apply: "Apply selected plans",
+    frontmatterSource: "frontmatter",
+    inlineSource: "inline body",
+    aiSource: "AI",
+    beforeTags: "Before",
+    afterTags: "After",
+    noTags: "None",
+    sourceFailed: "The note could not be read, so no local item or AI suggestion is available.",
+    aiFailed: (message) => `AI suggestions failed: ${message}. Local inline sync items remain reviewable.`,
+    aiCancelled: "AI suggestions were cancelled. Locally read sync items remain reviewable.",
+    noChange: "Read and AI both succeeded, with no writable candidates.",
+    confirmTitle: "Confirm folder batch apply",
+    confirmMessage: (fileCount, tagCount) => `This will modify ${fileCount} notes and add ${tagCount} frontmatter tags. Note bodies will not be rewritten.`,
+    confirmApply: "Confirm apply",
+    resultTitle: "Folder batch result",
+    appliedResult: "The batch was fully applied and one whole-batch undo record was retained.",
+    removedResult: "Every file is back at its before snapshot and the batch operation record was removed.",
+    noResult: "No folder batch operation was available.",
+    rolledBackResult: "Applying failed partway through; compensation fully restored every file to its before state.",
+    conflictResult: "Preflight found conflicts, so the entire batch performed zero writes.",
+    recoveryResult: (target) => `Compensation is incomplete and new batches are blocked. Fixed recovery target: ${target}.`,
+    conflictMissing: "File missing",
+    conflictTagsChanged: "Frontmatter tags changed; generate a new preview",
+    conflictContentChanged: "Full Markdown content changed; generate a new preview",
+    undo: "Undo whole batch",
+    retryRecovery: "Retry fixed-target recovery",
+    close: "Close"
   },
   health: {
     title: "Tag health report",

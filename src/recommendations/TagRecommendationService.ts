@@ -18,7 +18,10 @@ export class TagRecommendationService {
     const raw = await this.provider.completeJson(buildRecommendationMessages(note, index, this.settings, this.uiLanguage));
     return parseRecommendationResult(raw, {
       notePath: note.path,
-      existingTags: note.frontmatterTags
+      frontmatterTags: note.frontmatterTags,
+      inlineTags: note.inlineTags,
+      allTags: note.allTags,
+      sourceContentHash: note.sourceContentHash
     });
   }
 }

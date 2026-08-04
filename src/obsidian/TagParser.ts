@@ -44,7 +44,7 @@ export function parseObsidianTags(value: string[] | null | undefined): string[] 
 export function parseInlineTags(content: string): string[] {
   const withoutCode = stripInlineCodeAndFences(content);
   const tags: string[] = [];
-  const tagPattern = /(^|[\s([>{])#([A-Za-z0-9_\-/]+)(?=$|[\s.,;:!?()[\]{}<>])/g;
+  const tagPattern = /(^|[\s([>{])#([\p{L}\p{N}_\-/]+)(?=$|[\s.,;:!?()[\]{}<>])/gu;
 
   for (const line of withoutCode.split("\n")) {
     if (/^\s*#(\s|$)/.test(line)) {

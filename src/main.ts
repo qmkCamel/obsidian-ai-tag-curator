@@ -22,6 +22,22 @@ import { DEFAULT_SETTINGS, mergeSettings, type TagCuratorSettings } from "./sett
 import { TagCuratorSettingsTab } from "./settings/SettingsTab";
 import { getLabels, resolveUiLanguage, type UiLanguage } from "./ui/labels";
 import { OperationTimer } from "./utils/OperationTimer";
+import { createFolderBatchPlan, deriveChangePlans, type FolderBatchPlan } from "./batch/FolderBatchPlan";
+import { FolderBatchScopeModal } from "./batch/FolderBatchScopeModal";
+import type { FolderBatchScopeViewModel } from "./batch/FolderBatchScope";
+import {
+  buildFolderBatchProgressSnapshot,
+  FolderBatchRecommendationRunner
+} from "./batch/FolderBatchRecommendationRunner";
+import { FolderBatchProgressModal } from "./batch/FolderBatchProgressModal";
+import { FolderBatchPreviewModal } from "./batch/FolderBatchPreviewModal";
+import { FolderBatchExecutor, type FolderBatchExecutionResult } from "./batch/FolderBatchExecutor";
+import {
+  FolderBatchRecoveryService,
+  type FolderBatchRecoveryResult
+} from "./batch/FolderBatchRecoveryService";
+import { FolderBatchResultModal } from "./batch/FolderBatchResultModal";
+import type { BatchOperationRecord } from "./operations/OperationLog";
 
 interface PluginData {
   settings?: Partial<TagCuratorSettings>;
@@ -39,6 +55,7 @@ export default class TagCuratorPlugin extends Plugin {
   private operationLog = new OperationLog();
   private tagIndex: TagIndex | undefined;
   private healthAiAnalysisCache: CachedTagHealthAiAnalysis | undefined;
+  private folderBatchRecoveryService!: FolderBatchRecoveryService;
 
   async onload(): Promise<void> {
     await this.loadPluginData();
@@ -46,6 +63,15 @@ export default class TagCuratorPlugin extends Plugin {
 
     this.vaultReader = new VaultReader(this.app);
     this.frontmatterWriter = new FrontmatterWriter(this.app);
+    this.folderBatchRecoveryService = new FolderBatchRecoveryService({
+      findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
+      writer: this.frontmatterWriter,
+      operationLog: this.operationLog,
+      persist: () => this.savePluginData(),
+      refreshIndex: async () => {
+        await this.refreshDerivedStateAfterFolderBatch();
+      }
+    });
 
     this.addSettingTab(new TagCuratorSettingsTab(this));
 
@@ -88,6 +114,31 @@ export default class TagCuratorPlugin extends Plugin {
         void this.undoLastChangeForCurrentNote();
       }
     });
+
+    this.addCommand({
+      id: "suggest-tags-for-folder",
+      name: this.labels.commands.suggestTagsForFolder,
+      callback: () => {
+        void this.suggestTagsForFolder();
+      }
+    });
+
+    this.addCommand({
+      id: "undo-last-folder-batch",
+      name: this.labels.commands.undoLastFolderBatch,
+      callback: () => {
+        void this.undoLatestFolderBatch();
+      }
+    });
+
+    const unresolved = this.operationLog.latestUnresolvedBatch();
+    if (unresolved) {
+      const reconciliation = await this.folderBatchRecoveryService.reconcileInterruptedBatch();
+      if (reconciliation.status === "recoveryRequired") {
+        new Notice(this.labels.notices.unresolvedBatchBlocked);
+        this.openFolderBatchResult(reconciliation);
+      }
+    }
 
     if (this.settings.refreshIndexOnLoad) {
       void this.refreshTagIndex(false);
@@ -219,7 +270,7 @@ export default class TagCuratorPlugin extends Plugin {
       return;
     }
 
-    if (!this.settings.apiKey) {
+    if (!this.settings.apiKey.trim()) {
       new Notice(this.labels.notices.configureApiKey);
       return;
     }
@@ -240,10 +291,30 @@ export default class TagCuratorPlugin extends Plugin {
       const provider = new OpenAICompatibleProvider(this.settings);
       const service = new TagRecommendationService(provider, this.settings, this.uiLanguage);
       timer?.startStage("request-ai-recommendations");
-      const result = await service.recommendForNote(currentNote, index);
+      let result;
+      try {
+        result = await service.recommendForNote(currentNote, index);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : this.labels.notices.suggestFailed;
+        result = {
+          notePath: currentNote.path,
+          existingTags: currentNote.frontmatterTags,
+          frontmatterTags: currentNote.frontmatterTags,
+          inlineTags: currentNote.inlineTags,
+          allTags: currentNote.allTags,
+          sourceContentHash: currentNote.sourceContentHash,
+          recommendations: [],
+          warnings: [this.labels.recommendations.aiFailed(message)],
+          aiError: message
+        };
+      }
       timer?.endStage("request-ai-recommendations");
 
-      if (result.recommendations.length === 0) {
+      const hasUnsyncedInlineTags = currentNote.inlineTags.some((tag) => !currentNote.frontmatterTags.includes(tag));
+      if (result.recommendations.length === 0 && !hasUnsyncedInlineTags) {
+        if (result.aiError) {
+          throw new Error(result.aiError);
+        }
         new Notice(this.labels.notices.noRecommendations);
         return;
       }
@@ -258,6 +329,176 @@ export default class TagCuratorPlugin extends Plugin {
     }
   }
 
+  private async suggestTagsForFolder(): Promise<void> {
+    const defaultFolderPath = this.vaultReader.getCurrentFolderPath();
+    if (defaultFolderPath === null) {
+      new Notice(this.labels.notices.openMarkdownForFolderBatch);
+      return;
+    }
+    if (!this.settings.apiKey.trim()) {
+      new Notice(this.labels.notices.configureApiKey);
+      return;
+    }
+    const unresolved = this.operationLog.latestUnresolvedBatch();
+    if (unresolved) {
+      new Notice(this.labels.notices.unresolvedBatchBlocked);
+      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+      return;
+    }
+
+    new FolderBatchScopeModal(
+      this.app,
+      this.vaultReader,
+      defaultFolderPath,
+      this.settings.maxFolderBatchFiles,
+      true,
+      this.labels,
+      (scope) => {
+        void this.generateFolderBatch(scope);
+      }
+    ).open();
+  }
+
+  private async generateFolderBatch(scope: FolderBatchScopeViewModel): Promise<void> {
+    try {
+      const frozenSettings: TagCuratorSettings = { ...this.settings };
+      const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
+      const provider = new OpenAICompatibleProvider(frozenSettings);
+      const service = new TagRecommendationService(provider, frozenSettings, this.uiLanguage);
+      const batchPlan = createFolderBatchPlan({
+        folderPath: scope.folderPath,
+        includeSubfolders: scope.includeSubfolders,
+        filePaths: scope.filePaths,
+        index,
+        settings: frozenSettings,
+        uiLanguage: this.uiLanguage
+      });
+      const runner = new FolderBatchRecommendationRunner({
+        readNote: (path) => this.vaultReader.readNoteByPath(path),
+        recommendForNote: (note, frozenIndex) => service.recommendForNote(note, frozenIndex),
+        inlineSyncReason: this.labels.recommendations.inlineSyncReason
+      });
+      await this.runFolderBatchGeneration(runner, batchPlan, index, false);
+    } catch (error) {
+      new Notice(error instanceof Error ? error.message : this.labels.notices.folderBatchFailed);
+    }
+  }
+
+  private async runFolderBatchGeneration(
+    runner: FolderBatchRecommendationRunner,
+    plan: FolderBatchPlan,
+    index: TagIndex,
+    retry: boolean
+  ): Promise<void> {
+    const initial = runner.getSnapshot() ?? buildFolderBatchProgressSnapshot(plan);
+    const progress = new FolderBatchProgressModal(this.app, initial, this.labels, () => {
+      runner.cancel();
+    });
+    progress.open();
+    let completed: FolderBatchPlan;
+    try {
+      completed = retry
+        ? await runner.retryFailed(index, (snapshot) => progress.update(snapshot), plan)
+        : await runner.run(plan, index, (snapshot) => progress.update(snapshot));
+    } finally {
+      progress.close();
+    }
+    this.openFolderBatchPreview(completed, runner, index);
+  }
+
+  private openFolderBatchPreview(
+    plan: FolderBatchPlan,
+    runner: FolderBatchRecommendationRunner,
+    index: TagIndex
+  ): void {
+    new FolderBatchPreviewModal(
+      this.app,
+      plan,
+      this.labels,
+      (reviewedPlan) => {
+        void this.runFolderBatchGeneration(runner, reviewedPlan, index, true);
+      },
+      async (selectedPlan) => {
+        await this.applyFolderBatch(selectedPlan);
+      }
+    ).open();
+  }
+
+  private async applyFolderBatch(batchPlan: FolderBatchPlan): Promise<void> {
+    const unresolved = this.operationLog.latestUnresolvedBatch();
+    if (unresolved) {
+      new Notice(this.labels.notices.unresolvedBatchBlocked);
+      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+      return;
+    }
+    const plans = deriveChangePlans(batchPlan);
+    const executor = new FolderBatchExecutor({
+      findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
+      writer: this.frontmatterWriter,
+      operationLog: this.operationLog,
+      persist: () => this.savePluginData(),
+      refreshIndex: async () => {
+        await this.refreshDerivedStateAfterFolderBatch();
+      }
+    });
+    const result = await executor.execute(batchPlan, plans, this.settings.operationLogLimit);
+    if (result.status === "applied") {
+      new Notice(
+        this.labels.notices.folderBatchApplied(
+          plans.length,
+          plans.reduce((total, plan) => total + plan.addedTags.length, 0)
+        )
+      );
+    }
+    if (result.indexRefreshError) {
+      new Notice(this.labels.notices.indexRefreshFailed(result.indexRefreshError));
+    }
+    this.openFolderBatchResult(result);
+  }
+
+  private async undoLatestFolderBatch(): Promise<void> {
+    const unresolved = this.operationLog.latestUnresolvedBatch();
+    if (unresolved) {
+      new Notice(this.labels.notices.unresolvedBatchBlocked);
+      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+      return;
+    }
+    if (!this.operationLog.latestBatch("applied")) {
+      new Notice(this.labels.notices.noFolderBatchUndo);
+      return;
+    }
+    const result = await this.folderBatchRecoveryService.undoLatestAppliedBatch();
+    if (result.status === "removed") {
+      new Notice(this.labels.notices.folderBatchUndone);
+    }
+    if (result.indexRefreshError) {
+      new Notice(this.labels.notices.indexRefreshFailed(result.indexRefreshError));
+    }
+    this.openFolderBatchResult(result);
+  }
+
+  private async retryFolderBatchRecovery(record: BatchOperationRecord): Promise<void> {
+    const result = await this.folderBatchRecoveryService.retryRecovery(record);
+    if (result.indexRefreshError) {
+      new Notice(this.labels.notices.indexRefreshFailed(result.indexRefreshError));
+    }
+    this.openFolderBatchResult(result);
+  }
+
+  private openFolderBatchResult(result: FolderBatchExecutionResult | FolderBatchRecoveryResult): void {
+    new FolderBatchResultModal(
+      this.app,
+      result,
+      this.labels,
+      () => {
+        void this.undoLatestFolderBatch();
+      },
+      (record) => {
+        void this.retryFolderBatchRecovery(record);
+      }
+    ).open();
+  }
+
   private async buildAndSaveTagIndex(): Promise<TagIndex> {
     const notes = await this.vaultReader.readAllMarkdownNotes();
     const index = buildTagIndex(notes, new Date(), {
@@ -267,6 +508,12 @@ export default class TagCuratorPlugin extends Plugin {
     this.healthAiAnalysisCache = undefined;
     await this.savePluginData();
     return index;
+  }
+
+  private async refreshDerivedStateAfterFolderBatch(): Promise<void> {
+    this.healthAiAnalysisCache = undefined;
+    await this.savePluginData();
+    await this.buildAndSaveTagIndex();
   }
 
   private getHealthAiAnalysisCache(indexUpdatedAt: string): CachedTagHealthAiAnalysis | null {

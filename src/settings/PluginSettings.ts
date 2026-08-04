@@ -7,6 +7,7 @@ export interface TagCuratorSettings {
   apiKey: string;
   model: string;
   maxRecommendations: number;
+  maxFolderBatchFiles: number;
   allowNewTags: boolean;
   newTagStrictness: "strict" | "balanced" | "exploratory";
   readInlineTags: boolean;
@@ -21,6 +22,7 @@ export const DEFAULT_SETTINGS: TagCuratorSettings = {
   apiKey: "",
   model: "gpt-4o-mini",
   maxRecommendations: 5,
+  maxFolderBatchFiles: 50,
   allowNewTags: false,
   newTagStrictness: "strict",
   readInlineTags: true,
@@ -34,8 +36,20 @@ export function mergeSettings(value: unknown): TagCuratorSettings {
     return { ...DEFAULT_SETTINGS };
   }
 
-  return {
+  const merged = {
     ...DEFAULT_SETTINGS,
     ...(value as Partial<TagCuratorSettings>)
   };
+
+  return {
+    ...merged,
+    maxFolderBatchFiles: normalizeMaxFolderBatchFiles(merged.maxFolderBatchFiles)
+  };
+}
+
+export function normalizeMaxFolderBatchFiles(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return DEFAULT_SETTINGS.maxFolderBatchFiles;
+  }
+  return Math.min(200, Math.max(1, Math.round(value)));
 }

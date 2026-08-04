@@ -90,6 +90,20 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName(labels.settings.maxFolderBatchFilesName)
+      .setDesc(labels.settings.maxFolderBatchFilesDesc)
+      .addSlider((slider) =>
+        slider
+          .setLimits(1, 200, 1)
+          .setValue(this.plugin.settings.maxFolderBatchFiles)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.maxFolderBatchFiles = value;
+            await this.plugin.savePluginData();
+          })
+      );
+
+    new Setting(containerEl)
       .setName(labels.settings.allowNewTagsName)
       .setDesc(labels.settings.allowNewTagsDesc)
       .addToggle((toggle) =>
