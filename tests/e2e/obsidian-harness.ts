@@ -97,7 +97,7 @@ export function installDomHelpers(): void {
   };
 
   prototype.addClass = function addClass(this: HTMLElement, ...classes: string[]): void {
-    this.classList.add(...classes.flatMap((value) => value.split(/\s+/).filter(Boolean)));
+    this.classList.add(...classes);
   };
 
   prototype.setAttr = function setAttr(this: HTMLElement, name: string, value: string): void {

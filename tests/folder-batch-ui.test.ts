@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAiCandidates, createFolderBatchPlan, createInlineSyncCandidates, withDerivedPlanState } from "../src/batch/FolderBatchPlan";
 import { FolderBatchPreviewModal } from "../src/batch/FolderBatchPreviewModal";
+import { FolderBatchProgressModal } from "../src/batch/FolderBatchProgressModal";
 import { FolderBatchScopeModal } from "../src/batch/FolderBatchScopeModal";
 import { VaultReader } from "../src/obsidian/VaultReader";
 import { DEFAULT_SETTINGS } from "../src/settings/PluginSettings";
@@ -82,11 +83,42 @@ describe("folder batch DOM", () => {
     expect(document.body.textContent).toContain(labels.folderBatch.riskLow);
     expect(document.body.textContent).toContain(labels.folderBatch.riskMedium);
     expect(document.body.textContent).toContain(labels.folderBatch.riskHigh);
+    expect(document.querySelector(".tag-curator-folder-batch__candidate--low")).not.toBeNull();
+    expect(document.querySelector(".tag-curator-folder-batch__candidate--medium")).not.toBeNull();
+    expect(document.querySelector(".tag-curator-folder-batch__candidate--high")).not.toBeNull();
     expect(settingFor("#remove-body-tag").querySelector('input[type="checkbox"]')).toBeNull();
     expect((settingFor("#new").querySelector('input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
     findButton(labels.folderBatch.selectAllLow).click();
     expect((settingFor("#new").querySelector('input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
     expect(app.fileManager.getWriteCount()).toBe(0);
+  });
+
+  it("keeps progress modeless and marks the compact panel when minimized", () => {
+    const app = createFakeApp([{ path: "a.md", content: "body" }]);
+    const labels = getLabels("en");
+    const modal = new FolderBatchProgressModal(
+      app as never,
+      {
+        plan: {} as never,
+        completed: 0,
+        total: 1,
+        sourceReady: 0,
+        sourceFailed: 0,
+        aiReady: 0,
+        aiFailed: 0,
+        cancelled: 0,
+        planReady: 0,
+        noChange: 0
+      },
+      labels,
+      vi.fn()
+    );
+
+    modal.open();
+    expect(modal.containerEl.classList.contains("tag-curator-folder-progress-container")).toBe(true);
+    findButton(labels.folderBatch.minimize).click();
+    expect(modal.containerEl.classList.contains("tag-curator-folder-progress-container--minimized")).toBe(true);
+    expect(findButton(labels.loading.expand).disabled).toBe(false);
   });
 });
 

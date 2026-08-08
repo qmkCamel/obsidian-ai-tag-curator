@@ -165,6 +165,30 @@
   width: min(720px, calc(100vw - 32px));
 }
 
+.tag-curator-folder-progress-container {
+  pointer-events: none;
+}
+
+.tag-curator-folder-progress-container .modal-bg {
+  display: none;
+}
+
+.tag-curator-folder-progress-container .modal {
+  pointer-events: auto;
+}
+
+.tag-curator-folder-progress-container--minimized .tag-curator-folder-progress-modal {
+  bottom: 16px;
+  height: auto;
+  left: auto;
+  margin: 0;
+  max-width: min(420px, calc(100vw - 32px));
+  position: fixed;
+  right: 16px;
+  top: auto;
+  width: min(420px, calc(100vw - 32px));
+}
+
 .tag-curator-folder-preview-modal {
   display: flex;
   flex-direction: column;
@@ -200,10 +224,11 @@
 }
 
 .tag-curator-folder-batch__warning {
-  background: var(--background-modifier-error-hover);
-  border: 1px solid var(--background-modifier-error);
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 4px solid var(--color-red);
   border-radius: 8px;
-  color: var(--text-error);
+  color: var(--text-normal);
   line-height: 1.5;
   margin: 8px 0;
   padding: 10px 12px;

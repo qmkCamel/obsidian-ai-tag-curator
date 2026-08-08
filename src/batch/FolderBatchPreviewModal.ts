@@ -136,7 +136,8 @@ export class FolderBatchPreviewModal extends Modal {
     const setting = new Setting(parent)
       .setName(`#${candidate.tag} · ${source}`)
       .setDesc(`${risk} · ${candidate.reason}`);
-    setting.settingEl.addClass(`tag-curator-folder-batch__candidate tag-curator-folder-batch__candidate--${candidate.risk}`);
+    setting.settingEl.addClass("tag-curator-folder-batch__candidate");
+    setting.settingEl.addClass(`tag-curator-folder-batch__candidate--${candidate.risk}`);
     if (candidate.executable && candidate.risk !== "high") {
       setting.addToggle((toggle) =>
         toggle.setValue(candidate.selected).onChange((selected) => {

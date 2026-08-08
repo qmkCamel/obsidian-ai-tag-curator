@@ -104,6 +104,6 @@
 - [x] 10.3 如技术结构与本设计发生偏差，先更新本 change 的 design/spec 再完成实现，不得让代码绕过已确认安全边界。
 - [x] 10.4 运行 `npm run spec:validate -- add-safe-folder-batch-preview` 和 `npm run spec:validate -- --all`。
 - [x] 10.5 运行 `npm test`、`npm run build` 和 `git diff --check`，记录实际结果。
-- [ ] 10.6 使用 `npm run local:install-dev` 安装到专用测试库，验证深色/浅色、宽窄窗口、键盘操作和长路径布局。
+- [x] 10.6 使用 `npm run local:install-dev` 安装到专用测试库，验证深色/浅色、宽窄窗口、键盘操作和长路径布局。
 - [ ] 10.7 在可恢复的真实测试库中 smoke：API key/空范围阻断、范围确认、生成进度、立即取消、AI 失败本地同步、失败重试、默认选择、内容漂移、应用、before/after 目标恢复和重载后回退。
 - [x] 10.8 保存必要的真实 UI 截图或验收记录，并明确区分自动化结果与真实 Obsidian 视觉证明。

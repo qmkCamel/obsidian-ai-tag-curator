@@ -21,6 +21,7 @@ export class FolderBatchProgressModal extends Modal {
   }
 
   onOpen(): void {
+    this.containerEl.addClass("tag-curator-folder-progress-container");
     this.modalEl.addClass("tag-curator-folder-progress-modal");
     this.render();
   }
@@ -34,6 +35,7 @@ export class FolderBatchProgressModal extends Modal {
 
   private render(): void {
     const value = this.snapshot;
+    this.containerEl.classList.toggle("tag-curator-folder-progress-container--minimized", this.minimized);
     this.contentEl.empty();
     this.contentEl.createEl("h2", { text: this.labels.folderBatch.progressTitle });
     this.contentEl.createDiv({
