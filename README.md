@@ -126,6 +126,30 @@ npm run local:install-dev
 
 By default these commands target `/Users/edge/personal/edge-notes`. Override it with `OBSIDIAN_VAULT_PATH=/path/to/vault`.
 
+### Release screenshot vault
+
+Prepare or reset the dedicated synthetic vault used for real Obsidian smoke tests and release screenshots:
+
+```bash
+npm run release:vault:prepare
+```
+
+The default vault is `/Users/edge/work/obsidian-ai-tag-curator-test-vault`. The command copies only the active appearance configuration and theme from `/Users/edge/personal/notes`, installs the development plugin, resets the synthetic release notes, and disables Obsidian Sync. Override either path when needed:
+
+```bash
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \
+OBSIDIAN_THEME_SOURCE_VAULT=/path/to/theme-source \
+npm run release:vault:prepare
+```
+
+Start the deterministic local provider before exercising AI-backed release flows:
+
+```bash
+npm run release:mock
+```
+
+The mock listens on `127.0.0.1:18765`, keeps external APIs and real credentials out of the screenshot workflow, and adds a short response delay so progress and cancellation states can be verified.
+
 ## Usage
 
 1. Configure an OpenAI-compatible API base URL, API key, and model.

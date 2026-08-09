@@ -8,6 +8,8 @@
     "dev": "node esbuild.config.mjs",
     "local:install": "npm run build && node scripts/install-local.mjs",
     "local:install-dev": "npm run build && node scripts/install-local.mjs --dev",
+    "release:vault:prepare": "npm run build && node scripts/prepare-release-vault.mjs",
+    "release:mock": "node scripts/mock-provider.mjs",
     "spec:list": "openspec list",
     "spec:status": "openspec status",
     "spec:validate": "openspec validate",
