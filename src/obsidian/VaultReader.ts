@@ -1,4 +1,4 @@
-// Reads Markdown notes and metadata from the active Obsidian vault.
+// Reads source-aware note snapshots and exact folder scopes from the active Obsidian vault.
 import { App, TFile, TFolder } from "obsidian";
 import { parseFrontmatterTags, parseInlineTags, parseObsidianTags } from "./TagParser";
 import type { IndexedNote } from "../index/TagIndex";
@@ -32,6 +32,7 @@ export class VaultReader {
     return [root, ...folders.filter((folder) => folder !== root)];
   }
 
+  /** Lists the complete confirmed scope by path segment, never by ambiguous string prefix or truncation. */
   listMarkdownFilesInFolder(folderPath: string, includeSubfolders: boolean): TFile[] {
     const allMarkdownFiles = this.app.vault.getMarkdownFiles();
     const matchingPaths = new Set(
@@ -73,6 +74,7 @@ export class VaultReader {
     return Promise.all(files.map((file) => this.readNote(file)));
   }
 
+  /** Captures content, source-separated tags, and a hash from the same cached Markdown read. */
   async readNote(file: TFile): Promise<IndexedNote> {
     const content = await this.app.vault.cachedRead(file);
     const cache = this.app.metadataCache.getFileCache(file);
@@ -90,6 +92,7 @@ export class VaultReader {
   }
 }
 
+/** Pure path filter shared with tests to make root, recursion, and same-prefix boundaries explicit. */
 export function filterMarkdownPathsByFolder(
   filePaths: string[],
   folderPath: string,

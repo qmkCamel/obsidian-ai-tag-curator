@@ -34,6 +34,7 @@ export interface FolderBatchPreviewViewModel {
   canApply: boolean;
 }
 
+/** Derives all review metrics and writable plans from in-memory selection state without file I/O. */
 export function buildFolderBatchPreviewViewModel(
   plan: FolderBatchPlan,
   riskFilter: FolderBatchRiskFilter = "all"
@@ -80,6 +81,7 @@ export interface FolderBatchRecoveryViewModel {
   canRetry: boolean;
 }
 
+/** Summarizes a persisted fixed-target recovery record for the result UI. */
 export function buildFolderBatchRecoveryViewModel(record: BatchOperationRecord): FolderBatchRecoveryViewModel {
   const conflictPaths = record.files.filter((file) => file.recoveryState === "conflict").map((file) => file.notePath);
   const missingPaths = record.files.filter((file) => file.recoveryState === "missing").map((file) => file.notePath);

@@ -1,4 +1,4 @@
-// Stores recent applied change plans so the plugin can undo the latest edit.
+// Persists recommendation, cleanup, and batch transaction records for undo and crash recovery.
 import type { TagHealthSuggestion } from "../health/TagHealthReport";
 import type { ChangePlan } from "../preview/ChangePlan";
 import type { FolderBatchSettingsSnapshot } from "../batch/FolderBatchPlan";
@@ -84,6 +84,7 @@ export class OperationLog {
     return cleanupRecord;
   }
 
+  /** Records the complete applying intent before the first file write so reload recovery has a source of truth. */
   addBatchIntent(
     record: Omit<BatchOperationRecord, "id" | "type" | "status" | "createdAt">,
     limit: number
@@ -103,6 +104,7 @@ export class OperationLog {
     return this.updateBatch(id, (record) => ({ ...record, status }));
   }
 
+  /** Persists the only allowed recovery direction together with the latest per-file classification. */
   setBatchRecoveryTarget(
     id: string,
     recoveryTarget: BatchRecoveryTarget,
@@ -134,6 +136,7 @@ export class OperationLog {
     );
   }
 
+  /** Returns any batch whose transaction has not reached the stable applied state and therefore blocks new writes. */
   latestUnresolvedBatch(): BatchOperationRecord | undefined {
     return this.records.find(
       (record): record is BatchOperationRecord => isBatchRecord(record) && record.status !== "applied"

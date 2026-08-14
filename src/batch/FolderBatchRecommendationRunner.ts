@@ -47,6 +47,7 @@ export class FolderBatchRecommendationRunner {
     }
   }
 
+  /** Starts a fresh generation epoch and processes the frozen path list with at most two workers. */
   async run(
     initialPlan: FolderBatchPlan,
     index: TagIndex,
@@ -74,6 +75,7 @@ export class FolderBatchRecommendationRunner {
     return clonePlan(this.requirePlan());
   }
 
+  /** Invalidates the active epoch immediately so in-flight provider results cannot re-enter the plan. */
   cancel(): FolderBatchPlan | null {
     if (!this.plan) {
       return null;
@@ -87,6 +89,7 @@ export class FolderBatchRecommendationRunner {
     return clonePlan(this.plan);
   }
 
+  /** Retries failed stages only, preserving reviewed selections and the original frozen note when possible. */
   async retryFailed(
     index: TagIndex,
     onProgress?: FolderBatchProgressListener,
@@ -122,6 +125,7 @@ export class FolderBatchRecommendationRunner {
     return this.plan ? buildFolderBatchProgressSnapshot(this.plan) : null;
   }
 
+  /** Reads and freezes local state before AI work, then discards every update from an obsolete epoch. */
   private async processPath(notePath: string, index: TagIndex, generation: number, retry: boolean): Promise<void> {
     const existingItem = this.findItem(notePath);
     let note = retry && existingItem.sourceStatus === "ready" ? this.frozenNotes.get(notePath) : undefined;

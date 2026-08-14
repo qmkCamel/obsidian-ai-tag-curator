@@ -1,4 +1,4 @@
-// Applies reviewed tag change plans through Obsidian's frontmatter API.
+// Applies reviewed frontmatter changes with content-and-tag snapshot guards; note bodies are never edited directly.
 import { App, TFile } from "obsidian";
 import type { ChangePlan } from "../preview/ChangePlan";
 import { normalizeTag } from "../utils/normalizeTag";
@@ -36,6 +36,7 @@ export class FrontmatterWriter {
     );
   }
 
+  /** Performs a read-only full-content and frontmatter-tag preflight for a reviewed plan. */
   async checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<void> {
     const currentTags = this.readCurrentTags(file);
     if (!sameTagSet(currentTags, snapshot.beforeTags)) {
@@ -61,6 +62,7 @@ export class FrontmatterWriter {
     };
   }
 
+  /** Compare-and-swaps tags only when the complete Markdown and expected tag set still match. */
   async replaceTagsIfSnapshotMatches(
     file: TFile,
     snapshot: FrontmatterSnapshot,

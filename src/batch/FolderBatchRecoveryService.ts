@@ -46,6 +46,7 @@ interface ClassifiedFile {
 export class FolderBatchRecoveryService {
   constructor(private readonly dependencies: FolderBatchRecoveryDependencies) {}
 
+  /** Resolves an interrupted applying/undoing record or persists its one valid recovery direction. */
   async reconcileInterruptedBatch(): Promise<FolderBatchRecoveryResult> {
     const record = this.dependencies.operationLog.latestUnresolvedBatch();
     if (!record || record.status === "recoveryRequired") {
@@ -80,6 +81,7 @@ export class FolderBatchRecoveryService {
     return { status: "recoveryRequired", record: recovery, files: recovery.files, indexRefreshError };
   }
 
+  /** Retries only the persisted target after a zero-write full classification rejects third states. */
   async retryRecovery(record = this.dependencies.operationLog.latestUnresolvedBatch()): Promise<FolderBatchRecoveryResult> {
     if (!record || record.status !== "recoveryRequired" || !record.recoveryTarget) {
       return { status: "none", files: [] };
@@ -139,6 +141,7 @@ export class FolderBatchRecoveryService {
     return { status: "applied", record: applied, files: applied.files, indexRefreshError };
   }
 
+  /** Undoes the latest applied batch in reverse order and compensates back to after on failure. */
   async undoLatestAppliedBatch(): Promise<FolderBatchRecoveryResult> {
     const record = this.dependencies.operationLog.latestBatch("applied");
     if (!record) {
@@ -205,6 +208,7 @@ export class FolderBatchRecoveryService {
     }
   }
 
+  /** Classifies each file as before, after, missing, or conflict; strict retries also validate content hashes. */
   private async classify(record: BatchOperationRecord, validateContent: boolean): Promise<ClassifiedFile[]> {
     return Promise.all(
       record.files.map(async (change) => {

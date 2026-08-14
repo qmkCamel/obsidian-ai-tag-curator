@@ -78,6 +78,7 @@ export interface CreateFolderBatchPlanInput {
   randomId?: string;
 }
 
+/** Copies only the non-sensitive settings that must remain stable for the lifetime of one batch. */
 export function createFolderBatchSettingsSnapshot(
   settings: TagCuratorSettings,
   uiLanguage: UiLanguage
@@ -92,6 +93,7 @@ export function createFolderBatchSettingsSnapshot(
   };
 }
 
+/** Freezes the confirmed scope, index version, and settings before any per-note generation begins. */
 export function createFolderBatchPlan(input: CreateFolderBatchPlanInput): FolderBatchPlan {
   const createdAt = (input.now ?? new Date()).toISOString();
   const filePaths = stableFilePaths(input.filePaths);
@@ -140,12 +142,14 @@ export function createInlineSyncCandidates(
   }));
 }
 
+/** Reclassifies AI additions against the frozen vault index before assigning risk and defaults. */
 export function createAiCandidates(
   notePath: string,
   recommendations: TagRecommendation[],
   allowNewTags: boolean,
   existingVaultTags: Iterable<string>
 ): FolderBatchCandidate[] {
+  // Model-provided existing/new labels are advisory; the frozen vault index is the risk authority.
   const existing = new Set(Array.from(existingVaultTags, normalizeTag).filter(Boolean));
   return recommendations
     .map((recommendation) => {
@@ -168,6 +172,7 @@ export function createAiCandidates(
     .filter((candidate) => candidate.tag.length > 0 && (allowNewTags || candidate.type !== "new"));
 }
 
+/** Maps an action shape to local risk without trusting model confidence or safety claims. */
 export function classifyFolderBatchCandidate(action: string, type?: RecommendationType): FolderBatchRisk {
   if (action === "syncInlineTag") {
     return "low";
@@ -203,6 +208,7 @@ export function clearAllCandidates(plan: FolderBatchPlan): FolderBatchPlan {
   return mapCandidates(plan, (candidate) => ({ ...candidate, selected: false }));
 }
 
+/** Keeps source, AI, and writable-plan state orthogonal so partial local results remain reviewable. */
 export function deriveFolderBatchItemPlanStatus(item: FolderBatchPlanItem): FolderBatchItemPlanStatus {
   if (item.sourceStatus === "pending" || item.aiStatus === "pending") {
     return "pending";
@@ -235,6 +241,7 @@ export function deriveFolderBatchStatus(items: FolderBatchPlanItem[]): FolderBat
     : "ready";
 }
 
+/** Converts only explicitly selected executable candidates into additive frontmatter plans. */
 export function deriveChangePlans(plan: FolderBatchPlan): ChangePlan[] {
   return plan.items.flatMap((item) => {
     if (!item.beforeTags || !item.sourceContentHash || item.planStatus !== "ready") {

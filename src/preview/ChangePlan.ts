@@ -25,6 +25,7 @@ export interface ChangePlan {
   createdAt: string;
 }
 
+/** Builds an additive-only frontmatter plan while preserving inline and AI source attribution. */
 export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
   const beforeTags = normalizeTagList(input.beforeTags);
   const selectedInlineTags = normalizeTagList(input.selectedInlineTags ?? []);

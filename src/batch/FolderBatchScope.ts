@@ -22,6 +22,7 @@ export interface FolderBatchScopeViewModel {
   canStart: boolean;
 }
 
+/** Applies the complete-batch limit without truncating paths or triggering any note/provider work. */
 export function buildFolderBatchScopeViewModel(input: FolderBatchScopeInput): FolderBatchScopeViewModel {
   const filePaths = Array.from(new Set(input.filePaths)).sort((left, right) => left.localeCompare(right));
   const fileCount = filePaths.length;

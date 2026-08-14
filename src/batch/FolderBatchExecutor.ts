@@ -48,6 +48,10 @@ export class UnsafeBatchPlanError extends Error {
 export class FolderBatchExecutor {
   constructor(private readonly dependencies: FolderBatchExecutorDependencies) {}
 
+  /**
+   * Applies reviewed plans as a compensating transaction: full preflight, persisted intent,
+   * per-file CAS, then reverse-order compensation if any write fails.
+   */
   async execute(
     batchPlan: FolderBatchPlan,
     changePlans: ChangePlan[],
@@ -157,6 +161,7 @@ export class FolderBatchExecutor {
   }
 }
 
+/** Defense-in-depth validation that rejects removal, replacement, unselected additions, and empty writes. */
 export function validateFolderBatchChangePlans(plans: ChangePlan[]): void {
   if (plans.length === 0) {
     throw new UnsafeBatchPlanError("A folder batch must contain at least one selected change plan.");

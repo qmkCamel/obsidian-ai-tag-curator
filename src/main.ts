@@ -329,6 +329,7 @@ export default class TagCuratorPlugin extends Plugin {
     }
   }
 
+  /** Enforces entry prerequisites before opening a scope UI that remains read/request free until confirmation. */
   private async suggestTagsForFolder(): Promise<void> {
     const defaultFolderPath = this.vaultReader.getCurrentFolderPath();
     if (defaultFolderPath === null) {
@@ -359,6 +360,7 @@ export default class TagCuratorPlugin extends Plugin {
     ).open();
   }
 
+  /** Freezes settings and the vault index once, then hands all per-note work to the bounded runner. */
   private async generateFolderBatch(scope: FolderBatchScopeViewModel): Promise<void> {
     try {
       const frozenSettings: TagCuratorSettings = { ...this.settings };
@@ -384,6 +386,7 @@ export default class TagCuratorPlugin extends Plugin {
     }
   }
 
+  /** Reuses one runner across initial generation and failed-only retry so reviewed selections survive. */
   private async runFolderBatchGeneration(
     runner: FolderBatchRecommendationRunner,
     plan: FolderBatchPlan,
@@ -424,6 +427,7 @@ export default class TagCuratorPlugin extends Plugin {
     ).open();
   }
 
+  /** Converts current review selections into additive plans and delegates all writes to the transaction executor. */
   private async applyFolderBatch(batchPlan: FolderBatchPlan): Promise<void> {
     const unresolved = this.operationLog.latestUnresolvedBatch();
     if (unresolved) {
@@ -510,6 +514,7 @@ export default class TagCuratorPlugin extends Plugin {
     return index;
   }
 
+  /** Invalidates derived health data before rebuilding the index, even when the rebuild itself later fails. */
   private async refreshDerivedStateAfterFolderBatch(): Promise<void> {
     this.healthAiAnalysisCache = undefined;
     await this.savePluginData();

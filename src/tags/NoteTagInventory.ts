@@ -7,6 +7,7 @@ export interface NoteTagInventory {
   allTags: string[];
 }
 
+/** Normalizes each source independently, then creates a stable source-preserving union for AI filtering. */
 export function createNoteTagInventory(frontmatterTags: string[], inlineTags: string[]): NoteTagInventory {
   const normalizedFrontmatterTags = uniqueTags(frontmatterTags);
   const normalizedInlineTags = uniqueTags(inlineTags);
@@ -18,6 +19,7 @@ export function createNoteTagInventory(frontmatterTags: string[], inlineTags: st
   };
 }
 
+/** Returns inline tags missing from frontmatter without removing or relocating their body occurrences. */
 export function findUnsyncedInlineTags(inventory: NoteTagInventory): string[] {
   const frontmatter = new Set(inventory.frontmatterTags);
   return inventory.inlineTags.filter((tag) => !frontmatter.has(tag));
