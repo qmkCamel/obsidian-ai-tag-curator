@@ -28,6 +28,9 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Run slow AI requests in the background and show results when ready.
 
 **Safe folder batch preview**
+
+![Safe folder batch preview](docs/acceptance/screenshots/0.3-dev/04-folder-batch-preview.png)
+
 - Start from the active note's parent folder, choose any other vault folder or the vault root, and include subfolders by default.
 - Confirm the full Markdown file count and estimated one-request-per-note cost before any content read, index build, or provider request.
 - Enforce a configurable complete-batch limit of 1-200 files (default 50) without silently truncating the scope.
