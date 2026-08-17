@@ -66,11 +66,13 @@ export class FolderBatchPreviewModal extends Modal {
     for (const file of view.files) {
       const details = this.contentEl.createEl("details", { cls: "tag-curator-folder-batch__file" }) as HTMLDetailsElement;
       details.open = file.planStatus === "ready" || file.sourceStatus === "failed" || file.aiStatus === "failed";
-      details.createEl("summary", { text: `${file.notePath} · ${file.sourceStatus} / ${file.aiStatus} / ${file.planStatus}` });
+      details.createEl("summary", { text: file.notePath });
       this.renderTagLine(details, this.labels.folderBatch.frontmatterSource, file.frontmatterTags);
       this.renderTagLine(details, this.labels.folderBatch.inlineSource, file.inlineTags);
       if (file.sourceStatus === "failed") {
         details.createDiv({ cls: "tag-curator-folder-batch__warning", text: this.labels.folderBatch.sourceFailed });
+      } else if (file.sourceStatus === "cancelled") {
+        details.createDiv({ cls: "tag-curator-folder-batch__warning", text: this.labels.folderBatch.sourceCancelled });
       } else if (file.aiStatus === "failed") {
         details.createDiv({
           cls: "tag-curator-folder-batch__warning",

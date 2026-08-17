@@ -80,6 +80,7 @@ describe("folder batch DOM", () => {
     };
 
     new FolderBatchPreviewModal(app as never, withDerivedPlanState(plan), labels, vi.fn(), vi.fn()).open();
+    expect(document.querySelector(".tag-curator-folder-batch__file > summary")?.textContent).toBe("a.md");
     expect(document.body.textContent).toContain(labels.folderBatch.riskLow);
     expect(document.body.textContent).toContain(labels.folderBatch.riskMedium);
     expect(document.body.textContent).toContain(labels.folderBatch.riskHigh);
@@ -91,6 +92,33 @@ describe("folder batch DOM", () => {
     findButton(labels.folderBatch.selectAllLow).click();
     expect((settingFor("#new").querySelector('input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
     expect(app.fileManager.getWriteCount()).toBe(0);
+  });
+
+  it("hides successful internal states and explains a cancelled read with localized text", () => {
+    const app = createFakeApp([{ path: "cancelled.md", content: "body" }]);
+    const labels = getLabels("en");
+    const plan = createFolderBatchPlan({
+      folderPath: "",
+      includeSubfolders: true,
+      filePaths: ["cancelled.md"],
+      index: { updatedAt: "now", tags: {} },
+      settings: DEFAULT_SETTINGS,
+      uiLanguage: "en",
+      randomId: "cancelled-batch"
+    });
+    plan.items[0] = {
+      ...plan.items[0],
+      sourceStatus: "cancelled",
+      aiStatus: "cancelled",
+      planStatus: "unavailable"
+    };
+
+    new FolderBatchPreviewModal(app as never, plan, labels, vi.fn(), vi.fn()).open();
+
+    const summary = document.querySelector(".tag-curator-folder-batch__file > summary");
+    expect(summary?.textContent).toBe("cancelled.md");
+    expect(document.body.textContent).toContain(labels.folderBatch.sourceCancelled);
+    expect(document.body.textContent).not.toContain("cancelled / cancelled / unavailable");
   });
 
   it("keeps progress modeless and marks the compact panel when minimized", () => {

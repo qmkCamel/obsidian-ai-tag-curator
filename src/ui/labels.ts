@@ -162,6 +162,7 @@ type LabelTree = {
     afterTags: string;
     noTags: string;
     sourceFailed: string;
+    sourceCancelled: string;
     aiFailed: (message: string) => string;
     aiCancelled: string;
     noChange: string;
@@ -507,6 +508,7 @@ const ZH_LABELS: LabelTree = {
     afterTags: "应用后",
     noTags: "无",
     sourceFailed: "笔记读取失败，不能生成本地项或 AI 建议。",
+    sourceCancelled: "笔记读取已取消，没有生成可审查内容。",
     aiFailed: (message) => `AI 建议失败：${message}；仍保留本地 inline 同步项。`,
     aiCancelled: "AI 建议已取消；本地已读取的同步项仍可审查。",
     noChange: "读取和 AI 均成功，没有可写候选项。",
@@ -854,6 +856,7 @@ const EN_LABELS: LabelTree = {
     afterTags: "After",
     noTags: "None",
     sourceFailed: "The note could not be read, so no local item or AI suggestion is available.",
+    sourceCancelled: "Note reading was cancelled, so no reviewable content was generated.",
     aiFailed: (message) => `AI suggestions failed: ${message}. Local inline sync items remain reviewable.`,
     aiCancelled: "AI suggestions were cancelled. Locally read sync items remain reviewable.",
     noChange: "Read and AI both succeeded, with no writable candidates.",
