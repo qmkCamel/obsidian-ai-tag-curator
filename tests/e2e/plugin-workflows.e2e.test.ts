@@ -83,12 +83,17 @@ describe("plugin e2e workflows", () => {
       "refresh-tag-index",
       "show-tag-index-summary",
       "suggest-tags-for-current-note",
+      "suggest-tags-for-folder",
+      "undo-last-folder-batch",
       "undo-last-tag-curator-change"
     ]);
     expect(plugin.settingTabs).toHaveLength(1);
 
     const tab = plugin.settingTabs[0];
     tab.display();
+
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackName);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackButton);
 
     const language = requiredElement(tab.containerEl.querySelector<HTMLSelectElement>("select"));
     setSelectValue(language, "zh-CN");
@@ -107,6 +112,12 @@ describe("plugin e2e workflows", () => {
 
     const slider = requiredElement(tab.containerEl.querySelector<HTMLInputElement>('input[type="range"]'));
     setInputValue(slider, "3");
+    const batchLimitSlider = requiredElement(
+      Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>('input[type="range"]')).find(
+        (input) => input.max === "200"
+      )
+    );
+    setInputValue(batchLimitSlider, "75");
 
     const toggles = Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
     expect(toggles).toHaveLength(4);
@@ -123,12 +134,27 @@ describe("plugin e2e workflows", () => {
         apiKey: "sk-e2e",
         model: "test-model",
         maxRecommendations: 3,
+        maxFolderBatchFiles: 75,
         allowNewTags: true,
         readInlineTags: false,
         refreshIndexOnLoad: true,
         devMode: true
       });
     });
+
+    const feedbackButton = requiredElement(
+      Array.from(tab.containerEl.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent === getLabels("zh-CN").settings.feedbackButton
+      )
+    );
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    feedbackButton.click();
+
+    expect(openSpy).toHaveBeenCalledWith(
+      "https://github.com/qmkCamel/obsidian-ai-tag-curator/issues/new",
+      "_blank",
+      "noopener,noreferrer"
+    );
   });
 
   it("refreshes the tag index, shows progress, opens the summary, and supports tag click actions", async () => {
@@ -153,19 +179,19 @@ describe("plugin e2e workflows", () => {
     readGate.resolve();
     await waitFor(() => {
       const data = app.savedData as PluginDataSnapshot;
-      expect(data.tagIndex?.tags.AI).toBeDefined();
+      expect(data.tagIndex?.tags.ai).toBeDefined();
       expect(data.tagIndex?.tags.ml_notes).toBeDefined();
       expect(data.tagIndex?.tags["ml-notes"]).toBeDefined();
     });
     await waitForText(labels.summary.title);
     expect(notices.some((notice) => notice.startsWith("已索引 "))).toBe(true);
 
-    clickButton("#AI");
+    clickButton("#ai");
     await waitFor(() => {
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("#AI");
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith("#ai");
     });
     const searchLeaf = app.workspace.getLeavesOfType("search")[0];
-    await waitFor(() => expect(searchLeaf.queries).toContain("tag:#AI"));
+    await waitFor(() => expect(searchLeaf.queries).toContain("tag:#ai"));
   });
 
   it("runs AI tag recommendation review, applies selected tags, and undoes the change", async () => {
@@ -209,7 +235,7 @@ describe("plugin e2e workflows", () => {
 
     clickButton(labels.recommendations.apply);
     await waitFor(() => {
-      expect(app.getNoteTags("notes/current.md")).toEqual(["project/ai", "research", "learning"]);
+      expect(app.getNoteTags("notes/current.md")).toEqual(["project/ai", "workflow", "research", "learning"]);
     });
     await waitFor(() => expect(notices).toContain(labels.notices.tagsUpdated));
 

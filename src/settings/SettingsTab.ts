@@ -3,6 +3,8 @@ import { Notice, PluginSettingTab, Setting } from "obsidian";
 import type TagCuratorPlugin from "../main";
 import type { UiLanguagePreference } from "../ui/labels";
 
+const FEEDBACK_URL = "https://github.com/qmkCamel/obsidian-ai-tag-curator/issues/new";
+
 export class TagCuratorSettingsTab extends PluginSettingTab {
   plugin: TagCuratorPlugin;
 
@@ -88,6 +90,20 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName(labels.settings.maxFolderBatchFilesName)
+      .setDesc(labels.settings.maxFolderBatchFilesDesc)
+      .addSlider((slider) =>
+        slider
+          .setLimits(1, 200, 1)
+          .setValue(this.plugin.settings.maxFolderBatchFiles)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.maxFolderBatchFiles = value;
+            await this.plugin.savePluginData();
+          })
+      );
+
+    new Setting(containerEl)
       .setName(labels.settings.allowNewTagsName)
       .setDesc(labels.settings.allowNewTagsDesc)
       .addToggle((toggle) =>
@@ -141,5 +157,18 @@ export class TagCuratorSettingsTab extends PluginSettingTab {
           await this.plugin.savePluginData();
         })
       );
+
+    new Setting(containerEl)
+      .setName(labels.settings.feedbackName)
+      .setDesc(labels.settings.feedbackDesc)
+      .addButton((button) => {
+        button
+          .setIcon("message-circle")
+          .setTooltip(labels.settings.feedbackButton)
+          .onClick(() => {
+            window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
+          });
+        button.buttonEl.createSpan({ text: labels.settings.feedbackButton });
+      });
   }
 }

@@ -58,7 +58,7 @@ export function buildRecommendationMessages(
         },
         note: {
           path: note.path,
-          existingTags: note.frontmatterTags,
+          existingTags: note.allTags,
           content: truncate(note.content, 10000)
         },
         vaultTags: relevantTags

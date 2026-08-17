@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.3.0
+
+中文
+
+### 新增
+
+- 新增文件夹级安全批量标签流程：从当前笔记父文件夹、其他库内文件夹或库根目录选择范围，并可控制是否包含子文件夹。
+- 新增可配置的 1–200 篇单批完整上限（默认 50）、最多两个并发 AI 请求、立即取消、晚到结果丢弃和失败项重试。
+- 新增按文件、按标签的来源与风险审查；正文同步项和库中已有标签为低风险，新标签为中风险，破坏性动作不可批量执行。
+- 新增全量预检、完整 Markdown 与 frontmatter tags 快照检查、逐文件 CAS、逆序补偿、固定目标恢复和跨重载整批回退。
+- 在设置页新增反馈入口，并在中英文产品介绍中展示真实文件夹批次预览。
+
+### 变更
+
+- 当前笔记推荐和文件夹批次统一使用包含 frontmatter 与正文 inline tags 的整篇标签清单，避免重复推荐笔记任意位置已有的标签。
+- 正文已有但 frontmatter 缺少的标签会作为可取消的低风险同步项；应用只更新 frontmatter，正文文本和 inline tag 原位置保持不变。
+- 当前笔记应用增加完整内容快照保护；文件夹批次预览隐藏内部成功状态枚举，并改善深浅主题、窄窗口、长路径和后台进度体验。
+
+### 验证
+
+- 自动发布检查覆盖 OpenSpec 严格校验、完整 Vitest 回归、生产构建、依赖审计和差异检查。
+- 2026-08-07 至 2026-08-09 在隔离的真实 Obsidian 测试库中完成范围、生成、风险预览、应用、整体回退、取消、深色主题和窄窗口 smoke；故障恢复边界继续由自动化故障注入覆盖。
+
+English
+
+### Added
+
+- Add a safe folder-level batch workflow that can target the active note's parent folder, another vault folder, or the vault root, with optional subfolder inclusion.
+- Add a configurable complete-batch limit of 1–200 notes (default 50), at most two concurrent AI requests, immediate cancellation, late-result discard, and failed-item retry.
+- Add per-file and per-tag source/risk review. Inline sync items and existing-vault additions are low risk, new tags are medium risk, and destructive actions are not batch executable.
+- Add full preflight, complete Markdown and frontmatter-tag snapshot checks, per-file CAS, reverse compensation, fixed-target recovery, and whole-batch undo across reloads.
+- Add a settings feedback entry and show a real folder batch preview in the bilingual product introduction.
+
+### Changed
+
+- Use one whole-note tag inventory across current-note recommendations and folder batches so tags already present in frontmatter or the note body are not recommended again.
+- Surface body tags missing from frontmatter as deselectable low-risk sync items; applying changes updates frontmatter only and preserves all body text and inline tag positions.
+- Protect current-note applies with a full-content snapshot, hide internal success-state enums from folder previews, and improve dark/light theme, narrow-window, long-path, and background-progress behavior.
+
+### Verification
+
+- Release automation covers strict OpenSpec validation, the full Vitest regression suite, production build, dependency audit, and diff checks.
+- From 2026-08-07 through 2026-08-09, an isolated real Obsidian test vault covered scope, generation, risk review, apply, whole-batch undo, cancellation, dark theme, and narrow-window smoke; automated fault injection continues to cover recovery boundaries.
+
 ## 0.1.2
 
 中文

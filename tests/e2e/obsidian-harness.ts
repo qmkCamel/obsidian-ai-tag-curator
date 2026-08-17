@@ -12,6 +12,7 @@ interface FakeNoteSpec {
   path: string;
   content: string;
   frontmatterTags?: string[];
+  frontmatter?: Record<string, unknown>;
 }
 
 interface FakeAppOptions {
@@ -20,10 +21,10 @@ interface FakeAppOptions {
 }
 
 interface FakeCache {
-  frontmatter: {
+  frontmatter: Record<string, unknown> & {
     tags?: string[];
   };
-  tags: string[];
+  tags: Array<{ tag: string }>;
 }
 
 interface QueuedAiResponse {
@@ -96,7 +97,7 @@ export function installDomHelpers(): void {
   };
 
   prototype.addClass = function addClass(this: HTMLElement, ...classes: string[]): void {
-    this.classList.add(...classes.flatMap((value) => value.split(/\s+/).filter(Boolean)));
+    this.classList.add(...classes);
   };
 
   prototype.setAttr = function setAttr(this: HTMLElement, name: string, value: string): void {
@@ -163,6 +164,7 @@ export class TFile {
     mtime: 0,
     size: 0
   };
+  parent: TFolder | null = null;
 
   constructor(path: string) {
     this.path = path;
@@ -170,6 +172,19 @@ export class TFile {
     const parts = this.name.split(".");
     this.extension = parts.length > 1 ? parts.pop() ?? "" : "";
     this.basename = parts.join(".");
+  }
+}
+
+export class TFolder {
+  path: string;
+  name: string;
+  parent: TFolder | null;
+  children: Array<TFile | TFolder> = [];
+
+  constructor(path: string, parent: TFolder | null = null) {
+    this.path = path;
+    this.name = path.split("/").filter(Boolean).pop() ?? "/";
+    this.parent = parent;
   }
 }
 
@@ -271,6 +286,34 @@ export class Modal {
 
   setCloseCallback(_callback: () => unknown): this {
     return this;
+  }
+}
+
+export abstract class FuzzySuggestModal<T> extends Modal {
+  abstract getItems(): T[];
+  abstract getItemText(item: T): string;
+  abstract onChooseItem(item: T, evt: MouseEvent | KeyboardEvent): void;
+
+  onOpen(): void {
+    this.contentEl.empty();
+    const input = this.contentEl.createEl("input") as HTMLInputElement;
+    input.type = "search";
+    const list = this.contentEl.createDiv({ cls: "suggestion-container" });
+    const render = (): void => {
+      list.empty();
+      const query = input.value.toLowerCase();
+      for (const item of this.getItems().filter((candidate) => this.getItemText(candidate).toLowerCase().includes(query))) {
+        const button = list.createEl("button") as HTMLButtonElement;
+        button.type = "button";
+        button.textContent = this.getItemText(item);
+        button.addEventListener("click", (event) => {
+          this.onChooseItem(item, event);
+          this.close();
+        });
+      }
+    };
+    input.addEventListener("input", render);
+    render();
   }
 }
 
@@ -662,16 +705,39 @@ export class FakeObsidianApp {
 
 export class FakeVault {
   private readonly notes = new Map<string, FakeVaultNote>();
+  private readonly folders = new Map<string, TFolder>();
   private readGate: Deferred<void> | null = null;
+  private readCount = 0;
 
   constructor(notes: FakeNoteSpec[]) {
+    this.folders.set("", new TFolder(""));
     for (const spec of notes) {
-      this.notes.set(spec.path, new FakeVaultNote(spec));
+      const note = new FakeVaultNote(spec);
+      const parent = this.ensureFolder(parentPath(spec.path));
+      note.file.parent = parent;
+      parent.children.push(note.file);
+      this.notes.set(spec.path, note);
     }
+  }
+
+  getRoot(): TFolder {
+    return this.folders.get("")!;
+  }
+
+  getAllLoadedFiles(): Array<TFile | TFolder> {
+    return [
+      this.getRoot(),
+      ...Array.from(this.folders.values()).filter((folder) => folder.path !== ""),
+      ...Array.from(this.notes.values()).map((note) => note.file)
+    ];
   }
 
   setReadGate(gate: Deferred<void> | null): void {
     this.readGate = gate;
+  }
+
+  getReadCount(): number {
+    return this.readCount;
   }
 
   getMarkdownFiles(): TFile[] {
@@ -681,6 +747,7 @@ export class FakeVault {
   }
 
   async cachedRead(file: TFile): Promise<string> {
+    this.readCount += 1;
     if (this.readGate) {
       await this.readGate.promise;
     }
@@ -689,7 +756,8 @@ export class FakeVault {
   }
 
   getAbstractFileByPath(path: string): TFile | null {
-    return this.notes.get(path)?.file ?? null;
+    const normalized = path.replace(/^\/+|\/+$/g, "");
+    return this.notes.get(normalized)?.file ?? null;
   }
 
   getNote(path: string): FakeVaultNote {
@@ -699,17 +767,31 @@ export class FakeVault {
     }
     return note;
   }
+
+  private ensureFolder(path: string): TFolder {
+    const existing = this.folders.get(path);
+    if (existing) {
+      return existing;
+    }
+    const parent = this.ensureFolder(parentPath(path));
+    const folder = new TFolder(path, parent);
+    parent.children.push(folder);
+    this.folders.set(path, folder);
+    return folder;
+  }
 }
 
-class FakeVaultNote {
+export class FakeVaultNote {
   file: TFile;
   content: string;
   frontmatterTags: string[];
+  frontmatter: Record<string, unknown>;
 
   constructor(spec: FakeNoteSpec) {
     this.file = new TFile(spec.path);
     this.content = spec.content;
     this.frontmatterTags = normalizeTagList(spec.frontmatterTags ?? []);
+    this.frontmatter = { ...(spec.frontmatter ?? {}) };
   }
 }
 
@@ -720,23 +802,43 @@ class FakeMetadataCache {
     const note = this.vault.getNote(file.path);
     return {
       frontmatter: {
+        ...note.frontmatter,
         tags: [...note.frontmatterTags]
       },
-      tags: collectAllTags(note)
+      tags: extractInlineTags(note.content).map((tag) => ({ tag: `#${tag}` }))
     };
   }
 }
 
 class FakeFileManager {
+  private writeCount = 0;
+  private interceptor: ((file: TFile, currentTags: string[], writeCount: number) => void) | null = null;
+
   constructor(private readonly vault: FakeVault) {}
 
-  async processFrontMatter(file: TFile, callback: (frontmatter: { tags?: FrontmatterTags }) => void): Promise<void> {
+  setWriteInterceptor(interceptor: ((file: TFile, currentTags: string[], writeCount: number) => void) | null): void {
+    this.interceptor = interceptor;
+  }
+
+  getWriteCount(): number {
+    return this.writeCount;
+  }
+
+  async processFrontMatter(
+    file: TFile,
+    callback: (frontmatter: Record<string, unknown> & { tags?: FrontmatterTags }) => void
+  ): Promise<void> {
     const note = this.vault.getNote(file.path);
-    const frontmatter: { tags?: FrontmatterTags } = {
+    this.writeCount += 1;
+    this.interceptor?.(file, [...note.frontmatterTags], this.writeCount);
+    const frontmatter: Record<string, unknown> & { tags?: FrontmatterTags } = {
+      ...note.frontmatter,
       tags: [...note.frontmatterTags]
     };
     callback(frontmatter);
     note.frontmatterTags = normalizeFrontmatterTags(frontmatter.tags);
+    const { tags: _tags, ...otherFrontmatter } = frontmatter;
+    note.frontmatter = otherFrontmatter;
   }
 }
 
@@ -863,13 +965,9 @@ function normalizeTagList(tags: string[]): string[] {
   return result;
 }
 
-function collectAllTags(note: FakeVaultNote): string[] {
-  return [...note.frontmatterTags.map((tag) => `#${tag}`), ...extractInlineTags(note.content).map((tag) => `#${tag}`)];
-}
-
 function extractInlineTags(content: string): string[] {
   const tags: string[] = [];
-  const pattern = /(^|[\s([>{])#([A-Za-z0-9_\-/]+)(?=$|[\s.,;:!?()[\]{}<>])/g;
+  const pattern = /(^|[\s([>{])#([\p{L}\p{N}_\-/]+)(?=$|[\s.,;:!?()[\]{}<>])/gu;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(content)) !== null) {
     tags.push(match[2]);
@@ -878,7 +976,16 @@ function extractInlineTags(content: string): string[] {
 }
 
 export function getAllTags(cache: FakeCache): string[] {
-  return cache.tags;
+  return [
+    ...normalizeFrontmatterTags(cache.frontmatter.tags).map((tag) => `#${tag}`),
+    ...cache.tags.map((entry) => entry.tag)
+  ];
+}
+
+function parentPath(path: string): string {
+  const normalized = path.replace(/^\/+|\/+$/g, "");
+  const separator = normalized.lastIndexOf("/");
+  return separator === -1 ? "" : normalized.slice(0, separator);
 }
 
 export function getLanguage(): string {
@@ -892,6 +999,7 @@ export async function requestUrl(request: unknown): Promise<unknown> {
 export const obsidianMock = {
   ButtonComponent,
   DropdownComponent,
+  FuzzySuggestModal,
   Modal,
   Notice,
   Plugin,
@@ -901,6 +1009,7 @@ export const obsidianMock = {
   TextComponent,
   ToggleComponent,
   TFile,
+  TFolder,
   getAllTags,
   getLanguage,
   requestUrl

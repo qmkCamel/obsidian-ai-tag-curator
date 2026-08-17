@@ -1,21 +1,94 @@
-// Applies reviewed tag change plans through Obsidian's frontmatter API.
+// Applies reviewed frontmatter changes with content-and-tag snapshot guards; note bodies are never edited directly.
 import { App, TFile } from "obsidian";
 import type { ChangePlan } from "../preview/ChangePlan";
 import { normalizeTag } from "../utils/normalizeTag";
+import { hashContent } from "../utils/hashContent";
 import { parseFrontmatterTags } from "./TagParser";
 
 export interface FrontmatterTagChange {
   beforeTags: string[];
   afterTags: string[];
+  afterContentHash?: string;
+}
+
+export type SnapshotConflictKind = "tagsChanged" | "contentChanged";
+
+export class SnapshotConflictError extends Error {
+  constructor(readonly kind: SnapshotConflictKind) {
+    super(kind === "tagsChanged" ? "Frontmatter tags changed since the preview was generated." : "Note content changed since the preview was generated.");
+    this.name = "SnapshotConflictError";
+  }
+}
+
+export interface FrontmatterSnapshot {
+  beforeTags: string[];
+  sourceContentHash: string;
 }
 
 export class FrontmatterWriter {
   constructor(private readonly app: App) {}
 
   async applyChangePlan(file: TFile, plan: ChangePlan): Promise<void> {
+    await this.replaceTagsIfSnapshotMatches(
+      file,
+      { beforeTags: plan.beforeTags, sourceContentHash: plan.sourceContentHash },
+      plan.afterTags
+    );
+  }
+
+  /** Performs a read-only full-content and frontmatter-tag preflight for a reviewed plan. */
+  async checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<void> {
+    const currentTags = this.readCurrentTags(file);
+    if (!sameTagSet(currentTags, snapshot.beforeTags)) {
+      throw new SnapshotConflictError("tagsChanged");
+    }
+
+    const content = await this.app.vault.cachedRead(file);
+    if ((await hashContent(content)) !== snapshot.sourceContentHash) {
+      throw new SnapshotConflictError("contentChanged");
+    }
+  }
+
+  readCurrentTags(file: TFile): string[] {
+    const cache = this.app.metadataCache.getFileCache(file);
+    return parseFrontmatterTags(cache?.frontmatter?.tags);
+  }
+
+  async readSnapshot(file: TFile): Promise<FrontmatterSnapshot> {
+    const content = await this.app.vault.cachedRead(file);
+    return {
+      beforeTags: this.readCurrentTags(file),
+      sourceContentHash: await hashContent(content)
+    };
+  }
+
+  /** Compare-and-swaps tags only when the complete Markdown and expected tag set still match. */
+  async replaceTagsIfSnapshotMatches(
+    file: TFile,
+    snapshot: FrontmatterSnapshot,
+    nextTags: string[]
+  ): Promise<FrontmatterTagChange> {
+    const content = await this.app.vault.cachedRead(file);
+    if ((await hashContent(content)) !== snapshot.sourceContentHash) {
+      throw new SnapshotConflictError("contentChanged");
+    }
+
+    let change: FrontmatterTagChange = { beforeTags: [], afterTags: [] };
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-      frontmatter.tags = plan.afterTags;
+      const beforeTags = parseFrontmatterTags(frontmatter.tags);
+      if (!sameTagSet(beforeTags, snapshot.beforeTags)) {
+        throw new SnapshotConflictError("tagsChanged");
+      }
+
+      const afterTags = normalizeTagList(nextTags);
+      frontmatter.tags = afterTags;
+      change = { beforeTags, afterTags };
     });
+
+    return {
+      ...change,
+      afterContentHash: await hashContent(await this.app.vault.cachedRead(file))
+    };
   }
 
   async applyTagTransform(file: TFile, transform: (beforeTags: string[]) => string[]): Promise<FrontmatterTagChange> {

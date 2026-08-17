@@ -19,8 +19,16 @@ export function buildTagIndex(
 
   for (const note of notes) {
     const hasMetadataTags = note.metadataTags !== undefined;
-    const frontmatterTags = hasMetadataTags ? [] : note.frontmatterTags.map(normalizeTag).filter(Boolean);
-    const inlineTags = hasMetadataTags || options.includeInlineTags === false ? [] : parseInlineTags(note.content);
+    const hasSourceInventory = Array.isArray(note.inlineTags) && Array.isArray(note.allTags);
+    const frontmatterTags = hasMetadataTags && !hasSourceInventory ? [] : note.frontmatterTags.map(normalizeTag).filter(Boolean);
+    const inlineTags =
+      hasMetadataTags && !hasSourceInventory
+        ? []
+        : options.includeInlineTags === false
+          ? []
+          : hasSourceInventory
+            ? note.inlineTags.map(normalizeTag).filter(Boolean)
+            : parseInlineTags(note.content);
     const metadataTags = note.metadataTags?.map((tag) => tag.trim().replace(/^#+/, "")).filter(Boolean) ?? [];
     const noteSources = new Map<string, TagSource[]>();
 

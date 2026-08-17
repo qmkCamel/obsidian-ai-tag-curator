@@ -19,11 +19,27 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 ![当前笔记标签推荐](docs/images/tag-recommendations.png)
 - Suggest tags for the current Markdown note.
 - Prefer existing vault tags, even when new tags are allowed.
-- Filter out tags already present on the current note.
+- Treat frontmatter and inline body tags as one source-aware note inventory, and filter both from AI suggestions.
+- Default-select inline tags that are missing from frontmatter so the formatter-facing frontmatter can represent all reviewed note tags; each item can be deselected.
 - Explain each recommendation with confidence and close alternatives not selected.
 - Apply selected recommendations only after user confirmation.
 - Undo the latest tag change made by this plugin for the current note.
+- Bind previews to a SHA-256 snapshot of the full Markdown and reject stale content before writing.
 - Run slow AI requests in the background and show results when ready.
+
+**Safe folder batch preview**
+
+![Safe folder batch preview](docs/images/folder-batch-preview.png)
+
+- Start from the active note's parent folder, choose any other vault folder or the vault root, and include subfolders by default.
+- Confirm the full Markdown file count and estimated one-request-per-note cost before any content read, index build, or provider request.
+- Enforce a configurable complete-batch limit of 1-200 files (default 50) without silently truncating the scope.
+- Generate source-aware candidates with at most two concurrent AI requests; cancellation immediately stops new work, discards late results, and warns that in-flight provider requests may still be billed.
+- Keep locally derived inline-to-frontmatter sync items available when AI fails, and retry only failed read/AI items.
+- Review frontmatter, inline, and AI sources per file; low-risk inline/existing-tag additions start selected, new tags are medium risk and require individual selection, and destructive actions are not executable.
+- Apply only after a second whole-batch confirmation, using full preflight, per-file snapshot checks, reverse compensation, and a persisted fixed recovery target if compensation is incomplete.
+- Undo the latest applied folder batch as one operation, including after an Obsidian/plugin reload.
+- Never rewrite note bodies or remove inline tags.
 
 **Vault-level tag health report**
 - Organize vault-level tag health into overview, AI priority actions, and rule evidence details.
@@ -45,6 +61,7 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Support OpenAI-compatible providers such as DeepSeek and OpenAI.
 - Show dev-mode timing for tag recommendations and AI-enhanced health analysis.
 - Support Chinese, English, and `Auto` language mode following Obsidian.
+- Configure the maximum complete folder batch size from 1 to 200 files.
 
 ## Provider Configuration
 
@@ -112,6 +129,30 @@ npm run local:install-dev
 
 By default these commands target `/Users/edge/personal/edge-notes`. Override it with `OBSIDIAN_VAULT_PATH=/path/to/vault`.
 
+### Release screenshot vault
+
+Prepare or reset the dedicated synthetic vault used for real Obsidian smoke tests and release screenshots:
+
+```bash
+npm run release:vault:prepare
+```
+
+The default vault is `/Users/edge/work/obsidian-ai-tag-curator-test-vault`. The command copies only the active appearance configuration and theme from `/Users/edge/personal/edge-notes`, installs the development plugin, resets the synthetic release notes, and disables Obsidian Sync. Override either path when needed:
+
+```bash
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \
+OBSIDIAN_THEME_SOURCE_VAULT=/path/to/theme-source \
+npm run release:vault:prepare
+```
+
+Start the deterministic local provider before exercising AI-backed release flows:
+
+```bash
+npm run release:mock
+```
+
+The mock listens on `127.0.0.1:18765`, keeps external APIs and real credentials out of the screenshot workflow, and adds a short response delay so progress and cancellation states can be verified.
+
 ## Usage
 
 1. Configure an OpenAI-compatible API base URL, API key, and model.
@@ -119,9 +160,11 @@ By default these commands target `/Users/edge/personal/edge-notes`. Override it 
 3. Open a Markdown note.
 4. Run `Suggest tags for current note`.
 5. Review the recommendation modal and apply only the tags you want.
-6. Run `Analyze tag health` to inspect vault-level tag problems.
-7. Optionally run `AI-enhanced analysis` inside the health report.
-8. Run `Undo last tag curator change` if you need to revert the latest tag write for the current note.
+6. Run `Generate tag suggestions for folder` to confirm a folder scope, generate candidates, and review a whole batch before writing.
+7. Run `Undo latest folder batch tag operation` to revert the latest applied folder batch as one unit.
+8. Run `Analyze tag health` to inspect vault-level tag problems.
+9. Optionally run `AI-enhanced analysis` inside the health report.
+10. Run `Undo last tag curator change` if you need to revert the latest tag write for the current note.
 
 ## Commands
 
@@ -131,7 +174,9 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 - `Show tag index summary`
 - `Analyze tag health`
 - `Suggest tags for current note`
+- `Generate tag suggestions for folder`
 - `Undo last tag curator change`
+- `Undo latest folder batch tag operation`
 
 ## Development
 
@@ -159,8 +204,11 @@ For new product work, start with an OpenSpec change proposal before implementati
 
 ## Current Limitations
 
-- The MVP only writes to the current note's frontmatter `tags`.
-- Inline tags are read for indexing but are not automatically rewritten yet: body tags may appear in quotes, code blocks, links, or prose, so safe writes need position-level diffs, operation logs, and conflict detection.
+- Current-note and folder workflows write only the frontmatter `tags` field. Reviewed inline tags can be copied into frontmatter, but their original body text and position are never rewritten or removed.
+- Both AI entry points require a configured API key. Folder batches do not expose a separate local-only mode when the key is missing.
+- A folder batch must contain 1-200 Markdown files within the configured limit; an oversized scope is blocked rather than truncated.
+- Cancellation cannot revoke provider requests already sent, so those in-flight requests may still be billed even though late results are discarded.
+- Only additive tag plans are executable in folder batches. Delete, replace, merge, and body-edit actions remain outside the 0.3 write boundary.
 - Rule evidence in tag health reports is read-only. Executable cleanup items require file previews and explicit manual confirmation.
 - AI-enhanced health analysis provides summary and action guidance only; it cannot change local action capability or execute changes.
 - Cleanup plans label action capabilities. Executable merge/rename items can be applied manually and undone; other items remain preview-only, observe-only, or manual-review.

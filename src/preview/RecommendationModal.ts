@@ -4,12 +4,15 @@ import type { RecommendationResult, TagRecommendation } from "../ai/Recommendati
 import type { getLabels } from "../ui/labels";
 import { formatDuration } from "../utils/formatDuration";
 import type { OperationTimingReport, OperationStageTiming } from "../utils/OperationTimer";
+import { createNoteTagInventory, findUnsyncedInlineTags } from "../tags/NoteTagInventory";
+import { SnapshotConflictError } from "../obsidian/FrontmatterWriter";
 import { createChangePlan, type ChangePlan } from "./ChangePlan";
 
 type Labels = ReturnType<typeof getLabels>;
 
 export class RecommendationModal extends Modal {
-  private selected = new Set<string>();
+  private selectedInline = new Set<string>();
+  private selectedAi = new Set<string>();
 
   constructor(
     app: ConstructorParameters<typeof Modal>[0],
@@ -19,8 +22,12 @@ export class RecommendationModal extends Modal {
     private readonly onApply: (plan: ChangePlan) => Promise<void>
   ) {
     super(app);
+    const inventory = createNoteTagInventory(result.frontmatterTags, result.inlineTags);
+    for (const tag of findUnsyncedInlineTags(inventory)) {
+      this.selectedInline.add(tag);
+    }
     for (const recommendation of result.recommendations) {
-      this.selected.add(recommendation.tag);
+      this.selectedAi.add(recommendation.tag);
     }
   }
 
@@ -35,11 +42,25 @@ export class RecommendationModal extends Modal {
       text: this.labels.recommendations.subtitle
     });
 
+    this.renderTagSource(contentEl, this.labels.recommendations.frontmatterSource, this.result.frontmatterTags);
+    this.renderTagSource(contentEl, this.labels.recommendations.inlineSource, this.result.inlineTags);
+
     if (this.result.warnings.length > 0) {
       const warningList = contentEl.createEl("ul");
       for (const warning of this.result.warnings) {
         warningList.createEl("li", { text: warning });
       }
+    }
+
+    const unsyncedInlineTags = findUnsyncedInlineTags(
+      createNoteTagInventory(this.result.frontmatterTags, this.result.inlineTags)
+    );
+    for (const tag of unsyncedInlineTags) {
+      this.renderInlineCandidate(contentEl, tag);
+    }
+
+    if (this.result.recommendations.length > 0) {
+      contentEl.createEl("h3", { text: this.labels.recommendations.aiSource });
     }
 
     for (const [index, recommendation] of this.result.recommendations.entries()) {
@@ -60,14 +81,27 @@ export class RecommendationModal extends Modal {
           try {
             const plan = createChangePlan({
               notePath: this.result.notePath,
-              beforeTags: this.result.existingTags,
-              selectedTags: Array.from(this.selected)
+              beforeTags: this.result.frontmatterTags,
+              sourceContentHash: this.result.sourceContentHash,
+              selectedInlineTags: Array.from(this.selectedInline),
+              selectedAiTags: Array.from(this.selectedAi)
             });
+            if (plan.addedTags.length === 0) {
+              return;
+            }
             await this.onApply(plan);
             new Notice(this.labels.notices.tagsUpdated);
             this.close();
           } catch (error) {
-            new Notice(error instanceof Error ? error.message : this.labels.notices.updateFailed);
+            if (error instanceof SnapshotConflictError) {
+              new Notice(
+                error.kind === "contentChanged"
+                  ? this.labels.folderBatch.conflictContentChanged
+                  : this.labels.folderBatch.conflictTagsChanged
+              );
+            } else {
+              new Notice(error instanceof Error ? error.message : this.labels.notices.updateFailed);
+            }
           }
         })
     );
@@ -83,11 +117,11 @@ export class RecommendationModal extends Modal {
     const setting = new Setting(row)
       .setName(`${this.labels.recommendations.candidateLabel(index)} · #${recommendation.tag}`)
       .addToggle((toggle) =>
-        toggle.setValue(this.selected.has(recommendation.tag)).onChange((value) => {
+        toggle.setValue(this.selectedAi.has(recommendation.tag)).onChange((value) => {
           if (value) {
-            this.selected.add(recommendation.tag);
+            this.selectedAi.add(recommendation.tag);
           } else {
-            this.selected.delete(recommendation.tag);
+            this.selectedAi.delete(recommendation.tag);
           }
         })
       );
@@ -119,6 +153,28 @@ export class RecommendationModal extends Modal {
         list.createEl("li", { text: this.labels.recommendations.alternative(rejected.tag, rejected.reason) });
       }
     }
+  }
+
+  private renderInlineCandidate(parent: HTMLElement, tag: string): void {
+    const row = parent.createDiv({ cls: "tag-curator-recommendation tag-curator-recommendation--inline" });
+    new Setting(row)
+      .setName(`#${tag} · ${this.labels.recommendations.inlineSource}`)
+      .setDesc(this.labels.recommendations.inlineSyncReason)
+      .addToggle((toggle) =>
+        toggle.setValue(this.selectedInline.has(tag)).onChange((value) => {
+          if (value) {
+            this.selectedInline.add(tag);
+          } else {
+            this.selectedInline.delete(tag);
+          }
+        })
+      );
+  }
+
+  private renderTagSource(parent: HTMLElement, title: string, tags: string[]): void {
+    const section = parent.createDiv({ cls: "tag-curator-recommendation__source" });
+    section.createEl("strong", { text: title });
+    section.createDiv({ text: tags.length > 0 ? tags.map((tag) => `#${tag}`).join(" · ") : this.labels.recommendations.emptySource });
   }
 
   private renderTimingReport(parent: HTMLElement, timing: OperationTimingReport): void {

@@ -7,13 +7,6 @@ export class UndoService {
   constructor(private readonly writer: FrontmatterWriter) {}
 
   async undo(file: TFile, plan: ChangePlan): Promise<void> {
-    await this.writer.applyChangePlan(file, {
-      ...plan,
-      afterTags: plan.beforeTags,
-      beforeTags: plan.afterTags,
-      addedTags: [],
-      unchangedTags: plan.beforeTags,
-      skippedTags: []
-    });
+    await this.writer.replaceTagsIfCurrent(file, plan.afterTags, plan.beforeTags);
   }
 }

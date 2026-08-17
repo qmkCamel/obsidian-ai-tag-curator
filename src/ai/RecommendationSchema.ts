@@ -17,12 +17,21 @@ export interface TagRecommendation {
 
 export interface RecommendationResult {
   notePath: string;
+  /** Kept for compatibility; represents the original frontmatter tag snapshot. */
   existingTags: string[];
+  frontmatterTags: string[];
+  inlineTags: string[];
+  allTags: string[];
+  sourceContentHash: string;
   recommendations: TagRecommendation[];
   warnings: string[];
+  aiError?: string;
 }
 
 export interface RecommendationParseContext {
   notePath: string;
-  existingTags: string[];
+  frontmatterTags: string[];
+  inlineTags: string[];
+  allTags: string[];
+  sourceContentHash: string;
 }

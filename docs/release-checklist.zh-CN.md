@@ -114,3 +114,37 @@ Obsidian 客户端会从 GitHub Release 拉取新版本。
 - `复制 Markdown 计划` 在 AI 行动层和规则证据层均可见。
 - 规则证据明细能切换问题类型，并展示相关文件示例与当前标签。
 - 长内容在报告内部滚动，Modal 尺寸保持稳定。
+
+## 8. 0.3.0 发布验收记录
+
+发布日期：2026-08-17
+
+版本信息：
+
+- `package.json`：`0.3.0`
+- `manifest.json`：`0.3.0`
+- `versions.json`：包含 `0.3.0 -> 1.8.7`
+
+发布资产：
+
+- `main.js`
+- `manifest.json`
+- `styles.css`
+
+本次自动验证：
+
+- `npm ci --no-audit`：通过。
+- `npm run spec:validate -- add-safe-folder-batch-preview --strict`：通过。
+- `npm run spec:validate -- --all --strict`：通过，6 项全部有效。
+- `npm test`：通过，35 个测试文件、103 个测试全部成功。
+- `npm run build`：通过。
+- `npm audit --json`：通过，生产与开发依赖均为 0 个漏洞。
+- `npm audit --omit=dev --json`：通过，生产依赖为 0 个漏洞。
+- `npm run release:vault:prepare`：通过，标准默认路径可以重置隔离测试库并安装 `ai-tag-curator-dev@0.3.0`。
+- `git diff --check`：通过。
+
+真实 Obsidian 验收证据：
+
+- 2026-08-07 至 2026-08-09 在隔离测试库完成范围确认、生成进度、逐文件风险预览、应用、整体回退、立即取消、深色主题和窄窗口检查。
+- 发布截图与详细边界记录见 `docs/acceptance/0.3-folder-batch-acceptance.zh-CN.md`。
+- provider 失败重试、内容漂移以及 before/after 故障恢复注入尚未逐项手工执行；这些边界已由 E2E 故障注入覆盖，OpenSpec 任务 10.7 保持未完成，不把自动化结果描述为人工证明。

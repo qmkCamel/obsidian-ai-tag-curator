@@ -12,7 +12,14 @@ const emptyIndex: TagIndex = {
 describe("buildRecommendationMessages", () => {
   it("asks for Simplified Chinese reasons when UI language is zh-CN", () => {
     const messages = buildRecommendationMessages(
-      { path: "note.md", content: "经济数据", frontmatterTags: [] },
+      {
+        path: "note.md",
+        content: "经济数据",
+        frontmatterTags: [],
+        inlineTags: [],
+        allTags: [],
+        sourceContentHash: "a".repeat(64)
+      },
       emptyIndex,
       DEFAULT_SETTINGS,
       "zh-CN"
@@ -47,7 +54,14 @@ describe("buildRecommendationMessages", () => {
 
     const userPayload = JSON.parse(
       buildRecommendationMessages(
-        { path: "note.md", content: longContent, frontmatterTags: [] },
+        {
+          path: "note.md",
+          content: longContent,
+          frontmatterTags: ["frontmatter"],
+          inlineTags: ["inline"],
+          allTags: ["frontmatter", "inline"],
+          sourceContentHash: "a".repeat(64)
+        },
         index,
         DEFAULT_SETTINGS,
         "en"
@@ -55,6 +69,7 @@ describe("buildRecommendationMessages", () => {
     );
 
     expect(userPayload.note.content).toHaveLength(10012);
+    expect(userPayload.note.existingTags).toEqual(["frontmatter", "inline"]);
     expect(userPayload.note.content).toContain("[truncated]");
     expect(userPayload.vaultTags).toHaveLength(100);
     expect(userPayload.vaultTags[0].examples).toHaveLength(3);

@@ -7,11 +7,16 @@ describe("createChangePlan", () => {
     const plan = createChangePlan({
       notePath: "notes/ai.md",
       beforeTags: ["research", "project/ai"],
-      selectedTags: ["project/ai", "#writing", "Research"]
+      sourceContentHash: "a".repeat(64),
+      selectedInlineTags: ["project/ai", "#workflow"],
+      selectedAiTags: ["#writing", "Research"]
     });
 
-    expect(plan.addedTags).toEqual(["writing"]);
+    expect(plan.addedTags).toEqual(["workflow", "writing"]);
+    expect(plan.syncedInlineTags).toEqual(["workflow"]);
+    expect(plan.aiAddedTags).toEqual(["writing"]);
     expect(plan.unchangedTags).toEqual(["research", "project/ai"]);
-    expect(plan.afterTags).toEqual(["research", "project/ai", "writing"]);
+    expect(plan.afterTags).toEqual(["research", "project/ai", "workflow", "writing"]);
+    expect(plan.sourceContentHash).toBe("a".repeat(64));
   });
 });
