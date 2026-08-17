@@ -12,7 +12,7 @@ const vaultPath = resolve(
   process.env.OBSIDIAN_RELEASE_VAULT_PATH ?? "/Users/edge/work/obsidian-ai-tag-curator-test-vault"
 );
 const themeSourceVault = resolve(
-  process.env.OBSIDIAN_THEME_SOURCE_VAULT ?? "/Users/edge/personal/notes"
+  process.env.OBSIDIAN_THEME_SOURCE_VAULT ?? "/Users/edge/personal/edge-notes"
 );
 const obsidianDir = join(vaultPath, ".obsidian");
 const sourceObsidianDir = join(themeSourceVault, ".obsidian");

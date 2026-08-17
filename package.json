@@ -1,6 +1,6 @@
 {
   "name": "obsidian-ai-tag-curator",
-  "version": "0.1.2",
+  "version": "0.3.0",
   "description": "AI tag management and governance plugin for Obsidian vaults.",
   "main": "main.js",
   "scripts": {
