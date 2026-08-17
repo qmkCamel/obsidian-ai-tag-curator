@@ -29,7 +29,7 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 
 **文件夹级安全批量预览**
 
-![文件夹级安全批量预览](docs/acceptance/screenshots/0.3-dev/04-folder-batch-preview.png)
+![文件夹级安全批量预览](docs/images/folder-batch-preview.png)
 
 - 默认从当前笔记父文件夹开始，也可选择库内其他文件夹或库根目录；默认包含子文件夹。
 - 在读取正文、构建索引或请求 provider 前，先确认完整 Markdown 文件数和按每篇一次估算的请求数。
