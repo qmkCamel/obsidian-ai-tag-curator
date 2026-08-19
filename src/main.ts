@@ -3,7 +3,12 @@ import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
 import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
 import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
-import { applyCleanupPreviewToFrontmatterTags } from "./cleanup/CleanupTagTransform";
+import { CleanupReviewPlanBuilder } from "./cleanup/CleanupReviewPlanBuilder";
+import { CleanupReviewProgressModal } from "./cleanup/CleanupReviewProgressModal";
+import { CleanupReviewModal } from "./cleanup/CleanupReviewModal";
+import { CleanupExecutor, type CleanupExecutionResult } from "./cleanup/CleanupExecutor";
+import { CleanupRecoveryService, type CleanupRecoveryResult } from "./cleanup/CleanupRecoveryService";
+import { CleanupResultModal } from "./cleanup/CleanupResultModal";
 import { TagRecommendationService } from "./recommendations/TagRecommendationService";
 import type { CachedTagHealthAiAnalysis } from "./health/TagHealthAiAnalysis";
 import { TagHealthAiAnalyzer } from "./health/TagHealthAiAnalyzer";
@@ -11,8 +16,16 @@ import { analyzeTagHealth } from "./health/TagHealthAnalyzer";
 import { buildTagIndex } from "./index/TagIndexBuilder";
 import type { TagIndex } from "./index/TagIndex";
 import { FrontmatterWriter } from "./obsidian/FrontmatterWriter";
+import { InlineTagWriter } from "./obsidian/InlineTagWriter";
 import { VaultReader } from "./obsidian/VaultReader";
-import { OperationLog, type CleanupOperationRecord, type OperationRecord } from "./operations/OperationLog";
+import {
+  OperationLog,
+  isBatchRecord,
+  isCleanupV2Record,
+  isLegacyCleanupRecord,
+  type CleanupOperationRecordV2,
+  type OperationRecord
+} from "./operations/OperationLog";
 import { UndoService } from "./operations/UndoService";
 import { RecommendationModal } from "./preview/RecommendationModal";
 import { LoadingModal } from "./preview/LoadingModal";
@@ -52,10 +65,12 @@ export default class TagCuratorPlugin extends Plugin {
   labels = getLabels("en");
   private vaultReader!: VaultReader;
   private frontmatterWriter!: FrontmatterWriter;
+  private inlineTagWriter!: InlineTagWriter;
   private operationLog = new OperationLog();
   private tagIndex: TagIndex | undefined;
   private healthAiAnalysisCache: CachedTagHealthAiAnalysis | undefined;
   private folderBatchRecoveryService!: FolderBatchRecoveryService;
+  private cleanupRecoveryService!: CleanupRecoveryService;
 
   async onload(): Promise<void> {
     await this.loadPluginData();
@@ -63,9 +78,20 @@ export default class TagCuratorPlugin extends Plugin {
 
     this.vaultReader = new VaultReader(this.app);
     this.frontmatterWriter = new FrontmatterWriter(this.app);
+    this.inlineTagWriter = new InlineTagWriter(this.app);
     this.folderBatchRecoveryService = new FolderBatchRecoveryService({
       findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
       writer: this.frontmatterWriter,
+      operationLog: this.operationLog,
+      persist: () => this.savePluginData(),
+      refreshIndex: async () => {
+        await this.refreshDerivedStateAfterFolderBatch();
+      }
+    });
+    this.cleanupRecoveryService = new CleanupRecoveryService({
+      findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
+      inlineWriter: this.inlineTagWriter,
+      frontmatterWriter: this.frontmatterWriter,
       operationLog: this.operationLog,
       persist: () => this.savePluginData(),
       refreshIndex: async () => {
@@ -131,12 +157,29 @@ export default class TagCuratorPlugin extends Plugin {
       }
     });
 
+    this.addCommand({
+      id: "handle-unfinished-tag-operation",
+      name: this.labels.commands.handleUnfinishedTagOperation,
+      callback: () => {
+        this.openUnfinishedMutation();
+      }
+    });
+
     const unresolved = this.operationLog.latestUnresolvedBatch();
     if (unresolved) {
       const reconciliation = await this.folderBatchRecoveryService.reconcileInterruptedBatch();
       if (reconciliation.status === "recoveryRequired") {
         new Notice(this.labels.notices.unresolvedBatchBlocked);
         this.openFolderBatchResult(reconciliation);
+      }
+    }
+
+    const unresolvedCleanup = this.operationLog.latestUnresolvedCleanup();
+    if (unresolvedCleanup) {
+      const reconciliation = await this.cleanupRecoveryService.reconcileInterruptedCleanup();
+      if (reconciliation.status === "recoveryRequired") {
+        new Notice(this.labels.cleanupReview.unresolvedMutationBlocked);
+        this.openCleanupResult(reconciliation);
       }
     }
 
@@ -253,7 +296,9 @@ export default class TagCuratorPlugin extends Plugin {
         },
         {
           latestCleanupRecord: this.operationLog.latestCleanup() ?? null,
-          applyCleanupItem: (item) => this.applyCleanupItem(item),
+          reviewCleanupItem: (item) => {
+            void this.reviewCleanupItem(item);
+          },
           undoLatestCleanup: () => this.undoLatestCleanup()
         },
         cachedAnalysis
@@ -274,6 +319,7 @@ export default class TagCuratorPlugin extends Plugin {
       new Notice(this.labels.notices.configureApiKey);
       return;
     }
+    if (this.blockWriteForUnresolvedMutation()) return;
 
     try {
       const timer = this.settings.devMode ? new OperationTimer() : null;
@@ -320,6 +366,9 @@ export default class TagCuratorPlugin extends Plugin {
       }
 
       new RecommendationModal(this.app, result, this.labels, timer?.finish() ?? null, async (plan) => {
+        if (this.blockWriteForUnresolvedMutation()) {
+          throw new Error(this.labels.cleanupReview.unresolvedMutationBlocked);
+        }
         await this.frontmatterWriter.applyChangePlan(file, plan);
         this.operationLog.add(plan, this.settings.operationLogLimit);
         await this.savePluginData();
@@ -340,12 +389,7 @@ export default class TagCuratorPlugin extends Plugin {
       new Notice(this.labels.notices.configureApiKey);
       return;
     }
-    const unresolved = this.operationLog.latestUnresolvedBatch();
-    if (unresolved) {
-      new Notice(this.labels.notices.unresolvedBatchBlocked);
-      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
-      return;
-    }
+    if (this.blockWriteForUnresolvedMutation()) return;
 
     new FolderBatchScopeModal(
       this.app,
@@ -429,12 +473,7 @@ export default class TagCuratorPlugin extends Plugin {
 
   /** Converts current review selections into additive plans and delegates all writes to the transaction executor. */
   private async applyFolderBatch(batchPlan: FolderBatchPlan): Promise<void> {
-    const unresolved = this.operationLog.latestUnresolvedBatch();
-    if (unresolved) {
-      new Notice(this.labels.notices.unresolvedBatchBlocked);
-      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
-      return;
-    }
+    if (this.blockWriteForUnresolvedMutation()) return;
     const plans = deriveChangePlans(batchPlan);
     const executor = new FolderBatchExecutor({
       findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
@@ -461,12 +500,7 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private async undoLatestFolderBatch(): Promise<void> {
-    const unresolved = this.operationLog.latestUnresolvedBatch();
-    if (unresolved) {
-      new Notice(this.labels.notices.unresolvedBatchBlocked);
-      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
-      return;
-    }
+    if (this.blockWriteForUnresolvedMutation()) return;
     if (!this.operationLog.latestBatch("applied")) {
       new Notice(this.labels.notices.noFolderBatchUndo);
       return;
@@ -482,6 +516,7 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private async retryFolderBatchRecovery(record: BatchOperationRecord): Promise<void> {
+    if (this.blockRecoveryBehindDifferentMutation(record.id)) return;
     const result = await this.folderBatchRecoveryService.retryRecovery(record);
     if (result.indexRefreshError) {
       new Notice(this.labels.notices.indexRefreshFailed(result.indexRefreshError));
@@ -541,6 +576,7 @@ export default class TagCuratorPlugin extends Plugin {
       new Notice(this.labels.notices.noUndoRecord);
       return;
     }
+    if (this.blockWriteForUnresolvedMutation()) return;
 
     try {
       const undoService = new UndoService(this.frontmatterWriter);
@@ -559,53 +595,71 @@ export default class TagCuratorPlugin extends Plugin {
     }
   }
 
-  private async applyCleanupItem(item: CleanupPlanItem): Promise<CleanupOperationRecord> {
+  private async reviewCleanupItem(item: CleanupPlanItem): Promise<void> {
     if (item.capability.availability !== "executable") {
       throw new Error(this.labels.health.cleanupPlan.notApplyReady);
     }
-
-    const files: CleanupOperationRecord["files"] = [];
-
-    for (const preview of item.files) {
-      const target = this.app.vault.getAbstractFileByPath(preview.path);
-      if (!(target instanceof TFile)) {
-        continue;
+    const builder = new CleanupReviewPlanBuilder({
+      readOccurrences: async (notePath, relevantTags) => {
+        const file = this.vaultReader.getMarkdownFileByPath(notePath);
+        if (!file) throw new Error(`${this.labels.cleanupReview.conflictMissing}: ${notePath}`);
+        return this.vaultReader.readInlineTagOccurrences(file, relevantTags);
       }
-
-      const change = await this.frontmatterWriter.applyTagTransform(target, (beforeTags) =>
-        applyCleanupPreviewToFrontmatterTags(beforeTags, preview)
-      );
-
-      if (!sameTagList(change.beforeTags, change.afterTags)) {
-        files.push({
-          notePath: target.path,
-          beforeTags: change.beforeTags,
-          afterTags: change.afterTags
-        });
-      }
-    }
-
-    if (files.length === 0) {
-      throw new Error(this.labels.health.cleanupPlan.noWritableChanges);
-    }
-
-    const record = this.operationLog.addCleanup(
-      {
-        itemId: item.id,
-        title: item.title,
-        action: item.action,
-        files
-      },
-      this.settings.operationLogLimit
+    });
+    const total = new Set(item.files.map((file) => file.path)).size;
+    const progress = new CleanupReviewProgressModal(
+      this.app,
+      { total, completed: 0, ready: 0, unavailable: 0, failed: 0, cancelled: 0 },
+      this.labels,
+      () => builder.cancel()
     );
-
-    await this.buildAndSaveTagIndex();
-    return record;
+    progress.open();
+    try {
+      const plan = await builder.build(item, (snapshot) => progress.update(snapshot));
+      progress.close();
+      if (plan.cancelled) return;
+      new CleanupReviewModal(this.app, plan, this.labels, async (selected) => {
+        if (this.blockWriteForUnresolvedMutation()) {
+          throw new Error(this.labels.cleanupReview.unresolvedMutationBlocked);
+        }
+        const executor = new CleanupExecutor({
+          findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),
+          inlineWriter: this.inlineTagWriter,
+          frontmatterWriter: this.frontmatterWriter,
+          operationLog: this.operationLog,
+          persist: () => this.savePluginData(),
+          refreshIndex: async () => {
+            await this.refreshDerivedStateAfterFolderBatch();
+          }
+        });
+        const result = await executor.execute(selected, this.settings.operationLogLimit);
+        if (result.status === "applied") {
+          new Notice(this.labels.health.cleanupPlan.cleanupApplied(result.record?.files.length ?? selected.fileCount));
+        }
+        this.openCleanupResult(result);
+      }).open();
+    } catch (error) {
+      progress.close();
+      new Notice(error instanceof Error ? error.message : this.labels.notices.updateFailed);
+    }
   }
 
   private async undoLatestCleanup(): Promise<void> {
     const record = this.operationLog.latestCleanup();
     if (!record) {
+      throw new Error(this.labels.health.cleanupPlan.noCleanupUndoRecord);
+    }
+
+    if (this.blockWriteForUnresolvedMutation()) return;
+
+    if (isCleanupV2Record(record)) {
+      const result = await this.cleanupRecoveryService.undoLatestAppliedCleanup();
+      if (result.status === "removed") new Notice(this.labels.health.cleanupPlan.cleanupUndone);
+      this.openCleanupResult(result);
+      return;
+    }
+
+    if (!isLegacyCleanupRecord(record)) {
       throw new Error(this.labels.health.cleanupPlan.noCleanupUndoRecord);
     }
 
@@ -621,12 +675,56 @@ export default class TagCuratorPlugin extends Plugin {
     this.operationLog.remove(record.id);
     await this.buildAndSaveTagIndex();
   }
-}
 
-function sameTagList(left: string[], right: string[]): boolean {
-  if (left.length !== right.length) {
-    return false;
+  private async retryCleanupRecovery(record: CleanupOperationRecordV2): Promise<void> {
+    if (this.blockRecoveryBehindDifferentMutation(record.id)) return;
+    const result = await this.cleanupRecoveryService.retryRecovery(record);
+    this.openCleanupResult(result);
   }
 
-  return left.every((tag, index) => tag === right[index]);
+  private openCleanupResult(result: CleanupExecutionResult | CleanupRecoveryResult): void {
+    new CleanupResultModal(
+      this.app,
+      result,
+      this.labels,
+      () => {
+        void this.undoLatestCleanup();
+      },
+      (record) => {
+        void this.retryCleanupRecovery(record);
+      }
+    ).open();
+  }
+
+  private openUnfinishedMutation(): void {
+    const unresolved = this.operationLog.latestUnresolvedMutation();
+    if (!unresolved) {
+      new Notice(this.labels.cleanupReview.noResult);
+      return;
+    }
+    if (isBatchRecord(unresolved)) {
+      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+      return;
+    }
+    this.openCleanupResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+  }
+
+  private blockWriteForUnresolvedMutation(): boolean {
+    const unresolved = this.operationLog.latestUnresolvedMutation();
+    if (!unresolved) return false;
+    if (isBatchRecord(unresolved)) {
+      new Notice(this.labels.notices.unresolvedBatchBlocked);
+      this.openFolderBatchResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+    } else {
+      new Notice(this.labels.cleanupReview.unresolvedMutationBlocked);
+      this.openCleanupResult({ status: "recoveryRequired", record: unresolved, files: unresolved.files });
+    }
+    return true;
+  }
+
+  private blockRecoveryBehindDifferentMutation(recordId: string): boolean {
+    const unresolved = this.operationLog.latestUnresolvedMutation();
+    if (!unresolved || unresolved.id === recordId) return false;
+    return this.blockWriteForUnresolvedMutation();
+  }
 }

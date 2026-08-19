@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+中文
+
+### 新增
+
+- 为健康报告中的确定性合并/重命名新增 occurrence 级 inline token 审查、逐项取消、部分清理提示和二次确认。
+- 新增 cleanup V2 混合事务、逆序补偿、固定 before/after 恢复、跨重载整体回退和未解决事务写入门禁。
+
+### 安全边界
+
+- 只有当前 Obsidian `TagCache.position` 精确匹配的完整 token 可写；fallback、缓存缺失或陈旧位置保持只读。
+- 当前笔记推荐和文件夹批次继续保持 frontmatter-only；不支持 inline 新增、删除、拆分、模糊/全局替换或 AI 正文写入。
+
+English
+
+### Added
+
+- Add occurrence-level inline-token review, individual deselection, partial-cleanup warnings, and second confirmation for deterministic health-report merge/rename actions.
+- Add mixed-source cleanup V2 transactions, reverse compensation, fixed before/after recovery, cross-reload whole-operation undo, and a shared unresolved-mutation gate.
+
+### Safety boundaries
+
+- Only complete tokens at exact current Obsidian `TagCache.position` ranges are writable; fallback, missing-cache, and stale-cache occurrences remain view-only.
+- Current-note and folder workflows remain frontmatter-only; inline additions, deletion, split, fuzzy/global replacement, and AI-generated body writes are unsupported.
+
 ## 0.3.0
 
 中文

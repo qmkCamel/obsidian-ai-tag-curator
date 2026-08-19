@@ -13,6 +13,7 @@ type LabelTree = {
     suggestTagsForFolder: string;
     undoLastChangeForCurrentNote: string;
     undoLastFolderBatch: string;
+    handleUnfinishedTagOperation: string;
   };
   loading: {
     refreshTitle: string;
@@ -182,6 +183,58 @@ type LabelTree = {
     undo: string;
     retryRecovery: string;
     close: string;
+  };
+  cleanupReview: {
+    reviewChanges: string;
+    progressTitle: string;
+    progressSummary: (completed: number, total: number) => string;
+    progressCounts: (ready: number, unavailable: number, failed: number, cancelled: number) => string;
+    progressNoWrites: string;
+    title: string;
+    subtitle: string;
+    actionTarget: (action: string, target: string) => string;
+    summary: (files: number, frontmatter: number, inline: number) => string;
+    remaining: (count: number) => string;
+    partialWarning: (count: number) => string;
+    frontmatterSource: string;
+    inlineSource: string;
+    before: string;
+    after: string;
+    line: (line: number) => string;
+    selectAll: string;
+    clearAll: string;
+    apply: string;
+    cancel: string;
+    back: string;
+    confirmTitle: string;
+    confirmMessage: (files: number, frontmatter: number, inline: number) => string;
+    confirmPartial: (remaining: number) => string;
+    confirmApply: string;
+    emptySelection: string;
+    unavailable: {
+      cacheUnavailable: string;
+      positionMismatch: string;
+    };
+    resultTitle: string;
+    appliedResult: string;
+    removedResult: string;
+    noResult: string;
+    rolledBackResult: string;
+    conflictResult: string;
+    partialResult: string;
+    recoveryResult: (target: "before" | "after") => string;
+    conflictMissing: string;
+    conflictTagsChanged: string;
+    conflictContentChanged: string;
+    conflictTokenChanged: string;
+    indexRefreshFailure: (message: string) => string;
+    undo: string;
+    retryRecovery: string;
+    close: string;
+    unresolvedMutationBlocked: string;
+    noAppliedCleanup: string;
+    copySourceSummary: string;
+    copyUnavailablePending: string;
   };
   health: {
     title: string;
@@ -353,7 +406,8 @@ const ZH_LABELS: LabelTree = {
     suggestTagsForCurrentNote: "为当前笔记推荐标签",
     suggestTagsForFolder: "为文件夹批量生成标签建议",
     undoLastChangeForCurrentNote: "撤销当前笔记最近标签修改",
-    undoLastFolderBatch: "撤销最近一次文件夹批量标签操作"
+    undoLastFolderBatch: "撤销最近一次文件夹批量标签操作",
+    handleUnfinishedTagOperation: "处理未完成标签操作"
   },
   loading: {
     refreshTitle: "正在刷新标签索引",
@@ -529,6 +583,60 @@ const ZH_LABELS: LabelTree = {
     retryRecovery: "重试固定目标恢复",
     close: "关闭"
   },
+  cleanupReview: {
+    reviewChanges: "审查变更",
+    progressTitle: "正在准备 inline 标签审查",
+    progressSummary: (completed, total) => `读取进度：${completed}/${total}`,
+    progressCounts: (ready, unavailable, failed, cancelled) =>
+      `可审查 ${ready} · 位置不可用 ${unavailable} · 失败 ${failed} · 已取消 ${cancelled}`,
+    progressNoWrites: "此阶段只读取当前清理项涉及的文件，不会写入 Markdown。",
+    title: "审查标签清理变更",
+    subtitle: "逐项确认 frontmatter 和正文 token。只有来自 Obsidian 精确缓存位置的正文项可执行。",
+    actionTarget: (action, target) => `${action}到 #${target}`,
+    summary: (files, frontmatter, inline) => `将修改 ${files} 篇 · frontmatter ${frontmatter} 篇 · inline ${inline} 处`,
+    remaining: (count) => `仍保留 source 标签：${count} 处`,
+    partialWarning: (count) => `这是部分清理；完成后仍有 ${count} 处 source 标签未改写。`,
+    frontmatterSource: "frontmatter tags",
+    inlineSource: "正文 inline token",
+    before: "修改前",
+    after: "修改后",
+    line: (line) => `第 ${line} 行`,
+    selectAll: "选择全部可信变更",
+    clearAll: "清除全部",
+    apply: "继续应用",
+    cancel: "取消",
+    back: "返回审查",
+    confirmTitle: "再次确认清理范围",
+    confirmMessage: (files, frontmatter, inline) =>
+      `将修改 ${files} 篇笔记、${frontmatter} 组 frontmatter tags 和 ${inline} 个正文 token。`,
+    confirmPartial: (remaining) => `你选择了部分清理，仍会保留 ${remaining} 处 source 标签。确认继续？`,
+    confirmApply: "确认写入",
+    emptySelection: "尚未选择任何可写变更。",
+    unavailable: {
+      cacheUnavailable: "Obsidian 位置缓存不可用，只能查看，不能写入。",
+      positionMismatch: "缓存位置与当前正文不一致，只能查看，不能写入。"
+    },
+    resultTitle: "标签清理结果",
+    appliedResult: "清理已完整应用，并保留一条可整体回退的 V2 操作记录。",
+    removedResult: "文件已回到应用前状态，清理操作记录已移除。",
+    noResult: "没有可处理的 V2 清理操作。",
+    rolledBackResult: "应用中途失败，但补偿已完整恢复所有文件。",
+    conflictResult: "全量预检发现冲突，本次清理保持零写入。",
+    partialResult: "本次按用户选择完成部分清理，未选或位置不可用的 source 标签保持不变。",
+    recoveryResult: (target) => `补偿未完整完成。固定恢复目标：${target === "before" ? "应用前" : "应用后"}。`,
+    conflictMissing: "文件缺失",
+    conflictTagsChanged: "frontmatter tags 已变化，请重新审查",
+    conflictContentChanged: "完整 Markdown 内容已变化，请重新审查",
+    conflictTokenChanged: "正文 token 或精确位置已变化，请重新审查",
+    indexRefreshFailure: (message) => `文件状态已稳定，但标签索引刷新失败：${message}`,
+    undo: "整体回退清理",
+    retryRecovery: "重试固定目标恢复",
+    close: "关闭",
+    unresolvedMutationBlocked: "存在尚未解决的标签写入事务，请先完成其固定目标恢复。",
+    noAppliedCleanup: "没有可整体回退的 V2 标签清理。",
+    copySourceSummary: "frontmatter tags + 逐 occurrence inline token（仅精确缓存位置可写）",
+    copyUnavailablePending: "审查 hydrate 时计算；不可用位置保持只读"
+  },
   health: {
     title: "标签健康报告",
     subtitle: "规则分析负责生成事实证据，AI 辅助分析负责合并、解释和排序，不直接决定可执行性。",
@@ -620,8 +728,8 @@ const ZH_LABELS: LabelTree = {
       undoThisOperation: "回退",
       unsupportedWriteAction: "该动作需要人工确认目标，当前仅生成审查预览。",
       notApplyReady: "该清理建议暂未开放直接写入。",
-      frontmatterOnlyWarning: "应用前请确认文件预览。当前只写入 frontmatter tags；正文 inline tags 仍需人工处理，操作会记录用于回退。",
-      noWritableChanges: "没有找到可写入的 frontmatter 标签变更。",
+      frontmatterOnlyWarning: "应用前需逐项审查 frontmatter 与可信 inline token；位置不可用项保持只读。",
+      noWritableChanges: "没有找到选中的可信标签变更。",
       noCleanupUndoRecord: "没有可回退的清理操作。",
       cleanupApplied: (count) => `已应用清理，更新 ${count} 个文件。`,
       cleanupUndone: "已回退最近一次清理。",
@@ -699,7 +807,8 @@ const EN_LABELS: LabelTree = {
     suggestTagsForCurrentNote: "Suggest tags for current note",
     suggestTagsForFolder: "Generate tag suggestions for folder",
     undoLastChangeForCurrentNote: "Undo last tag curator change",
-    undoLastFolderBatch: "Undo latest folder batch tag operation"
+    undoLastFolderBatch: "Undo latest folder batch tag operation",
+    handleUnfinishedTagOperation: "Handle unfinished tag operation"
   },
   loading: {
     refreshTitle: "Refreshing tag index",
@@ -877,6 +986,60 @@ const EN_LABELS: LabelTree = {
     retryRecovery: "Retry fixed-target recovery",
     close: "Close"
   },
+  cleanupReview: {
+    reviewChanges: "Review changes",
+    progressTitle: "Preparing inline tag review",
+    progressSummary: (completed, total) => `Read progress: ${completed}/${total}`,
+    progressCounts: (ready, unavailable, failed, cancelled) =>
+      `${ready} reviewable · ${unavailable} unavailable · ${failed} failed · ${cancelled} cancelled`,
+    progressNoWrites: "This stage only reads files in the current cleanup item and never writes Markdown.",
+    title: "Review tag cleanup changes",
+    subtitle: "Confirm frontmatter and body tokens individually. Body edits require exact Obsidian cache positions.",
+    actionTarget: (action, target) => `${action} to #${target}`,
+    summary: (files, frontmatter, inline) => `${files} notes · ${frontmatter} frontmatter groups · ${inline} inline tokens`,
+    remaining: (count) => `Source tags remaining: ${count}`,
+    partialWarning: (count) => `This is a partial cleanup; ${count} source-tag occurrences will remain.`,
+    frontmatterSource: "frontmatter tags",
+    inlineSource: "inline body token",
+    before: "Before",
+    after: "After",
+    line: (line) => `Line ${line}`,
+    selectAll: "Select all trusted changes",
+    clearAll: "Clear all",
+    apply: "Continue to apply",
+    cancel: "Cancel",
+    back: "Back to review",
+    confirmTitle: "Confirm cleanup scope again",
+    confirmMessage: (files, frontmatter, inline) =>
+      `This will modify ${files} notes, ${frontmatter} frontmatter tag groups, and ${inline} body tokens.`,
+    confirmPartial: (remaining) => `You selected a partial cleanup. ${remaining} source-tag occurrences will remain. Continue?`,
+    confirmApply: "Confirm write",
+    emptySelection: "No writable changes are selected.",
+    unavailable: {
+      cacheUnavailable: "Obsidian position cache is unavailable. This occurrence is view-only.",
+      positionMismatch: "The cached position does not match the current body. This occurrence is view-only."
+    },
+    resultTitle: "Tag cleanup result",
+    appliedResult: "Cleanup was fully applied and one V2 whole-operation undo record was retained.",
+    removedResult: "Files are back at their before state and the cleanup record was removed.",
+    noResult: "No V2 cleanup operation is available.",
+    rolledBackResult: "Applying failed partway through, but compensation restored every file.",
+    conflictResult: "Full preflight found conflicts, so this cleanup performed zero writes.",
+    partialResult: "This was a partial cleanup; unselected or unavailable source-tag occurrences were left unchanged.",
+    recoveryResult: (target) => `Compensation is incomplete. Fixed recovery target: ${target}.`,
+    conflictMissing: "File missing",
+    conflictTagsChanged: "Frontmatter tags changed; review again",
+    conflictContentChanged: "Full Markdown content changed; review again",
+    conflictTokenChanged: "The body token or exact position changed; review again",
+    indexRefreshFailure: (message) => `Files are stable, but the tag index refresh failed: ${message}`,
+    undo: "Undo whole cleanup",
+    retryRecovery: "Retry fixed-target recovery",
+    close: "Close",
+    unresolvedMutationBlocked: "An unresolved tag mutation must reach its fixed recovery target before another write.",
+    noAppliedCleanup: "No V2 tag cleanup is available to undo.",
+    copySourceSummary: "frontmatter tags + per-occurrence inline tokens (exact cache positions only)",
+    copyUnavailablePending: "Calculated during review hydration; unavailable positions remain view-only"
+  },
   health: {
     title: "Tag health report",
     subtitle: "Rules provide factual evidence; AI assistance merges, explains, and ranks issues without deciding executability.",
@@ -968,8 +1131,8 @@ const EN_LABELS: LabelTree = {
       undoThisOperation: "Undo",
       unsupportedWriteAction: "This action needs a confirmed target, so it is preview-only for now.",
       notApplyReady: "This cleanup suggestion is not ready for direct writes yet.",
-      frontmatterOnlyWarning: "Review the file preview before applying. Only frontmatter tags are written for now; inline body tags still need manual review, and the operation is logged for undo.",
-      noWritableChanges: "No writable frontmatter tag changes were found.",
+      frontmatterOnlyWarning: "Review frontmatter and trusted inline tokens individually; occurrences without exact positions remain view-only.",
+      noWritableChanges: "No selected trusted tag changes were found.",
       noCleanupUndoRecord: "No cleanup operation is available to undo.",
       cleanupApplied: (count) => `Cleanup applied to ${count} files.`,
       cleanupUndone: "Latest cleanup undone.",

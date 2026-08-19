@@ -80,6 +80,7 @@ describe("plugin e2e workflows", () => {
 
     expect(Object.keys(plugin.commands).sort()).toEqual([
       "analyze-tag-health",
+      "handle-unfinished-tag-operation",
       "refresh-tag-index",
       "show-tag-index-summary",
       "suggest-tags-for-current-note",
@@ -203,7 +204,8 @@ describe("plugin e2e workflows", () => {
         settings: {
           apiKey: "sk-e2e",
           uiLanguage: "zh-CN",
-          devMode: true
+          devMode: true,
+          readInlineTags: false
         }
       }
     });
@@ -318,17 +320,41 @@ describe("plugin e2e workflows", () => {
     expect(pageText()).toContain(labels.health.workflow.lastAnalyzedAt(formatMonthDayTime(cache?.analyzedAt ?? "")));
     expect(requestUrlMock).toHaveBeenCalledTimes(firstRequestCount);
 
-    clickButton(labels.health.cleanupPlan.applyThisSuggestion);
+    const processWritesBeforeReview = app.vault.getProcessCount();
+    const frontmatterWritesBeforeReview = app.fileManager.getWriteCount();
+    clickButton(labels.cleanupReview.reviewChanges);
+    await waitForText(labels.cleanupReview.title);
+    expect(app.vault.getProcessCount()).toBe(processWritesBeforeReview);
+    expect(app.fileManager.getWriteCount()).toBe(frontmatterWritesBeforeReview);
+    expect(pageText()).toContain(labels.cleanupReview.frontmatterSource);
+    expect(pageText()).toContain(labels.cleanupReview.inlineSource);
+    const inlineRows = Array.from(document.querySelectorAll<HTMLElement>(".tag-curator-cleanup-review__occurrence"));
+    expect(inlineRows.length).toBeGreaterThanOrEqual(2);
+    const firstInlineToggle = requiredElement(inlineRows[0].querySelector<HTMLInputElement>('input[type="checkbox"]'));
+    firstInlineToggle.checked = false;
+    firstInlineToggle.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(pageText()).toContain(labels.cleanupReview.partialWarning(1));
+    clickButton(labels.cleanupReview.apply);
+    await waitForText(labels.cleanupReview.confirmTitle);
+    clickButton(labels.cleanupReview.confirmApply);
+    await waitForText(labels.cleanupReview.appliedResult);
     await waitFor(() => {
-      expect(app.getNoteTags("notes/hyphen.md")).toEqual(["ml_notes"]);
-      expect(app.getNoteTags("notes/shared.md")).toEqual(["ml_notes"]);
+      expect(app.getNoteTags("notes/hyphen.md")).toEqual(["ml-notes"]);
+      expect(app.getNoteTags("notes/shared.md")).toEqual(["ml-notes"]);
+      expect(app.vault.getNote("notes/hyphen.md").content).toContain("#ml-notes");
+      expect(app.vault.getNote("notes/shared.md").content).toBe(
+        "Mixed #ml-notes and #ml_notes then #ml-notes and #ml-notes tags."
+      );
     });
     await waitFor(() => expect(notices).toContain(labels.health.cleanupPlan.cleanupApplied(2)));
 
-    clickButton(labels.health.cleanupPlan.undoThisOperation);
+    clickButton(labels.cleanupReview.undo);
     await waitFor(() => {
       expect(app.getNoteTags("notes/hyphen.md")).toEqual(["ml-notes"]);
       expect(app.getNoteTags("notes/shared.md")).toEqual(["ml-notes", "ml_notes"]);
+      expect(app.vault.getNote("notes/shared.md").content).toBe(
+        "Mixed #ml-notes and #ml_notes then #ml-notes and #ml_notes tags."
+      );
     });
     await waitFor(() => expect(notices).toContain(labels.health.cleanupPlan.cleanupUndone));
   });
@@ -368,6 +394,72 @@ describe("plugin e2e workflows", () => {
     expect(pageText()).toContain(labels.health.workflow.evidenceTitle);
     expect(app.getNoteTags("notes/lower.md")).toEqual(["ml_notes"]);
   });
+
+  it("blocks mutation commands behind unresolved cleanup while keeping health analysis readable", async () => {
+    setMockLanguage("zh-CN");
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(sampleNotes(), {
+      activeFilePath: "notes/current.md",
+      pluginData: {
+        settings: { apiKey: "sk-e2e", uiLanguage: "zh-CN" },
+        operations: [
+          {
+            id: "unresolved-cleanup",
+            type: "cleanup",
+            schemaVersion: 2,
+            status: "recoveryRequired",
+            recoveryTarget: "before",
+            itemId: "rename",
+            title: "Rename",
+            action: "rename",
+            sourceTags: ["old"],
+            targetTag: "new",
+            partial: false,
+            createdAt: "2026-08-04T00:00:00.000Z",
+            files: []
+          }
+        ]
+      }
+    });
+    const plugin = await loadPlugin(app);
+    notices.length = 0;
+
+    runCommand(plugin, "suggest-tags-for-current-note");
+    runCommand(plugin, "suggest-tags-for-folder");
+    expect(notices.filter((notice) => notice === labels.cleanupReview.unresolvedMutationBlocked)).toHaveLength(2);
+    expect(requestUrlMock).not.toHaveBeenCalled();
+
+    runCommand(plugin, "analyze-tag-health");
+    await waitForText(labels.health.title);
+    expect(pageText()).toContain(labels.health.workflow.evidenceTitle);
+  });
+
+  it("keeps legacy frontmatter-only cleanup undo compatible", async () => {
+    setMockLanguage("en");
+    const app = createFakeApp([{ path: "legacy.md", content: "body #old", frontmatterTags: ["new"] }], {
+      pluginData: {
+        settings: { uiLanguage: "en" },
+        operations: [
+          {
+            id: "legacy-cleanup",
+            type: "cleanup",
+            itemId: "legacy",
+            title: "Legacy cleanup",
+            action: "rename",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            files: [{ notePath: "legacy.md", beforeTags: ["old"], afterTags: ["new"] }]
+          }
+        ]
+      }
+    });
+    const plugin = await loadPlugin(app);
+
+    await (plugin as unknown as { undoLatestCleanup(): Promise<void> }).undoLatestCleanup();
+
+    expect(app.getNoteTags("legacy.md")).toEqual(["old"]);
+    expect(app.vault.getNote("legacy.md").content).toBe("body #old");
+    expect((app.savedData as PluginDataSnapshot).operations).toEqual([]);
+  });
 });
 
 async function loadPlugin(app: FakeObsidianApp): Promise<LoadedPlugin> {
@@ -403,12 +495,12 @@ function sampleNotes(): Array<{ path: string; content: string; frontmatterTags?:
     },
     {
       path: "notes/hyphen.md",
-      content: "Machine learning taxonomy notes.",
+      content: "Machine learning taxonomy #ml-notes notes.",
       frontmatterTags: ["ml-notes"]
     },
     {
       path: "notes/shared.md",
-      content: "Mixed separator duplicate tags.",
+      content: "Mixed #ml-notes and #ml_notes then #ml-notes and #ml_notes tags.",
       frontmatterTags: ["ml-notes", "ml_notes"]
     },
     {

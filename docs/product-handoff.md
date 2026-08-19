@@ -132,7 +132,7 @@ The product can win by making tag changes trustworthy, inspectable, and reversib
 
 ## Current Capabilities and Next Stage
 
-The product now has three completed loops: current-note recommendations, vault-level tag health, and the `0.3` safe folder-level batch preview. The next stage is `0.4` full operation history, not a broader set of batch write actions.
+The product now has four completed implementation loops: current-note recommendations, vault-level tag health, reviewed deterministic inline cleanup, and the `0.3` safe folder-level batch preview. The inline workflow has automated coverage; real multi-version Obsidian and visual acceptance remain pending. The next stage is `0.4` full operation history, not broader body or folder write actions.
 
 ### 1. Suggest Tags for Current Note
 
@@ -159,7 +159,7 @@ Key differentiation:
 
 Goal: give the user a vault-level diagnosis.
 
-Status: shipped. It provides rule evidence, AI action guidance, a cleanup review plan, and constrained merge/rename actions with file previews, operation logging, and conflict-safe undo.
+Status: implemented with automated coverage. Deterministic merge/rename actions support independent frontmatter and occurrence-level inline review, second confirmation, partial-cleanup warnings, a mixed-source V2 transaction, and fixed-target recovery.
 
 Expected output:
 
@@ -216,15 +216,17 @@ Implemented:
 - store deterministic cleanup operations as a reviewable plan with file-level previews;
 - write frontmatter changes through a YAML-aware parser instead of string replacement;
 - keep a reversible operation log and block undo from overwriting files that changed afterward.
-- consolidate frontmatter and inline tags for current-note and folder review without rewriting inline body positions;
+- consolidate frontmatter and inline tags for current-note and folder review without rewriting inline body positions; deterministic health-report merge/rename is the only body-write exception and always requires occurrence review;
 - default folder scope to the active note's parent, allow any folder or vault root, and enforce a configurable complete-batch limit of 1-200 files (default 50);
 - run at most two AI requests concurrently with immediate cancellation, late-result discard, local inline sync after AI failure, and failed-item retry;
 - apply folder batches with full preflight, per-file content/tag CAS, reverse compensation, and fixed before/after recovery targets;
 - undo a successful batch across plugin reloads and block new batch writes while recovery is unresolved.
+- trust only exact `TagCache.position` entries for body writes, using body-relative offsets, full-content/body hashes, and callback-time CAS in `Vault.process`;
+- transact health-cleanup frontmatter and body edits under one V2 record with compensation, fixed before/after recovery, reload reconciliation, and a shared unresolved-mutation gate.
 
 Established product and technical boundaries:
 
-- inline tags participate in the whole-note inventory; reviewed missing tags may be copied into frontmatter, while body text is never deleted, moved, or rewritten;
+- inline tags participate in the whole-note inventory; current-note/folder flows only copy them into frontmatter. Health cleanup may rename/merge individually reviewed complete tokens, but never deletes, moves, fuzzily matches, or AI-generates body edits;
 - the current version does not use embeddings and combines local rules, the tag index, and structured LLM output;
 - tag audits are manually triggered, and AI health analysis is cached by tag-index timestamp;
 - AI may add explanations, priority hints, and candidate targets but cannot raise local action capability;
@@ -266,6 +268,7 @@ The product has delivered:
 5. vault-level tag health reports;
 6. layered AI action guidance and rule evidence;
 7. file preview, manual apply, and undo for deterministic merge/rename actions.
-8. safe folder batch preview, per-note/per-tag approval, transactional recovery, and cross-reload batch undo.
+8. safe folder batch preview, per-note/per-tag approval, transactional recovery, and cross-reload batch undo;
+9. occurrence-level inline cleanup review, mixed-source V2 transactions, fixed-target recovery, and a global mutation gate.
 
 The next stage should focus only on `0.4` full operation history. Incremental indexing and local/multi-provider experience remain sequenced behind it in the roadmap.

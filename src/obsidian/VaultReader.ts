@@ -4,6 +4,7 @@ import { parseFrontmatterTags, parseInlineTags, parseObsidianTags } from "./TagP
 import type { IndexedNote } from "../index/TagIndex";
 import { createNoteTagInventory } from "../tags/NoteTagInventory";
 import { hashContent } from "../utils/hashContent";
+import { InlineTagOccurrenceReader, type InlineTagOccurrenceReadResult } from "./InlineTagOccurrenceReader";
 
 export class VaultReader {
   constructor(private readonly app: App) {}
@@ -89,6 +90,10 @@ export class VaultReader {
       ...inventory,
       sourceContentHash: await hashContent(content)
     };
+  }
+
+  async readInlineTagOccurrences(file: TFile, relevantTags: string[]): Promise<InlineTagOccurrenceReadResult> {
+    return new InlineTagOccurrenceReader(this.app).read(file, relevantTags);
   }
 }
 

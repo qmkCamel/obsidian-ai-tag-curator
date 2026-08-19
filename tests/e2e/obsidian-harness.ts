@@ -13,6 +13,7 @@ interface FakeNoteSpec {
   content: string;
   frontmatterTags?: string[];
   frontmatter?: Record<string, unknown>;
+  inlineTagCache?: "missing" | FakeCache["tags"];
 }
 
 interface FakeAppOptions {
@@ -24,7 +25,13 @@ interface FakeCache {
   frontmatter: Record<string, unknown> & {
     tags?: string[];
   };
-  tags: Array<{ tag: string }>;
+  tags?: Array<{
+    tag: string;
+    position: {
+      start: { line: number; col: number; offset: number };
+      end: { line: number; col: number; offset: number };
+    };
+  }>;
 }
 
 interface QueuedAiResponse {
@@ -708,6 +715,8 @@ export class FakeVault {
   private readonly folders = new Map<string, TFolder>();
   private readGate: Deferred<void> | null = null;
   private readCount = 0;
+  private processCount = 0;
+  private processInterceptor: ((file: TFile, content: string, processCount: number) => void) | null = null;
 
   constructor(notes: FakeNoteSpec[]) {
     this.folders.set("", new TFolder(""));
@@ -740,6 +749,14 @@ export class FakeVault {
     return this.readCount;
   }
 
+  getProcessCount(): number {
+    return this.processCount;
+  }
+
+  setProcessInterceptor(interceptor: ((file: TFile, content: string, processCount: number) => void) | null): void {
+    this.processInterceptor = interceptor;
+  }
+
   getMarkdownFiles(): TFile[] {
     return Array.from(this.notes.values())
       .map((note) => note.file)
@@ -753,6 +770,19 @@ export class FakeVault {
     }
 
     return this.getNote(file.path).content;
+  }
+
+  async read(file: TFile): Promise<string> {
+    return this.cachedRead(file);
+  }
+
+  async process(file: TFile, callback: (data: string) => string): Promise<string> {
+    const note = this.getNote(file.path);
+    this.processCount += 1;
+    this.processInterceptor?.(file, note.content, this.processCount);
+    const nextContent = callback(note.content);
+    note.content = nextContent;
+    return nextContent;
   }
 
   getAbstractFileByPath(path: string): TFile | null {
@@ -786,12 +816,14 @@ export class FakeVaultNote {
   content: string;
   frontmatterTags: string[];
   frontmatter: Record<string, unknown>;
+  inlineTagCache: FakeNoteSpec["inlineTagCache"];
 
   constructor(spec: FakeNoteSpec) {
     this.file = new TFile(spec.path);
     this.content = spec.content;
     this.frontmatterTags = normalizeTagList(spec.frontmatterTags ?? []);
     this.frontmatter = { ...(spec.frontmatter ?? {}) };
+    this.inlineTagCache = spec.inlineTagCache;
   }
 }
 
@@ -800,13 +832,16 @@ class FakeMetadataCache {
 
   getFileCache(file: TFile): FakeCache {
     const note = this.vault.getNote(file.path);
-    return {
+    const cache: FakeCache = {
       frontmatter: {
         ...note.frontmatter,
         tags: [...note.frontmatterTags]
-      },
-      tags: extractInlineTags(note.content).map((tag) => ({ tag: `#${tag}` }))
+      }
     };
+    if (note.inlineTagCache !== "missing") {
+      cache.tags = note.inlineTagCache ?? extractInlineTagCaches(note.content);
+    }
+    return cache;
   }
 }
 
@@ -975,10 +1010,59 @@ function extractInlineTags(content: string): string[] {
   return normalizeTagList(tags);
 }
 
+function extractInlineTagCaches(content: string): FakeCache["tags"] {
+  const tags: FakeCache["tags"] = [];
+  const pattern = /(^|[\s([>{])#([\p{L}\p{N}_\-/]+)(?=$|[\s.,;:!?()[\]{}<>])/gu;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(content)) !== null) {
+    const startOffset = match.index + match[1].length;
+    const endOffset = startOffset + match[2].length + 1;
+    const start = offsetLocation(content, startOffset);
+    const end = offsetLocation(content, endOffset);
+    tags.push({
+      tag: content.slice(startOffset, endOffset),
+      position: {
+        start: { line: start.line, col: start.col, offset: startOffset },
+        end: { line: end.line, col: end.col, offset: endOffset }
+      }
+    });
+  }
+  return tags;
+}
+
+function offsetLocation(content: string, offset: number): { line: number; col: number } {
+  const lines = content.slice(0, offset).split("\n");
+  return { line: lines.length - 1, col: lines[lines.length - 1].replace(/\r$/, "").length };
+}
+
+export function getFrontMatterInfo(content: string): {
+  exists: boolean;
+  frontmatter: string;
+  from: number;
+  to: number;
+  contentStart: number;
+} {
+  const opening = content.match(/^---(?:\r?\n|$)/);
+  if (!opening) {
+    return { exists: false, frontmatter: "", from: 0, to: 0, contentStart: 0 };
+  }
+  const from = opening[0].length;
+  const closingPattern = /^---\s*$/gm;
+  closingPattern.lastIndex = from;
+  const closing = closingPattern.exec(content);
+  if (!closing) {
+    return { exists: false, frontmatter: "", from: 0, to: 0, contentStart: 0 };
+  }
+  const to = closing.index;
+  const newlineLength = content.slice(closing.index + closing[0].length).match(/^(?:\r?\n)/)?.[0].length ?? 0;
+  const contentStart = closing.index + closing[0].length + newlineLength;
+  return { exists: true, frontmatter: content.slice(from, to), from, to, contentStart };
+}
+
 export function getAllTags(cache: FakeCache): string[] {
   return [
     ...normalizeFrontmatterTags(cache.frontmatter.tags).map((tag) => `#${tag}`),
-    ...cache.tags.map((entry) => entry.tag)
+    ...(cache.tags ?? []).map((entry) => entry.tag)
   ];
 }
 
@@ -1011,6 +1095,7 @@ export const obsidianMock = {
   TFile,
   TFolder,
   getAllTags,
+  getFrontMatterInfo,
   getLanguage,
   requestUrl
 };

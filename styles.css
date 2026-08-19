@@ -946,3 +946,113 @@
     transform: rotate(360deg);
   }
 }
+
+.tag-curator-cleanup-review-modal,
+.tag-curator-cleanup-result-modal,
+.tag-curator-cleanup-progress-modal {
+  width: min(860px, calc(100vw - 32px));
+}
+
+.tag-curator-cleanup-review-modal {
+  display: flex;
+  flex-direction: column;
+  height: min(760px, calc(100vh - 64px));
+}
+
+.tag-curator-cleanup-review-modal .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tag-curator-cleanup-review__identity,
+.tag-curator-cleanup-review__summary,
+.tag-curator-cleanup-review__metrics,
+.tag-curator-cleanup-review__progress-primary {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin-block: 8px;
+  padding: 10px 12px;
+}
+
+.tag-curator-cleanup-review__identity {
+  color: var(--text-accent);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tag-curator-cleanup-review__files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block: 12px;
+}
+
+.tag-curator-cleanup-review__file {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.tag-curator-cleanup-review__file > summary {
+  cursor: pointer;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.tag-curator-cleanup-review__occurrences h4 {
+  margin-bottom: 4px;
+}
+
+.tag-curator-cleanup-review__occurrence .setting-item-description {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.tag-curator-cleanup-review__occurrence.is-unavailable {
+  opacity: 0.72;
+}
+
+.tag-curator-cleanup-review__warning {
+  border-inline-start: 3px solid var(--text-warning, var(--text-error));
+  color: var(--text-warning, var(--text-normal));
+  margin-block: 8px;
+  padding: 6px 10px;
+}
+
+.tag-curator-cleanup-review__note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.tag-curator-cleanup-review__actions .setting-item-control,
+.tag-curator-cleanup-review__bulk-actions .setting-item-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-curator-cleanup-review__actions button:focus-visible,
+.tag-curator-cleanup-review__bulk-actions button:focus-visible,
+.tag-curator-cleanup-review__file summary:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .tag-curator-cleanup-review-modal,
+  .tag-curator-cleanup-result-modal,
+  .tag-curator-cleanup-progress-modal {
+    width: calc(100vw - 16px);
+  }
+
+  .tag-curator-cleanup-review__file {
+    padding-inline: 6px;
+  }
+
+  .tag-curator-cleanup-review__occurrence.setting-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

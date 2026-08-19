@@ -39,7 +39,7 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Review frontmatter, inline, and AI sources per file; low-risk inline/existing-tag additions start selected, new tags are medium risk and require individual selection, and destructive actions are not executable.
 - Apply only after a second whole-batch confirmation, using full preflight, per-file snapshot checks, reverse compensation, and a persisted fixed recovery target if compensation is incomplete.
 - Undo the latest applied folder batch as one operation, including after an Obsidian/plugin reload.
-- Never rewrite note bodies or remove inline tags.
+- Never rewrite note bodies or remove inline tags in the folder workflow.
 
 **Vault-level tag health report**
 - Organize vault-level tag health into overview, AI priority actions, and rule evidence details.
@@ -47,7 +47,10 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Use rule analysis for factual evidence and action safety boundaries; use AI assistance for merging related issues, explaining rationale, ranking priorities, and adding risk notes.
 - Show user-facing AI action cards with priority, confidence, actionability, diagnosis, rationale, target tags, rule evidence, and caution notes.
 - Cache AI-enhanced analysis for the current tag index and show the last analysis time when reopening the report.
-- Executable merge/rename suggestions can show file previews, be applied manually, and be undone. Observation, broad split, deprecation, and removal suggestions stay read-only or manual-review.
+- Executable deterministic merge/rename suggestions hydrate frontmatter diffs and individual body `#tag` occurrences; only positions that exactly match Obsidian `TagCache.position` are writable.
+- Frontmatter and each body occurrence can be deselected independently. Partial cleanup shows the remaining source count and requires a second confirmation.
+- Apply uses full-content/body hashes, token-slice validation, and callback-time CAS inside `Vault.process`; frontmatter and body edits share one compensating, recoverable V2 transaction.
+- Observation, broad split, deprecation/removal actions, and body occurrences with missing or stale cache positions remain view-only or manual-review.
 - Copy AI action and cleanup suggestions as Markdown for external review.
 - Click health report tags to copy and search them in Obsidian.
 - Keep long reports scrollable inside a stable modal layout.
@@ -204,11 +207,12 @@ For new product work, start with an OpenSpec change proposal before implementati
 
 ## Current Limitations
 
-- Current-note and folder workflows write only the frontmatter `tags` field. Reviewed inline tags can be copied into frontmatter, but their original body text and position are never rewritten or removed.
+- Current-note and folder workflows still write only frontmatter `tags`; reviewed inline tags may be copied into frontmatter without changing the body.
+- The only body-write entry is deterministic merge/rename review in the health report. It replaces only user-selected complete `#tag` tokens with exact cache positions; it does not use fuzzy/global replacement or support body additions, deletion, split actions, or AI-generated body writes.
 - Both AI entry points require a configured API key. Folder batches do not expose a separate local-only mode when the key is missing.
 - A folder batch must contain 1-200 Markdown files within the configured limit; an oversized scope is blocked rather than truncated.
 - Cancellation cannot revoke provider requests already sent, so those in-flight requests may still be billed even though late results are discarded.
-- Only additive tag plans are executable in folder batches. Delete, replace, merge, and body-edit actions remain outside the 0.3 write boundary.
+- Only additive tag plans are executable in folder batches. Delete, replace, merge, and body-edit actions remain outside the folder workflow boundary.
 - Rule evidence in tag health reports is read-only. Executable cleanup items require file previews and explicit manual confirmation.
 - AI-enhanced health analysis provides summary and action guidance only; it cannot change local action capability or execute changes.
 - Cleanup plans label action capabilities. Executable merge/rename items can be applied manually and undone; other items remain preview-only, observe-only, or manual-review.
