@@ -39,7 +39,14 @@ export class CleanupReviewPlanBuilder {
     const targetTag = normalizeTag(item.targetTag!);
     const sourceTags = uniqueNormalized(item.tags).filter((tag) => tag !== targetTag);
     const generation = ++this.generation;
-    const paths = Array.from(new Set(item.files.map((file) => file.path))).sort((left, right) => left.localeCompare(right));
+    const sourceSet = new Set(sourceTags);
+    const paths = Array.from(
+      new Set(
+        item.files
+          .filter((file) => file.beforeTags.some((tag) => sourceSet.has(normalizeTag(tag))))
+          .map((file) => file.path)
+      )
+    ).sort((left, right) => left.localeCompare(right));
     const files = new Map<string, CleanupReviewFile>(
       paths.map((notePath) => [notePath, emptyReviewFile(notePath)])
     );

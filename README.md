@@ -140,7 +140,7 @@ Prepare or reset the dedicated synthetic vault used for real Obsidian smoke test
 npm run release:vault:prepare
 ```
 
-The default vault is `/Users/edge/work/obsidian-ai-tag-curator-test-vault`. The command copies only the active appearance configuration and theme from `/Users/edge/personal/edge-notes`, installs the development plugin, resets the synthetic release notes, and disables Obsidian Sync. Override either path when needed:
+The default vault is `/Users/edge/work/obsidian-ai-tag-curator-test-vault`. The command copies only the active appearance configuration and theme from `/Users/edge/personal/notes`, installs the development plugin, resets the synthetic folder-batch and inline-rewrite notes, and disables Obsidian Sync. Override either path when needed:
 
 ```bash
 OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \

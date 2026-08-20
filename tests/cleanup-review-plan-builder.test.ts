@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CleanupPlanItem } from "../src/cleanup/CleanupPlan";
+import { buildSelectedCleanupPlan } from "../src/cleanup/CleanupReviewPlan";
 import { CleanupReviewPlanBuilder } from "../src/cleanup/CleanupReviewPlanBuilder";
 import type { InlineTagOccurrenceReadResult } from "../src/obsidian/InlineTagOccurrenceReader";
 
@@ -71,6 +72,28 @@ describe("CleanupReviewPlanBuilder", () => {
       "Only deterministic"
     );
     expect(reads).toBe(0);
+  });
+
+  it("excludes target-only files so a fully selected cleanup is not marked partial", async () => {
+    const reads: string[] = [];
+    const builder = new CleanupReviewPlanBuilder({
+      async readOccurrences(notePath) {
+        reads.push(notePath);
+        return readResult(notePath, "trusted");
+      }
+    });
+    const cleanupItem = item(["source.md", "target-only.md"]);
+    cleanupItem.files = [
+      { path: "source.md", beforeTags: ["old"], afterTags: ["target"] },
+      { path: "target-only.md", beforeTags: ["target"], afterTags: ["target"] }
+    ];
+
+    const plan = await builder.build(cleanupItem);
+    const selected = buildSelectedCleanupPlan(plan);
+
+    expect(reads).toEqual(["source.md"]);
+    expect(plan.files.map((file) => file.notePath)).toEqual(["source.md"]);
+    expect(selected).toMatchObject({ partial: false, remainingSourceCount: 0 });
   });
 });
 

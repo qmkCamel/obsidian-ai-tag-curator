@@ -12,7 +12,7 @@ const vaultPath = resolve(
   process.env.OBSIDIAN_RELEASE_VAULT_PATH ?? "/Users/edge/work/obsidian-ai-tag-curator-test-vault"
 );
 const themeSourceVault = resolve(
-  process.env.OBSIDIAN_THEME_SOURCE_VAULT ?? "/Users/edge/personal/edge-notes"
+  process.env.OBSIDIAN_THEME_SOURCE_VAULT ?? "/Users/edge/personal/notes"
 );
 const obsidianDir = join(vaultPath, ".obsidian");
 const sourceObsidianDir = join(themeSourceVault, ".obsidian");
@@ -63,6 +63,7 @@ console.log("The vault contains synthetic notes only and has Obsidian Sync disab
 
 function resetFixtureNotes() {
   rmSync(join(vaultPath, "Release Test"), { recursive: true, force: true });
+  rmSync(join(vaultPath, "Inline Rewrite Test"), { recursive: true, force: true });
   rmSync(join(vaultPath, "Outside scope.md"), { force: true });
 
   writeText(
@@ -109,6 +110,71 @@ tags:
 ---
 
 This note must remain outside the default folder scope.
+`
+  );
+  writeText(
+    join(vaultPath, "Inline Rewrite Test", "01 Frontmatter and inline.md"),
+    `---
+tags:
+  - ml_notes
+  - keep
+---
+
+# Frontmatter and inline
+
+中文与 emoji 🧠 前缀 #ml_notes, canonical token #ml-notes remains unchanged.
+`
+  );
+  writeText(
+    join(vaultPath, "Inline Rewrite Test", "02 Repeated occurrences.md"),
+    `---
+tags:
+  - ml-notes
+---
+
+# Repeated occurrences
+
+Mixed #ml-notes and #ml_notes, then #ml-notes and #ml_notes. Final canonical #ml-notes.
+`
+  );
+  writeText(
+    join(vaultPath, "Inline Rewrite Test", "03 CRLF occurrence.md"),
+    "---\r\ntags:\r\n  - ml_notes\r\n---\r\n\r\n# CRLF occurrence\r\n\r\nCRLF source #ml_notes.\r\nCRLF target #ml-notes.\r\n"
+  );
+  writeText(
+    join(vaultPath, "Inline Rewrite Test", "04 No frontmatter.md"),
+    `# No frontmatter
+
+Standalone source #ml_notes and canonical #ml-notes.
+`
+  );
+  writeText(
+    join(
+      vaultPath,
+      "Inline Rewrite Test",
+      "Nested",
+      "05 Long path note for narrow reviewed inline tag layout.md"
+    ),
+    `---
+tags:
+  - ml-notes
+---
+
+# Long path acceptance
+
+Long-path source #ml_notes is reviewed while canonical references #ml-notes and #ml-notes keep the target deterministic.
+`
+  );
+  writeText(
+    join(vaultPath, "Inline Rewrite Test", "06 Canonical target reference.md"),
+    `---
+tags:
+  - ml-notes
+---
+
+# Canonical target reference
+
+Target-only reference #ml-notes keeps the canonical cleanup direction deterministic.
 `
   );
 }

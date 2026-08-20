@@ -135,8 +135,8 @@
 - [x] 10.4 运行 `npm run spec:validate -- support-reviewed-inline-tag-rewrites`。
 - [x] 10.5 运行 `npm run spec:validate -- --all`，确认与 `cleanup-action-capabilities`、`inline-health-actions` 及 0.3 change 无冲突。
 - [x] 10.6 运行相关聚焦测试、`npm test`、`npm run build` 和 `git diff --check`。
-- [ ] 10.7 使用 `npm run local:install-dev` 安装到专用可恢复测试库，不使用生产 vault 作为首次写入验证环境。
+- [x] 10.7 使用 `npm run local:install-dev` 安装到专用可恢复测试库，不使用生产 vault 作为首次写入验证环境。
 - [ ] 10.8 在最低支持版本与当前稳定版 Obsidian 验证 TagCache position：中文、emoji、CRLF、嵌套/重复 tag、无/有 frontmatter 和活动编辑器打开状态。
-- [ ] 10.9 在真实测试库 smoke 完整审查、逐位置取消、partial 确认、混合应用、内容冲突、回退、插件重载和 before/after 恢复目标。
+- [x] 10.9 在真实测试库 smoke 完整审查、逐位置取消、partial 确认、混合应用、内容冲突、回退、插件重载和 before/after 恢复目标。
 - [ ] 10.10 验证桌面窄/宽窗口、深色/浅色、键盘焦点和长路径布局，保存必要截图或验收记录。
 - [x] 10.11 明确记录自动化通过项、真实 Obsidian 证明和任何尚未验证的移动端边界，不以 build/test 代替视觉与设备验证。
