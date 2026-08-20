@@ -1,6 +1,6 @@
 # Obsidian AI Tag Curator 路线图
 
-更新日期：2026-08-04
+更新日期：2026-08-19
 
 ## 1. 路线图原则
 
@@ -254,19 +254,28 @@ MVP 完整版不追求批量自动改写，而是完成两个可验证闭环：
 
 目标：降低用户的隐私顾虑和使用成本。
 
+状态：`support-local-on-device-models` 变更已进入实现阶段。本阶段只支持显式 OpenAI-compatible endpoint，不把 Apple Foundation Models、Android Gemini Nano/AICore、Chrome Prompt API 或 LiteRT-LM JS runtime 直接打包进 Obsidian 插件。
+
 需求：
 
-- 支持 Ollama 或其他本地 OpenAI-compatible endpoint；
-- 为常见 provider 提供配置预设；
-- 区分 Chat Completions 兼容和其他格式；
-- 增加 provider 测试按钮；
-- 在设置页提示哪些内容会发送给 AI。
+- 支持 Ollama、LM Studio、LiteRT-LM CLI 或其他本地 OpenAI-compatible endpoint；
+- 为 OpenAI、DeepSeek、Ollama、LM Studio、LiteRT-LM CLI 和自定义 endpoint 提供配置预设；
+- 远端 provider 继续要求 API key，本地 provider 允许空 API key；
+- 用 JSON mode capability 兼容不支持 `response_format` 的本地服务；
+- 增加 provider 测试按钮，覆盖模型列表探测、最小 chat completion 和 JSON 输出验证；
+- 增加 `edge-small` prompt profile，降低端上小模型上下文压力；
+- 本地 provider 文件夹批次默认 1 并发，远端 provider 保持最多 2 并发；
+- 在设置页和文件夹范围确认中提示哪些内容会发送给 provider，并区分本机、局域网/自定义和远端 endpoint。
 
 验收标准：
 
 - 用户能用 DeepSeek、OpenAI、本地兼容服务完成推荐；
 - 配置错误时能得到明确错误；
-- 用户知道当前笔记内容和标签索引摘要会被发送给 provider。
+- 用户知道当前笔记内容、标签索引摘要、健康报告规则证据会被发送给 provider；
+- 文件夹批次快照和操作日志不保存 API key；
+- Apple/Google 原生端上 SDK 只能作为后续 helper/伴生 app POC 进入方案。
+
+参考：[端上模型支持调研](on-device-model-support-research.zh-CN.md)。
 
 ## 5. 暂缓范围
 

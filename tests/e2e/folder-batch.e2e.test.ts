@@ -197,6 +197,41 @@ describe("folder batch e2e", () => {
     expect(app.fileManager.getWriteCount()).toBe(0);
   });
 
+  it("uses a local provider without an API key and defaults folder batches to one in-flight request", async () => {
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(
+      ["a", "b"].map((name) => ({ path: `notes/${name}.md`, content: `body #${name}` })),
+      {
+        activeFilePath: "notes/a.md",
+        pluginData: {
+          settings: {
+            providerType: "local-openai-compatible",
+            apiBaseUrl: "http://127.0.0.1:11434/v1",
+            apiKey: "",
+            model: "qwen3:4b",
+            supportsJsonMode: false,
+            uiLanguage: "zh-CN"
+          }
+        }
+      }
+    );
+    const plugin = await loadPlugin(app);
+    const first = createDeferred<void>();
+    queueAiResponse(aiResponse([]), first);
+    queueAiResponse(aiResponse([]));
+
+    runCommand(plugin, "suggest-tags-for-folder");
+    await waitForText(labels.folderBatch.providerNoticeLoopback("127.0.0.1:11434"));
+    click(labels.folderBatch.start);
+    await waitFor(() => expect(requestUrlMock).toHaveBeenCalledTimes(1));
+    const request = requestUrlMock.mock.calls[0][0] as { headers: Record<string, string>; body: string };
+    expect(request.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(request.body)).not.toHaveProperty("response_format");
+    first.resolve();
+    await waitForText(labels.folderBatch.previewTitle);
+    expect(requestUrlMock).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps local inline sync review when folder or single-note AI fails", async () => {
     const labels = getLabels("zh-CN");
     const app = createFakeApp([{ path: "notes/a.md", content: "body #inline", frontmatterTags: ["base"] }], {
@@ -461,7 +496,12 @@ function batchRecord(status: "applying" | "undoing") {
     includeSubfolders: true,
     indexUpdatedAt: "2026-08-04T00:00:00.000Z",
     settings: {
+      providerType: "openai-compatible",
+      providerPreset: "openai",
       model: "model",
+      supportsJsonMode: true,
+      providerConcurrency: 2,
+      promptProfile: "default",
       maxRecommendations: 5,
       maxFolderBatchFiles: 50,
       allowNewTags: false,

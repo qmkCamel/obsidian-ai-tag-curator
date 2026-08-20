@@ -28,6 +28,11 @@ type LabelTree = {
     noTagIndex: string;
     openMarkdownForSuggest: string;
     configureApiKey: string;
+    configureProviderBaseUrl: string;
+    configureProviderInvalidBaseUrl: string;
+    configureProviderModel: string;
+    providerTestSucceeded: (model: string, jsonMode: string) => string;
+    providerTestFailed: (message: string) => string;
     suggestStarted: string;
     noRecommendations: string;
     suggestFailed: string;
@@ -54,12 +59,41 @@ type LabelTree = {
     languageAuto: string;
     languageZh: string;
     languageEn: string;
+    providerTypeName: string;
+    providerTypeDesc: string;
+    providerTypeRemote: string;
+    providerTypeLocal: string;
+    providerPresetName: string;
+    providerPresetDesc: string;
+    providerPresetOpenAI: string;
+    providerPresetDeepSeek: string;
+    providerPresetLiteRT: string;
+    providerPresetOllama: string;
+    providerPresetLMStudio: string;
+    providerPresetCustom: string;
     apiBaseUrlName: string;
     apiBaseUrlDesc: string;
     apiKeyName: string;
     apiKeyDesc: string;
     modelName: string;
     modelDesc: string;
+    supportsJsonModeName: string;
+    supportsJsonModeDesc: string;
+    providerConcurrencyName: string;
+    providerConcurrencyDesc: string;
+    promptProfileName: string;
+    promptProfileDesc: string;
+    promptProfileDefault: string;
+    promptProfileEdgeSmall: string;
+    providerPrivacyName: string;
+    providerPrivacyDesc: string;
+    providerBoundaryLoopback: (host: string) => string;
+    providerBoundaryCustom: (host: string) => string;
+    providerBoundaryRemote: (host: string) => string;
+    providerTestName: string;
+    providerTestDesc: string;
+    providerTestButton: string;
+    providerTestRunning: string;
     maxRecommendationsName: string;
     maxRecommendationsDesc: string;
     maxFolderBatchFilesName: string;
@@ -128,6 +162,9 @@ type LabelTree = {
     fileCount: (count: number) => string;
     requestCount: (count: number) => string;
     providerNotice: string;
+    providerNoticeLoopback: (host: string) => string;
+    providerNoticeCustom: (host: string) => string;
+    providerNoticeRemote: (host: string) => string;
     maxLimit: (limit: number) => string;
     emptyScope: string;
     overLimit: (count: number, limit: number) => string;
@@ -369,6 +406,11 @@ const ZH_LABELS: LabelTree = {
     noTagIndex: "还没有标签索引，请先运行“刷新标签索引”。",
     openMarkdownForSuggest: "请先打开一篇 Markdown 笔记再请求标签推荐。",
     configureApiKey: "请先在 AI Tag Curator 设置中配置 API key。",
+    configureProviderBaseUrl: "请先在 AI Tag Curator 设置中配置 AI provider base URL。",
+    configureProviderInvalidBaseUrl: "AI provider base URL 必须是 http 或 https URL。",
+    configureProviderModel: "请先在 AI Tag Curator 设置中配置模型名。",
+    providerTestSucceeded: (model, jsonMode) => `Provider 测试通过：模型 ${model}，JSON mode ${jsonMode}。`,
+    providerTestFailed: (message) => `Provider 测试失败：${message}`,
     suggestStarted: "正在后台生成标签推荐，完成后会弹出结果。",
     noRecommendations: "没有返回标签推荐。",
     suggestFailed: "标签推荐失败。",
@@ -395,12 +437,42 @@ const ZH_LABELS: LabelTree = {
     languageAuto: "Auto（跟随 Obsidian）",
     languageZh: "简体中文",
     languageEn: "English",
+    providerTypeName: "Provider 类型",
+    providerTypeDesc: "远端 provider 需要 API key；本地 OpenAI-compatible endpoint 可留空 API key。",
+    providerTypeRemote: "远端 OpenAI-compatible",
+    providerTypeLocal: "本地 OpenAI-compatible",
+    providerPresetName: "Provider preset",
+    providerPresetDesc: "选择常见 provider 默认值。插件不会安装、启动或下载任何模型。",
+    providerPresetOpenAI: "OpenAI",
+    providerPresetDeepSeek: "DeepSeek",
+    providerPresetLiteRT: "LiteRT-LM CLI",
+    providerPresetOllama: "Ollama",
+    providerPresetLMStudio: "LM Studio",
+    providerPresetCustom: "自定义",
     apiBaseUrlName: "API base URL",
     apiBaseUrlDesc: "OpenAI-compatible endpoint，例如 https://api.deepseek.com 或 https://api.openai.com/v1。",
     apiKeyName: "API key",
     apiKeyDesc: "保存在本地 Obsidian 插件数据中。",
     modelName: "Model",
     modelDesc: "OpenAI-compatible provider 的模型名，例如 deepseek-v4-flash。",
+    supportsJsonModeName: "JSON mode",
+    supportsJsonModeDesc: "开启后请求会包含 response_format=json_object；若本地 provider 不支持，请关闭。",
+    providerConcurrencyName: "Provider 并发",
+    providerConcurrencyDesc: "文件夹批次同时请求 provider 的数量。远端默认 2，本地默认 1，可在 1–2 间调整。",
+    promptProfileName: "Prompt profile",
+    promptProfileDesc: "default 保持完整上下文；edge-small 为端上小模型收窄正文、标签和健康报告上下文。",
+    promptProfileDefault: "default",
+    promptProfileEdgeSmall: "edge-small",
+    providerPrivacyName: "Provider 隐私边界",
+    providerPrivacyDesc:
+      "当前笔记推荐会发送笔记内容片段、已有标签和标签索引摘要；标签健康 AI 会发送本地规则证据、标签统计和有限示例；文件夹批次会按每篇笔记发送内容片段和标签索引摘要。API key 只保存在本地插件数据中，不进入批次快照或操作日志。",
+    providerBoundaryLoopback: (host) => `当前 endpoint 是本机地址 ${host}。`,
+    providerBoundaryCustom: (host) => `当前 endpoint 是 ${host}，内容会发送到该地址，不能视为只留在当前设备。`,
+    providerBoundaryRemote: (host) => `当前 endpoint 是远端 provider ${host}，请自行确认其服务条款和数据处理方式。`,
+    providerTestName: "测试 provider",
+    providerTestDesc: "手动发送模型列表探测和最小 JSON chat completion；打开设置页不会自动请求。",
+    providerTestButton: "测试连接",
+    providerTestRunning: "测试中...",
     maxRecommendationsName: "推荐数量上限",
     maxRecommendationsDesc: "预览中最多展示多少个标签。",
     maxFolderBatchFilesName: "单批最多文件数",
@@ -474,6 +546,12 @@ const ZH_LABELS: LabelTree = {
     fileCount: (count) => `Markdown 文件：${count}`,
     requestCount: (count) => `预计 AI 请求：${count}`,
     providerNotice: "每篇笔记单独请求当前配置的 provider；已发出的请求在取消后仍可能计费。",
+    providerNoticeLoopback: (host) =>
+      `每篇笔记会单独请求本机 endpoint ${host}，发送内容片段和标签索引摘要；取消后晚到结果会被丢弃。`,
+    providerNoticeCustom: (host) =>
+      `每篇笔记会单独请求 ${host}，内容会发送到该地址；取消后晚到结果会被丢弃。`,
+    providerNoticeRemote: (host) =>
+      `每篇笔记会单独请求远端 provider ${host}；已发出的请求在取消后仍可能计费。`,
     maxLimit: (limit) => `当前单批上限：${limit}`,
     emptyScope: "当前范围没有 Markdown 文件，无法开始。",
     overLimit: (count, limit) => `当前范围有 ${count} 篇，超过上限 ${limit}；不会静默截断。请缩小范围或调整设置。`,
@@ -715,6 +793,11 @@ const EN_LABELS: LabelTree = {
     noTagIndex: "No tag index yet. Run Refresh vault tag index first.",
     openMarkdownForSuggest: "Open a Markdown note before requesting tag suggestions.",
     configureApiKey: "Configure an API key in AI Tag Curator settings first.",
+    configureProviderBaseUrl: "Configure an AI provider base URL in AI Tag Curator settings first.",
+    configureProviderInvalidBaseUrl: "AI provider base URL must be an http or https URL.",
+    configureProviderModel: "Configure an AI provider model in AI Tag Curator settings first.",
+    providerTestSucceeded: (model, jsonMode) => `Provider test passed: model ${model}, JSON mode ${jsonMode}.`,
+    providerTestFailed: (message) => `Provider test failed: ${message}`,
     suggestStarted: "Generating tag recommendations in the background. Results will open when ready.",
     noRecommendations: "No tag recommendations returned.",
     suggestFailed: "Failed to suggest tags.",
@@ -741,12 +824,48 @@ const EN_LABELS: LabelTree = {
     languageAuto: "Auto (follow Obsidian)",
     languageZh: "简体中文",
     languageEn: "English",
+    providerTypeName: "Provider type",
+    providerTypeDesc: "Remote providers require an API key. Local OpenAI-compatible endpoints may leave it blank.",
+    providerTypeRemote: "Remote OpenAI-compatible",
+    providerTypeLocal: "Local OpenAI-compatible",
+    providerPresetName: "Provider preset",
+    providerPresetDesc: "Choose defaults for common providers. The plugin does not install, start, or download models.",
+    providerPresetOpenAI: "OpenAI",
+    providerPresetDeepSeek: "DeepSeek",
+    providerPresetLiteRT: "LiteRT-LM CLI",
+    providerPresetOllama: "Ollama",
+    providerPresetLMStudio: "LM Studio",
+    providerPresetCustom: "Custom",
     apiBaseUrlName: "API base URL",
     apiBaseUrlDesc: "OpenAI-compatible endpoint, for example https://api.deepseek.com or https://api.openai.com/v1.",
     apiKeyName: "API key",
     apiKeyDesc: "Stored locally in Obsidian plugin data.",
     modelName: "Model",
     modelDesc: "Model name for your OpenAI-compatible provider, for example deepseek-v4-flash.",
+    supportsJsonModeName: "JSON mode",
+    supportsJsonModeDesc:
+      "When enabled, requests include response_format=json_object. Turn it off if your local provider does not support it.",
+    providerConcurrencyName: "Provider concurrency",
+    providerConcurrencyDesc:
+      "Number of simultaneous provider requests in folder batches. Remote defaults to 2, local defaults to 1; allowed range is 1-2.",
+    promptProfileName: "Prompt profile",
+    promptProfileDesc:
+      "default keeps the full context; edge-small narrows note text, tags, and health-report context for small on-device models.",
+    promptProfileDefault: "default",
+    promptProfileEdgeSmall: "edge-small",
+    providerPrivacyName: "Provider privacy boundary",
+    providerPrivacyDesc:
+      "Current-note recommendations send note excerpts, existing tags, and a tag-index summary. Tag-health AI sends local rule evidence, tag statistics, and limited examples. Folder batches send note excerpts and tag-index summaries per note. API keys stay in local plugin data and are not stored in batch snapshots or operation logs.",
+    providerBoundaryLoopback: (host) => `Current endpoint is local loopback ${host}.`,
+    providerBoundaryCustom: (host) =>
+      `Current endpoint is ${host}; content is sent to that address and should not be treated as staying on this device.`,
+    providerBoundaryRemote: (host) =>
+      `Current endpoint is remote provider ${host}; review its terms and data handling yourself.`,
+    providerTestName: "Test provider",
+    providerTestDesc:
+      "Manually sends a model-list probe and a minimal JSON chat completion. Opening settings never sends requests automatically.",
+    providerTestButton: "Test connection",
+    providerTestRunning: "Testing...",
     maxRecommendationsName: "Maximum recommendations",
     maxRecommendationsDesc: "Upper bound for tags shown in the preview.",
     maxFolderBatchFilesName: "Maximum files per batch",
@@ -822,6 +941,12 @@ const EN_LABELS: LabelTree = {
     fileCount: (count) => `Markdown files: ${count}`,
     requestCount: (count) => `Estimated AI requests: ${count}`,
     providerNotice: "Each note uses one request to the configured provider. Requests already sent may still be billed after cancellation.",
+    providerNoticeLoopback: (host) =>
+      `Each note requests local endpoint ${host} with a content excerpt and tag-index summary. Late results after cancellation are discarded.`,
+    providerNoticeCustom: (host) =>
+      `Each note requests ${host}; content is sent to that address. Late results after cancellation are discarded.`,
+    providerNoticeRemote: (host) =>
+      `Each note requests remote provider ${host}. Requests already sent may still be billed after cancellation.`,
     maxLimit: (limit) => `Current per-batch limit: ${limit}`,
     emptyScope: "This scope contains no Markdown files and cannot start.",
     overLimit: (count, limit) => `This scope has ${count} notes, above the ${limit} limit. Nothing will be silently truncated; narrow the scope or change settings.`,

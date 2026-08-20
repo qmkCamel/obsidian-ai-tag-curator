@@ -74,4 +74,49 @@ describe("buildRecommendationMessages", () => {
     expect(userPayload.vaultTags).toHaveLength(100);
     expect(userPayload.vaultTags[0].examples).toHaveLength(3);
   });
+
+  it("uses a smaller context for the edge-small prompt profile", () => {
+    const index = denseIndex(80);
+    const userPayload = JSON.parse(
+      buildRecommendationMessages(
+        {
+          path: "note.md",
+          content: "a".repeat(5000),
+          frontmatterTags: [],
+          inlineTags: [],
+          allTags: [],
+          sourceContentHash: "a".repeat(64)
+        },
+        index,
+        { ...DEFAULT_SETTINGS, promptProfile: "edge-small" },
+        "en"
+      )[1].content
+    );
+
+    expect(userPayload.note.content).toHaveLength(4012);
+    expect(userPayload.vaultTags).toHaveLength(50);
+    expect(userPayload.vaultTags[0].examples).toHaveLength(1);
+  });
 });
+
+function denseIndex(count: number): TagIndex {
+  return {
+    updatedAt: "2026-05-12T00:00:00.000Z",
+    tags: Object.fromEntries(
+      Array.from({ length: count }, (_, index) => [
+        `tag-${index}`,
+        {
+          tag: `tag-${index}`,
+          normalized: `tag-${index}`,
+          count: count - index,
+          files: [],
+          examples: [
+            { path: "a.md", snippet: "one" },
+            { path: "b.md", snippet: "two" }
+          ],
+          namingSignals: { hasHierarchy: false, depth: 1 }
+        }
+      ])
+    )
+  };
+}

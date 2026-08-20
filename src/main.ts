@@ -1,6 +1,12 @@
 // Obsidian plugin entry point that wires settings, commands, indexing, AI, preview, and undo.
 import { getLanguage, Notice, Plugin, TFile } from "obsidian";
-import { OpenAICompatibleProvider } from "./ai/OpenAICompatibleProvider";
+import {
+  createAiProvider,
+  describeProviderEndpoint,
+  getProviderCapabilities,
+  validateProviderSettings,
+  type ProviderConfigIssue
+} from "./ai/AiProviderFactory";
 import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
 import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
 import { applyCleanupPreviewToFrontmatterTags } from "./cleanup/CleanupTagTransform";
@@ -220,17 +226,19 @@ export default class TagCuratorPlugin extends Plugin {
         cleanupPlan,
         this.labels,
         async () => {
-          if (!this.settings.apiKey) {
-            throw new Error(this.labels.notices.configureApiKey);
+          const providerIssue = this.getProviderConfigIssue();
+          if (providerIssue) {
+            throw new Error(this.providerConfigNotice(providerIssue));
           }
 
           const timer = this.settings.devMode ? new OperationTimer() : null;
           timer?.startStage("prepare-ai-health-context");
-          const provider = new OpenAICompatibleProvider(this.settings);
+          const provider = createAiProvider(this.settings);
           const analyzer = new TagHealthAiAnalyzer(provider, {
             allowNewTags: this.settings.allowNewTags,
             newTagStrictness: this.settings.newTagStrictness,
-            uiLanguage: this.uiLanguage
+            uiLanguage: this.uiLanguage,
+            promptProfile: this.settings.promptProfile
           });
           timer?.endStage("prepare-ai-health-context");
 
@@ -270,8 +278,9 @@ export default class TagCuratorPlugin extends Plugin {
       return;
     }
 
-    if (!this.settings.apiKey.trim()) {
-      new Notice(this.labels.notices.configureApiKey);
+    const providerIssue = this.getProviderConfigIssue();
+    if (providerIssue) {
+      new Notice(this.providerConfigNotice(providerIssue));
       return;
     }
 
@@ -288,7 +297,7 @@ export default class TagCuratorPlugin extends Plugin {
       this.tagIndex = index;
       timer?.endStage("prepare-tag-index");
 
-      const provider = new OpenAICompatibleProvider(this.settings);
+      const provider = createAiProvider(this.settings);
       const service = new TagRecommendationService(provider, this.settings, this.uiLanguage);
       timer?.startStage("request-ai-recommendations");
       let result;
@@ -336,8 +345,9 @@ export default class TagCuratorPlugin extends Plugin {
       new Notice(this.labels.notices.openMarkdownForFolderBatch);
       return;
     }
-    if (!this.settings.apiKey.trim()) {
-      new Notice(this.labels.notices.configureApiKey);
+    const providerIssue = this.getProviderConfigIssue();
+    if (providerIssue) {
+      new Notice(this.providerConfigNotice(providerIssue));
       return;
     }
     const unresolved = this.operationLog.latestUnresolvedBatch();
@@ -354,6 +364,7 @@ export default class TagCuratorPlugin extends Plugin {
       this.settings.maxFolderBatchFiles,
       true,
       this.labels,
+      this.folderBatchProviderNotice(),
       (scope) => {
         void this.generateFolderBatch(scope);
       }
@@ -365,7 +376,7 @@ export default class TagCuratorPlugin extends Plugin {
     try {
       const frozenSettings: TagCuratorSettings = { ...this.settings };
       const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
-      const provider = new OpenAICompatibleProvider(frozenSettings);
+      const provider = createAiProvider(frozenSettings);
       const service = new TagRecommendationService(provider, frozenSettings, this.uiLanguage);
       const batchPlan = createFolderBatchPlan({
         folderPath: scope.folderPath,
@@ -375,11 +386,14 @@ export default class TagCuratorPlugin extends Plugin {
         settings: frozenSettings,
         uiLanguage: this.uiLanguage
       });
-      const runner = new FolderBatchRecommendationRunner({
-        readNote: (path) => this.vaultReader.readNoteByPath(path),
-        recommendForNote: (note, frozenIndex) => service.recommendForNote(note, frozenIndex),
-        inlineSyncReason: this.labels.recommendations.inlineSyncReason
-      });
+      const runner = new FolderBatchRecommendationRunner(
+        {
+          readNote: (path) => this.vaultReader.readNoteByPath(path),
+          recommendForNote: (note, frozenIndex) => service.recommendForNote(note, frozenIndex),
+          inlineSyncReason: this.labels.recommendations.inlineSyncReason
+        },
+        getProviderCapabilities(frozenSettings).providerConcurrency
+      );
       await this.runFolderBatchGeneration(runner, batchPlan, index, false);
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.folderBatchFailed);
@@ -527,6 +541,35 @@ export default class TagCuratorPlugin extends Plugin {
     }
 
     return this.healthAiAnalysisCache;
+  }
+
+  private getProviderConfigIssue(): ProviderConfigIssue | null {
+    const state = validateProviderSettings(this.settings);
+    return state.ok ? null : state.issue;
+  }
+
+  private providerConfigNotice(issue: ProviderConfigIssue): string {
+    switch (issue) {
+      case "missing-api-key":
+        return this.labels.notices.configureApiKey;
+      case "missing-base-url":
+        return this.labels.notices.configureProviderBaseUrl;
+      case "invalid-base-url":
+        return this.labels.notices.configureProviderInvalidBaseUrl;
+      case "missing-model":
+        return this.labels.notices.configureProviderModel;
+    }
+  }
+
+  private folderBatchProviderNotice(): string {
+    const endpoint = describeProviderEndpoint(this.settings);
+    if (endpoint.boundary === "loopback") {
+      return this.labels.folderBatch.providerNoticeLoopback(endpoint.host);
+    }
+    if (endpoint.boundary === "remote") {
+      return this.labels.folderBatch.providerNoticeRemote(endpoint.host);
+    }
+    return this.labels.folderBatch.providerNoticeCustom(endpoint.host);
   }
 
   private async undoLastChangeForCurrentNote(): Promise<void> {

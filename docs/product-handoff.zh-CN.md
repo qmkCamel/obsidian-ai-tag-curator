@@ -215,6 +215,9 @@ Obsidian 插件生态已经足够大，可以支撑专注于某个知识管理�
 - 扫描 Markdown 文件中的 inline tags 和 frontmatter tags；
 - 构建标签索引，包含使用次数、文件路径、代表性片段；
 - 通过 OpenAI-compatible API 抽象接入 DeepSeek、OpenAI 等 provider；
+- 支持本地 OpenAI-compatible endpoint preset，包括 Ollama、LM Studio、LiteRT-LM CLI 和自定义地址；本地 provider 可空 API key；
+- 通过 provider factory 统一当前笔记推荐、健康报告 AI 分析和文件夹批次入口；
+- 支持 JSON mode 开关、`edge-small` prompt profile、provider 连接测试和 endpoint 隐私边界提示；
 - 将确定性清理操作保存成可审查计划，并展示文件级预览；
 - 使用 YAML-aware parser 修改 frontmatter，避免字符串替换；
 - 保留可逆操作日志，并在文件内容已变化时阻止回退覆盖。
@@ -230,13 +233,15 @@ Obsidian 插件生态已经足够大，可以支撑专注于某个知识管理�
 - 当前版本不引入 embedding，使用本地规则、标签索引和结构化 LLM 输出；
 - 标签审计由用户手动触发，AI 健康分析按标签索引时间缓存；
 - AI 只能补充解释、优先级和候选目标，不能提升本地动作可执行性；
+- 本地 provider 只代表显式配置的 endpoint；插件不自动安装、启动、下载或管理模型，也不做静默云端 fallback；
+- Apple Foundation Models、Android Gemini Nano/AICore、Chrome Prompt API 和 LiteRT-LM JS 属于后续 helper/伴生 app POC，不直接进入当前插件运行时；
 - 低频观察、过宽拆分、废弃/移除等高风险动作保持只读或人工判断。
 
 仍需推进：
 
 - 完整操作历史和按操作查看、撤销能力；
 - 增量索引、索引过期状态、刷新进度和大型库性能保护；
-- Ollama/本地 endpoint 的明确支持、常见 provider 预设、连接测试和隐私提示。
+- Apple/Google 原生端上 helper 或伴生 app 的可行性验证，详见 [端上模型支持调研](on-device-model-support-research.zh-CN.md)。
 
 ## 11. 路线图
 

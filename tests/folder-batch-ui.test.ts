@@ -25,6 +25,7 @@ describe("folder batch DOM", () => {
       50,
       true,
       labels,
+      labels.folderBatch.providerNotice,
       vi.fn()
     );
     modal.open();

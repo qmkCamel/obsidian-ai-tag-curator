@@ -37,9 +37,9 @@ describe("folder scope", () => {
         includeSubfolders: true,
         filePaths: ["a.md"],
         maxFolderBatchFiles: 50,
-        hasApiKey: false
+        isProviderConfigured: false
       })
-    ).toMatchObject({ blockReason: "missingApiKey", canStart: false });
+    ).toMatchObject({ blockReason: "missingProviderConfig", canStart: false });
   });
 
   it("normalizes legacy and out-of-range batch limits to 1–200", () => {
@@ -56,6 +56,6 @@ function scope(filePaths: string[], maxFolderBatchFiles = 50) {
     includeSubfolders: true,
     filePaths,
     maxFolderBatchFiles,
-    hasApiKey: true
+    isProviderConfigured: true
   });
 }

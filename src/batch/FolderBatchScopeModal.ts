@@ -16,8 +16,9 @@ export class FolderBatchScopeModal extends Modal {
     private readonly reader: VaultReader,
     defaultFolderPath: string,
     private readonly maxFolderBatchFiles: number,
-    private readonly hasApiKey: boolean,
+    private readonly isProviderConfigured: boolean,
     private readonly labels: Labels,
+    private readonly providerNotice: string,
     private readonly onStart: (scope: FolderBatchScopeViewModel) => void
   ) {
     super(app);
@@ -35,7 +36,7 @@ export class FolderBatchScopeModal extends Modal {
       includeSubfolders: this.includeSubfolders,
       filePaths: this.reader.listMarkdownFilesInFolder(this.folderPath, this.includeSubfolders).map((file) => file.path),
       maxFolderBatchFiles: this.maxFolderBatchFiles,
-      hasApiKey: this.hasApiKey
+      isProviderConfigured: this.isProviderConfigured
     });
   }
 
@@ -71,7 +72,7 @@ export class FolderBatchScopeModal extends Modal {
     metrics.createDiv({ text: this.labels.folderBatch.fileCount(scope.fileCount) });
     metrics.createDiv({ text: this.labels.folderBatch.requestCount(scope.estimatedRequestCount) });
     metrics.createDiv({ text: this.labels.folderBatch.maxLimit(scope.maxFolderBatchFiles) });
-    this.contentEl.createEl("p", { cls: "tag-curator-folder-batch__muted", text: this.labels.folderBatch.providerNotice });
+    this.contentEl.createEl("p", { cls: "tag-curator-folder-batch__muted", text: this.providerNotice });
 
     if (scope.blockReason === "empty") {
       this.contentEl.createDiv({ cls: "tag-curator-folder-batch__warning", text: this.labels.folderBatch.emptyScope });

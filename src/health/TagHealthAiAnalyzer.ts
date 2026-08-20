@@ -1,6 +1,7 @@
 // Coordinates optional AI interpretation for the rule-based tag health report.
 import type { AiProvider } from "../ai/AiProvider";
 import type { TagIndex } from "../index/TagIndex";
+import type { AiPromptProfile } from "../settings/PluginSettings";
 import type { UiLanguage } from "../ui/labels";
 import type { TagHealthAiAnalysis } from "./TagHealthAiAnalysis";
 import { parseTagHealthAiAnalysis } from "./TagHealthAiAnalysisParser";
@@ -11,6 +12,7 @@ interface TagHealthAiAnalyzerOptions {
   allowNewTags: boolean;
   newTagStrictness: "strict" | "balanced" | "exploratory";
   uiLanguage: UiLanguage;
+  promptProfile: AiPromptProfile;
 }
 
 export class TagHealthAiAnalyzer {
@@ -24,7 +26,8 @@ export class TagHealthAiAnalyzer {
       buildTagHealthAiMessages(report, index, {
         allowNewTags: this.options.allowNewTags,
         newTagStrictness: this.options.newTagStrictness,
-        uiLanguage: this.options.uiLanguage
+        uiLanguage: this.options.uiLanguage,
+        promptProfile: this.options.promptProfile
       })
     );
     return parseTagHealthAiAnalysis(raw);

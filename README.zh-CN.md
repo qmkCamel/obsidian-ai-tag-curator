@@ -58,7 +58,9 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 
 **设置**
 ![设置](docs/images/settings.png)
-- 支持 DeepSeek、OpenAI 等 OpenAI-compatible provider。
+- 支持 DeepSeek、OpenAI 等远端 OpenAI-compatible provider，也支持 Ollama、LM Studio、LiteRT-LM CLI 等本地 OpenAI-compatible endpoint。
+- 本地 provider 允许空 API key，可关闭 JSON mode，并默认使用更小的 `edge-small` prompt profile 与 1 并发文件夹批次。
+- 设置页提供手动 provider 连接测试，并展示当前 endpoint 会接收哪些内容。
 - 支持中文、英文和跟随 Obsidian 当前语言的 `Auto` 模式。
 - 开发模式支持展示标签推荐和 AI 增强分析的总耗时与阶段耗时。
 - 可配置 1–200 的单批完整文件上限。
@@ -67,18 +69,27 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 
 在插件设置中配置：
 
+- `Provider 类型` 和 `Provider preset`
 - `API base URL`
-- `API key`
+- `API key`（远端 provider 必填；本地 provider 可留空）
 - `Model`
+- `JSON mode`
+- `Prompt profile`
+- `Provider 并发`
 
 常见 OpenAI-compatible 配置示例：
 
-| Provider | API base URL | Model 示例 |
-| --- | --- | --- |
-| DeepSeek | `https://api.deepseek.com` | `deepseek-v4-flash` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| Provider | 类型 | API base URL | API key | Model 示例 |
+| --- | --- | --- | --- | --- |
+| OpenAI | 远端 | `https://api.openai.com/v1` | 必填 | `gpt-4o-mini` |
+| DeepSeek | 远端 | `https://api.deepseek.com` | 必填 | `deepseek-chat` |
+| Ollama | 本地 | `http://127.0.0.1:11434/v1` | 可空 | `qwen3:4b` |
+| LM Studio | 本地 | `http://127.0.0.1:1234/v1` | 可空 | 本地已加载模型名 |
+| LiteRT-LM CLI | 本地 | `http://127.0.0.1:9379/v1` | 可空 | `litert-lm serve` 暴露的模型名 |
 
-API key 会保存在本地 Obsidian 插件数据中。
+API key 会保存在本地 Obsidian 插件数据中，不会进入文件夹批次快照或操作日志。插件不会自动安装、启动、下载或管理任何本地模型；如果配置的本地 endpoint 不是 `127.0.0.1` / `localhost`，设置页和文件夹范围确认会提示内容会发送到该地址。
+
+Apple Foundation Models、Android Gemini Nano/AICore、Chrome Prompt API 和 LiteRT-LM JS 这类原生端上 SDK 不会直接打包进 Obsidian 插件运行时；本阶段只通过显式本地 OpenAI-compatible endpoint 接入。详细调研见 [端上模型支持调研](docs/on-device-model-support-research.zh-CN.md)。
 
 ## 本地安装
 
@@ -131,7 +142,7 @@ npm run local:install-dev
 
 ## 使用流程
 
-1. 配置 OpenAI-compatible API base URL、API key 和 model。
+1. 配置 provider 类型、preset、API base URL、API key（本地 provider 可留空）和 model。
 2. 执行 `刷新标签索引`。
 3. 打开一篇 Markdown 笔记。
 4. 执行 `为当前笔记推荐标签`。
@@ -181,7 +192,8 @@ npm run spec:validate -- <change-name>
 ## 当前限制
 
 - 当前笔记和文件夹工作流都只写 frontmatter `tags`。用户审查过的 inline tags 可以同步进入 frontmatter，但正文中的原始文本和位置永远不会被改写或删除。
-- 两个 AI 入口都要求已配置 API key；未配置时，文件夹入口不会降级为独立的本地同步模式。
+- 远端 provider 仍要求 API key；本地 OpenAI-compatible provider 可以留空 API key，但仍必须配置 base URL 和 model。
+- 插件只调用用户显式配置的 provider endpoint，不会自动安装、启动或下载任何模型，也不会静默云端 fallback。
 - 文件夹批次必须在当前配置的 1–200 篇完整上限内；超过上限会阻断，而不是截取前 N 篇。
 - 取消无法撤回已经发给 provider 的请求，因此在途请求仍可能计费，但其晚到结果会被丢弃。
 - 文件夹批次只允许新增标签；删除、替换、合并和正文改写仍在 0.3 写入边界之外。

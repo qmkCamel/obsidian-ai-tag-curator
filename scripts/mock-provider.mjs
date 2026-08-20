@@ -20,11 +20,34 @@ const recommendationBody = JSON.stringify({
   ],
   warnings: []
 });
+const healthBody = JSON.stringify({
+  summary: "Local mock health summary.",
+  priorities: [
+    {
+      issueType: "nearDuplicates",
+      tags: ["ml_notes", "ml-notes"],
+      severity: "high",
+      confidence: "high",
+      diagnosis: "These tags represent the same taxonomy entry.",
+      suggestedAction: "merge",
+      targetTag: "ml_notes",
+      reason: "Keep one spelling for the same topic.",
+      riskNote: "Review affected files before applying."
+    }
+  ]
+});
+const connectionTestBody = JSON.stringify({ ok: true });
 
 const server = http.createServer((request, response) => {
   if (request.method === "GET" && request.url === "/health") {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  if (request.method === "GET" && request.url === "/v1/models") {
+    response.writeHead(200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ data: [{ id: "deterministic-local-mock" }] }));
     return;
   }
 
@@ -34,17 +57,28 @@ const server = http.createServer((request, response) => {
   });
   request.on("end", () => {
     setTimeout(() => {
+      const content = chooseResponseContent(requestBody);
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(
         JSON.stringify({
           id: "release-mock-response",
           model: "deterministic-local-mock",
-          choices: [{ message: { role: "assistant", content: recommendationBody } }]
+          choices: [{ message: { role: "assistant", content } }]
         })
       );
     }, delayMs);
   });
 });
+
+function chooseResponseContent(requestBody) {
+  if (requestBody.includes("Enhance a read-only Obsidian tag health report")) {
+    return healthBody;
+  }
+  if (requestBody.includes("Return exactly this JSON object")) {
+    return connectionTestBody;
+  }
+  return recommendationBody;
+}
 
 server.listen(port, host, () => {
   console.log(`Deterministic mock provider listening on http://${host}:${port}/v1`);

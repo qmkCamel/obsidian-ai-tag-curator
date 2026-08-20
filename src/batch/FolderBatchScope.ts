@@ -6,10 +6,10 @@ export interface FolderBatchScopeInput {
   includeSubfolders: boolean;
   filePaths: string[];
   maxFolderBatchFiles: number;
-  hasApiKey: boolean;
+  isProviderConfigured: boolean;
 }
 
-export type FolderBatchScopeBlockReason = "missingApiKey" | "empty" | "overLimit" | null;
+export type FolderBatchScopeBlockReason = "missingProviderConfig" | "empty" | "overLimit" | null;
 
 export interface FolderBatchScopeViewModel {
   folderPath: string;
@@ -26,8 +26,8 @@ export interface FolderBatchScopeViewModel {
 export function buildFolderBatchScopeViewModel(input: FolderBatchScopeInput): FolderBatchScopeViewModel {
   const filePaths = Array.from(new Set(input.filePaths)).sort((left, right) => left.localeCompare(right));
   const fileCount = filePaths.length;
-  const blockReason: FolderBatchScopeBlockReason = !input.hasApiKey
-    ? "missingApiKey"
+  const blockReason: FolderBatchScopeBlockReason = !input.isProviderConfigured
+    ? "missingProviderConfig"
     : fileCount === 0
       ? "empty"
       : fileCount > input.maxFolderBatchFiles

@@ -213,6 +213,9 @@ Implemented:
 - scan Markdown files for inline tags and frontmatter tags;
 - build a tag index with usage count, file paths, and representative snippets;
 - connect providers such as DeepSeek and OpenAI through an OpenAI-compatible API abstraction;
+- support local OpenAI-compatible endpoint presets for Ollama, LM Studio, LiteRT-LM CLI, and custom addresses; local providers may leave the API key blank;
+- route current-note recommendations, tag-health AI analysis, and folder batches through one provider factory;
+- support a JSON mode toggle, `edge-small` prompt profile, provider connection testing, and endpoint privacy-boundary guidance;
 - store deterministic cleanup operations as a reviewable plan with file-level previews;
 - write frontmatter changes through a YAML-aware parser instead of string replacement;
 - keep a reversible operation log and block undo from overwriting files that changed afterward.
@@ -228,13 +231,15 @@ Established product and technical boundaries:
 - the current version does not use embeddings and combines local rules, the tag index, and structured LLM output;
 - tag audits are manually triggered, and AI health analysis is cached by tag-index timestamp;
 - AI may add explanations, priority hints, and candidate targets but cannot raise local action capability;
+- local providers mean only the explicitly configured endpoint; the plugin does not install, start, download, or manage models, and does not silently fall back to cloud providers;
+- Apple Foundation Models, Android Gemini Nano/AICore, Chrome Prompt API, and LiteRT-LM JS belong to later helper/companion-app POCs, not the current plugin runtime;
 - low-frequency observation, broad-tag splitting, and deprecate/remove actions remain read-only or require manual judgment.
 
 Still to advance:
 
 - a complete operation history with per-operation inspection and undo;
 - incremental indexing, stale-index state, refresh progress, and large-vault safeguards;
-- explicit Ollama/local endpoint support, common provider presets, connection testing, and privacy guidance.
+- Apple/Google native on-device helper or companion-app feasibility, tracked in the Chinese [on-device model support research](on-device-model-support-research.zh-CN.md).
 
 ## Success Criteria
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildTagHealthAiMessages } from "../src/health/TagHealthAiPromptBuilder";
 import { analyzeTagHealth } from "../src/health/TagHealthAnalyzer";
+import type { TagHealthReport } from "../src/health/TagHealthReport";
 import type { TagIndex, TagUsage } from "../src/index/TagIndex";
 
 describe("buildTagHealthAiMessages", () => {
@@ -32,6 +33,28 @@ describe("buildTagHealthAiMessages", () => {
     expect(JSON.stringify(payload)).not.toContain("x".repeat(500));
     expect(payload.tagDetails["long-note"].examples[0].snippet.endsWith("[truncated]")).toBe(true);
   });
+
+  it("narrows risk groups, top tags, examples, and snippets for edge-small", () => {
+    const index: TagIndex = {
+      updatedAt: "2026-05-12T00:00:00.000Z",
+      tags: Object.fromEntries(Array.from({ length: 80 }, (_, index) => [`tag-${index}`, usage(`tag-${index}`, 80 - index, 3, "x".repeat(300))]))
+    };
+    const report = syntheticReport(15);
+    const payload = JSON.parse(
+      buildTagHealthAiMessages(report, index, {
+        allowNewTags: false,
+        newTagStrictness: "strict",
+        uiLanguage: "en",
+        promptProfile: "edge-small"
+      })[1].content
+    );
+
+    expect(payload.healthReport.riskGroups).toHaveLength(12);
+    expect(payload.topTags).toHaveLength(50);
+    expect(payload.tagDetails["tag-0"].files).toHaveLength(1);
+    expect(payload.tagDetails["tag-0"].examples).toHaveLength(1);
+    expect(payload.tagDetails["tag-0"].examples[0].snippet.length).toBeLessThan(200);
+  });
 });
 
 function usage(tag: string, count: number, fileCount: number, snippet: string): TagUsage {
@@ -48,6 +71,40 @@ function usage(tag: string, count: number, fileCount: number, snippet: string): 
     namingSignals: {
       hasHierarchy: tag.includes("/"),
       depth: tag.split("/").length
+    }
+  };
+}
+
+function syntheticReport(count: number): TagHealthReport {
+  return {
+    generatedAt: "2026-05-12T00:00:00.000Z",
+    indexUpdatedAt: "2026-05-12T00:00:00.000Z",
+    summary: {
+      updatedAt: "2026-05-12T00:00:00.000Z",
+      totalTags: count,
+      totalUsages: count,
+      totalFiles: count,
+      hierarchicalTags: 0,
+      topTags: [],
+      riskItemCount: count
+    },
+    sections: {
+      lowFrequency: {
+        type: "lowFrequency",
+        items: Array.from({ length: count }, (_, index) => ({
+          type: "lowFrequency",
+          title: `tag-${index}`,
+          tags: [`tag-${index}`],
+          evidence: "single use",
+          impact: "low reuse",
+          suggestion: "observe"
+        }))
+      },
+      nearDuplicates: { type: "nearDuplicates", items: [] },
+      hierarchyInconsistency: { type: "hierarchyInconsistency", items: [] },
+      overBroad: { type: "overBroad", items: [] },
+      overNarrow: { type: "overNarrow", items: [] },
+      namingDrift: { type: "namingDrift", items: [] }
     }
   };
 }

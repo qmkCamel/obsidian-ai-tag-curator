@@ -31,6 +31,14 @@ describe("FolderBatchPlan", () => {
 
     expect(plan.filePaths).toEqual(["notes/a.md", "notes/z.md"]);
     expect(plan.settings).not.toHaveProperty("apiKey");
+    expect(plan.settings).toMatchObject({
+      providerType: "openai-compatible",
+      providerPreset: "openai",
+      model: "gpt-4o-mini",
+      supportsJsonMode: true,
+      providerConcurrency: 2,
+      promptProfile: "default"
+    });
     expect(plan.settings.maxFolderBatchFiles).toBe(50);
     expect(plan.items.map((item) => item.notePath)).toEqual(plan.filePaths);
   });

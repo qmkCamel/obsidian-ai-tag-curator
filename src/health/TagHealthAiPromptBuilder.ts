@@ -1,6 +1,7 @@
 // Builds a bounded prompt for optional AI interpretation of the rule-based health report.
 import type { ChatMessage } from "../ai/AiProvider";
 import type { TagIndex, TagUsage } from "../index/TagIndex";
+import type { AiPromptProfile } from "../settings/PluginSettings";
 import type { UiLanguage } from "../ui/labels";
 import type { TagHealthReport } from "./TagHealthReport";
 
@@ -8,6 +9,7 @@ interface BuildTagHealthAiMessagesOptions {
   allowNewTags: boolean;
   newTagStrictness: "strict" | "balanced" | "exploratory";
   uiLanguage: UiLanguage;
+  promptProfile?: AiPromptProfile;
   maxRiskGroups?: number;
 }
 
@@ -16,9 +18,10 @@ export function buildTagHealthAiMessages(
   index: TagIndex,
   options: BuildTagHealthAiMessagesOptions
 ): ChatMessage[] {
+  const limits = getTagHealthPromptLimits(options.promptProfile ?? "default", options.maxRiskGroups);
   const riskGroups = Object.values(report.sections)
     .flatMap((section) => section.items)
-    .slice(0, options.maxRiskGroups ?? 20);
+    .slice(0, limits.maxRiskGroups);
 
   const involvedTags = new Set(riskGroups.flatMap((item) => item.tags));
   const tagDetails = Object.fromEntries(
@@ -30,26 +33,30 @@ export function buildTagHealthAiMessages(
         {
           count: usage.count,
           fileCount: usage.files.length,
-          files: usage.files.slice(0, 3).map((file) => file.path),
-          examples: usage.examples.slice(0, 3).map((example) => ({
+          files: usage.files.slice(0, limits.maxFilesPerTag).map((file) => file.path),
+          examples: usage.examples.slice(0, limits.maxExamplesPerTag).map((example) => ({
             path: example.path,
-            snippet: truncate(example.snippet, 240)
+            snippet: truncate(example.snippet, limits.maxSnippetLength)
           }))
         }
       ])
   );
+  const systemMessages = [
+    "You are an AI tag governance analyst for an Obsidian note library.",
+    "Enhance a rule-based tag health report with read-only diagnosis and prioritized actions.",
+    "Do not claim that Markdown files were changed.",
+    "Prefer existing tags as merge or rename targets.",
+    "Return only valid JSON.",
+    `Write all human-facing text in ${getOutputLanguageName(options.uiLanguage)}.`
+  ];
+  if ((options.promptProfile ?? "default") === "edge-small") {
+    systemMessages.push("Keep the summary and reasons compact, and do not include any text outside the JSON object.");
+  }
 
   return [
     {
       role: "system",
-      content: [
-        "You are an AI tag governance analyst for an Obsidian note library.",
-        "Enhance a rule-based tag health report with read-only diagnosis and prioritized actions.",
-        "Do not claim that Markdown files were changed.",
-        "Prefer existing tags as merge or rename targets.",
-        "Return only valid JSON.",
-        `Write all human-facing text in ${getOutputLanguageName(options.uiLanguage)}.`
-      ].join(" ")
+      content: systemMessages.join(" ")
     },
     {
       role: "user",
@@ -93,7 +100,7 @@ export function buildTagHealthAiMessages(
         },
         topTags: Object.values(index.tags)
           .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
-          .slice(0, 100)
+          .slice(0, limits.maxTopTags)
           .map((usage) => ({
             tag: usage.tag,
             count: usage.count,
@@ -107,6 +114,31 @@ export function buildTagHealthAiMessages(
 
 function truncate(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength)}[truncated]` : value;
+}
+
+function getTagHealthPromptLimits(promptProfile: AiPromptProfile, maxRiskGroups?: number): {
+  maxRiskGroups: number;
+  maxTopTags: number;
+  maxFilesPerTag: number;
+  maxExamplesPerTag: number;
+  maxSnippetLength: number;
+} {
+  if (promptProfile === "edge-small") {
+    return {
+      maxRiskGroups: Math.min(maxRiskGroups ?? 12, 12),
+      maxTopTags: 50,
+      maxFilesPerTag: 1,
+      maxExamplesPerTag: 1,
+      maxSnippetLength: 160
+    };
+  }
+  return {
+    maxRiskGroups: maxRiskGroups ?? 20,
+    maxTopTags: 100,
+    maxFilesPerTag: 3,
+    maxExamplesPerTag: 3,
+    maxSnippetLength: 240
+  };
 }
 
 function getOutputLanguageName(uiLanguage: UiLanguage): string {

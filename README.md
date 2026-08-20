@@ -58,7 +58,9 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 
 **Settings**
 ![设置](docs/images/settings.png)
-- Support OpenAI-compatible providers such as DeepSeek and OpenAI.
+- Support remote OpenAI-compatible providers such as DeepSeek and OpenAI, plus local OpenAI-compatible endpoints such as Ollama, LM Studio, and LiteRT-LM CLI.
+- Local providers may leave the API key blank, disable JSON mode, and default to the smaller `edge-small` prompt profile with one concurrent folder-batch request.
+- Provide an explicit provider test button and show which content the current endpoint receives.
 - Show dev-mode timing for tag recommendations and AI-enhanced health analysis.
 - Support Chinese, English, and `Auto` language mode following Obsidian.
 - Configure the maximum complete folder batch size from 1 to 200 files.
@@ -67,18 +69,27 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 
 Open the plugin settings and configure:
 
+- `Provider type` and `Provider preset`
 - `API base URL`
-- `API key`
+- `API key` (required for remote providers, optional for local providers)
 - `Model`
+- `JSON mode`
+- `Prompt profile`
+- `Provider concurrency`
 
 Example OpenAI-compatible settings:
 
-| Provider | API base URL | Model example |
-| --- | --- | --- |
-| DeepSeek | `https://api.deepseek.com` | `deepseek-v4-flash` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| Provider | Type | API base URL | API key | Model example |
+| --- | --- | --- | --- | --- |
+| OpenAI | Remote | `https://api.openai.com/v1` | Required | `gpt-4o-mini` |
+| DeepSeek | Remote | `https://api.deepseek.com` | Required | `deepseek-chat` |
+| Ollama | Local | `http://127.0.0.1:11434/v1` | Optional | `qwen3:4b` |
+| LM Studio | Local | `http://127.0.0.1:1234/v1` | Optional | The locally loaded model name |
+| LiteRT-LM CLI | Local | `http://127.0.0.1:9379/v1` | Optional | The model exposed by `litert-lm serve` |
 
-The API key is stored locally in Obsidian plugin data.
+The API key is stored locally in Obsidian plugin data and is not written into folder-batch snapshots or operation logs. The plugin does not install, start, download, or manage local models. If a local endpoint is not `127.0.0.1` / `localhost`, settings and folder-scope confirmation warn that content is sent to that address.
+
+Apple Foundation Models, Android Gemini Nano/AICore, Chrome Prompt API, and LiteRT-LM JS are not bundled directly into the Obsidian plugin runtime. This stage only connects through an explicit local OpenAI-compatible endpoint. See the Chinese [on-device model support research](docs/on-device-model-support-research.zh-CN.md).
 
 ## Local Installation
 
@@ -155,7 +166,7 @@ The mock listens on `127.0.0.1:18765`, keeps external APIs and real credentials 
 
 ## Usage
 
-1. Configure an OpenAI-compatible API base URL, API key, and model.
+1. Configure provider type, preset, API base URL, API key (blank is allowed for local providers), and model.
 2. Run `Refresh vault tag index`.
 3. Open a Markdown note.
 4. Run `Suggest tags for current note`.
@@ -205,7 +216,8 @@ For new product work, start with an OpenSpec change proposal before implementati
 ## Current Limitations
 
 - Current-note and folder workflows write only the frontmatter `tags` field. Reviewed inline tags can be copied into frontmatter, but their original body text and position are never rewritten or removed.
-- Both AI entry points require a configured API key. Folder batches do not expose a separate local-only mode when the key is missing.
+- Remote providers still require an API key. Local OpenAI-compatible providers may leave it blank, but still require a base URL and model.
+- The plugin only calls the explicitly configured provider endpoint. It does not install, start, or download models, and it does not silently fall back to a cloud provider.
 - A folder batch must contain 1-200 Markdown files within the configured limit; an oversized scope is blocked rather than truncated.
 - Cancellation cannot revoke provider requests already sent, so those in-flight requests may still be billed even though late results are discarded.
 - Only additive tag plans are executable in folder batches. Delete, replace, merge, and body-edit actions remain outside the 0.3 write boundary.

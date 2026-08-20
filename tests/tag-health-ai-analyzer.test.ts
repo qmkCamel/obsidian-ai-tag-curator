@@ -34,7 +34,8 @@ describe("TagHealthAiAnalyzer", () => {
     const analyzer = new TagHealthAiAnalyzer(provider, {
       allowNewTags: false,
       newTagStrictness: "strict",
-      uiLanguage: "zh-CN"
+      uiLanguage: "zh-CN",
+      promptProfile: "default"
     });
     const analysis = await analyzer.analyze(analyzeTagHealth(index), index);
 

@@ -66,7 +66,12 @@ describe("FolderBatchViewModel", () => {
       includeSubfolders: true,
       indexUpdatedAt: "now",
       settings: {
+        providerType: "openai-compatible",
+        providerPreset: "openai",
         model: "model",
+        supportsJsonMode: true,
+        providerConcurrency: 2,
+        promptProfile: "default",
         maxRecommendations: 5,
         maxFolderBatchFiles: 50,
         allowNewTags: false,

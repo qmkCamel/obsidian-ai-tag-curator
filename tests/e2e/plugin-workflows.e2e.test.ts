@@ -120,11 +120,11 @@ describe("plugin e2e workflows", () => {
     setInputValue(batchLimitSlider, "75");
 
     const toggles = Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
-    expect(toggles).toHaveLength(4);
-    setCheckboxValue(toggles[0], true);
-    setCheckboxValue(toggles[1], false);
-    setCheckboxValue(toggles[2], true);
+    expect(toggles).toHaveLength(5);
+    setCheckboxValue(toggles[1], true);
+    setCheckboxValue(toggles[2], false);
     setCheckboxValue(toggles[3], true);
+    setCheckboxValue(toggles[4], true);
 
     await waitFor(() => {
       const data = app.savedData as PluginDataSnapshot;
@@ -133,6 +133,11 @@ describe("plugin e2e workflows", () => {
         apiBaseUrl: "https://provider.example/v1",
         apiKey: "sk-e2e",
         model: "test-model",
+        providerType: "openai-compatible",
+        providerPreset: "custom",
+        supportsJsonMode: true,
+        providerConcurrency: 2,
+        promptProfile: "default",
         maxRecommendations: 3,
         maxFolderBatchFiles: 75,
         allowNewTags: true,
@@ -246,6 +251,91 @@ describe("plugin e2e workflows", () => {
     await waitFor(() => expect(notices).toContain(labels.notices.undoComplete));
   });
 
+  it("runs current-note recommendations against a local provider without an API key", async () => {
+    setMockLanguage("zh-CN");
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(sampleNotes(), {
+      activeFilePath: "notes/current.md",
+      pluginData: {
+        settings: {
+          providerType: "local-openai-compatible",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3:4b",
+          supportsJsonMode: false,
+          uiLanguage: "zh-CN"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    queueAiResponse(
+      JSON.stringify({
+        recommendations: [{ tag: "research", type: "existing", confidence: "high", reason: "reuse" }],
+        warnings: []
+      })
+    );
+
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitForText(labels.recommendations.title);
+    expect(requestUrlMock).toHaveBeenCalledTimes(1);
+    const request = requestUrlMock.mock.calls[0][0] as { headers: Record<string, string>; body: string };
+    expect(request.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(request.body)).not.toHaveProperty("response_format");
+  });
+
+  it("does not write files when a local provider returns non-JSON content", async () => {
+    setMockLanguage("zh-CN");
+    const app = createFakeApp([{ path: "notes/current.md", content: "body", frontmatterTags: [] }], {
+      activeFilePath: "notes/current.md",
+      pluginData: {
+        settings: {
+          providerType: "local-openai-compatible",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3:4b",
+          supportsJsonMode: false,
+          uiLanguage: "zh-CN"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    queueAiResponse("plain text");
+
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitFor(() => expect(notices).toContain("AI response must be valid JSON."));
+    expect(app.getNoteTags("notes/current.md")).toEqual([]);
+    expect(app.fileManager.getWriteCount()).toBe(0);
+  });
+
+  it("tests a local provider from settings only after the user clicks the test button", async () => {
+    setMockLanguage("en");
+    const labels = getLabels("en");
+    const app = createFakeApp(sampleNotes(), {
+      pluginData: { settings: { uiLanguage: "en" } }
+    });
+    const plugin = await loadPlugin(app);
+    const tab = plugin.settingTabs[0];
+    tab.display();
+    expect(requestUrlMock).not.toHaveBeenCalled();
+
+    const presetSelect = Array.from(tab.containerEl.querySelectorAll<HTMLSelectElement>("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "ollama")
+    );
+    setSelectValue(requiredElement(presetSelect), "ollama");
+    const model = requiredElement(Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input")).find((input) => input.value === "gpt-4o-mini"));
+    setInputValue(model, "qwen3:4b");
+    queueAiResponse(JSON.stringify({ models: [] }));
+    queueAiResponse(JSON.stringify({ ok: true }));
+
+    requiredElement(
+      Array.from(tab.containerEl.querySelectorAll<HTMLButtonElement>("button")).find(
+        (button) => button.textContent === labels.settings.providerTestButton
+      )
+    ).click();
+    await waitFor(() => expect(notices).toContain(labels.notices.providerTestSucceeded("qwen3:4b", "disabled")));
+    expect(requestUrlMock).toHaveBeenCalledTimes(2);
+  });
+
   it("runs tag health AI review, keeps evidence usable during loading, applies cleanup, and undoes cleanup", async () => {
     setMockLanguage("zh-CN");
     const labels = getLabels("zh-CN");
@@ -331,6 +421,38 @@ describe("plugin e2e workflows", () => {
       expect(app.getNoteTags("notes/shared.md")).toEqual(["ml-notes", "ml_notes"]);
     });
     await waitFor(() => expect(notices).toContain(labels.health.cleanupPlan.cleanupUndone));
+  });
+
+  it("runs tag health AI against a local provider without an API key", async () => {
+    setMockLanguage("zh-CN");
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(sampleNotes(), {
+      pluginData: {
+        settings: {
+          providerType: "local-openai-compatible",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3:4b",
+          supportsJsonMode: false,
+          uiLanguage: "zh-CN"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+
+    runCommand(plugin, "analyze-tag-health");
+    await waitForText(labels.health.title);
+    queueAiResponse(
+      JSON.stringify({
+        summary: "Local health summary.",
+        priorities: []
+      })
+    );
+    clickButton(labels.health.workflow.generateAiButton);
+    await waitForText("Local health summary.");
+    const request = requestUrlMock.mock.calls[0][0] as { headers: Record<string, string>; body: string };
+    expect(request.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(request.body)).not.toHaveProperty("response_format");
   });
 
   it("reports recoverable preconditions and preserves the health report after AI failure", async () => {

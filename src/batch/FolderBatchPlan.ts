@@ -20,7 +20,12 @@ export type FolderBatchItemPlanStatus = "pending" | "ready" | "noChange" | "unav
 export type FolderBatchConflict = "missing" | "tagsChanged" | "contentChanged";
 
 export interface FolderBatchSettingsSnapshot {
+  providerType: TagCuratorSettings["providerType"];
+  providerPreset: TagCuratorSettings["providerPreset"];
   model: string;
+  supportsJsonMode: boolean;
+  providerConcurrency: TagCuratorSettings["providerConcurrency"];
+  promptProfile: TagCuratorSettings["promptProfile"];
   maxRecommendations: number;
   maxFolderBatchFiles: number;
   allowNewTags: boolean;
@@ -84,7 +89,12 @@ export function createFolderBatchSettingsSnapshot(
   uiLanguage: UiLanguage
 ): FolderBatchSettingsSnapshot {
   return {
+    providerType: settings.providerType,
+    providerPreset: settings.providerPreset,
     model: settings.model,
+    supportsJsonMode: settings.supportsJsonMode,
+    providerConcurrency: settings.providerConcurrency,
+    promptProfile: settings.promptProfile,
     maxRecommendations: settings.maxRecommendations,
     maxFolderBatchFiles: settings.maxFolderBatchFiles,
     allowNewTags: settings.allowNewTags,
