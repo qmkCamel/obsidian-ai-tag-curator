@@ -189,6 +189,88 @@
   width: min(420px, calc(100vw - 32px));
 }
 
+.tag-curator-current-recommendation-progress-container {
+  pointer-events: none;
+}
+
+.tag-curator-current-recommendation-progress-container .modal-bg {
+  display: none !important;
+}
+
+.tag-curator-current-recommendation-progress-container .modal {
+  pointer-events: auto;
+}
+
+.tag-curator-current-recommendation-progress-container .modal-close-button,
+.tag-curator-current-recommendation-progress-container .modal-header-button {
+  display: none !important;
+}
+
+.tag-curator-current-recommendation-progress-modal {
+  bottom: 16px !important;
+  height: auto;
+  left: auto !important;
+  margin: 0;
+  max-height: min(520px, calc(100vh - 32px));
+  max-width: min(480px, calc(100vw - 32px));
+  position: fixed !important;
+  right: 16px !important;
+  top: auto !important;
+  transform: none !important;
+  width: min(480px, calc(100vw - 32px));
+}
+
+.tag-curator-current-recommendation-progress-container--minimized
+  .tag-curator-current-recommendation-progress-modal {
+  max-width: min(400px, calc(100vw - 32px));
+  width: min(400px, calc(100vw - 32px));
+}
+
+.tag-curator-current-recommendation-progress__status {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.tag-curator-current-recommendation-progress__status .tag-curator-loading-spinner {
+  flex: 0 0 auto;
+  height: 22px;
+  margin: 0;
+  width: 22px;
+}
+
+.tag-curator-current-recommendation-progress__stage {
+  color: var(--text-normal);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.tag-curator-current-recommendation-progress__elapsed,
+.tag-curator-current-recommendation-progress__model,
+.tag-curator-current-recommendation-progress__boundary {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+
+.tag-curator-current-recommendation-progress__model {
+  margin: 12px 0 0;
+}
+
+.tag-curator-current-recommendation-progress__boundary {
+  margin: 6px 0 0;
+}
+
+.tag-curator-current-recommendation-progress__actions {
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.tag-curator-current-recommendation-progress__actions .setting-item-info {
+  display: none;
+}
+
 .tag-curator-folder-preview-modal {
   display: flex;
   flex-direction: column;
@@ -299,6 +381,16 @@
     align-items: stretch;
     flex-direction: column;
     width: 100%;
+  }
+
+  .tag-curator-current-recommendation-progress-modal,
+  .tag-curator-current-recommendation-progress-container--minimized
+    .tag-curator-current-recommendation-progress-modal {
+    bottom: 8px !important;
+    max-height: calc(100vh - 16px);
+    max-width: calc(100vw - 16px);
+    right: 8px !important;
+    width: calc(100vw - 16px);
   }
 }
 

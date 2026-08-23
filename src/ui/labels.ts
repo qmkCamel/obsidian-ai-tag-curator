@@ -19,6 +19,14 @@ type LabelTree = {
     refreshMessage: string;
     suggestTitle: string;
     suggestMessage: string;
+    suggestReadCurrentNote: string;
+    suggestPrepareTagIndex: string;
+    suggestRequestProvider: string;
+    suggestCancelled: string;
+    suggestModel: (model: string) => string;
+    suggestElapsed: (elapsed: string) => string;
+    suggestCancel: string;
+    suggestCancelBoundary: string;
     minimize: string;
     expand: string;
   };
@@ -34,6 +42,8 @@ type LabelTree = {
     providerTestSucceeded: (model: string, jsonMode: string) => string;
     providerTestFailed: (message: string) => string;
     suggestStarted: string;
+    suggestAlreadyRunning: string;
+    suggestCancelAccepted: string;
     noRecommendations: string;
     suggestFailed: string;
     openMarkdownForUndo: string;
@@ -397,6 +407,14 @@ const ZH_LABELS: LabelTree = {
     refreshMessage: "正在扫描 Markdown 笔记并统计当前库的标签用法。",
     suggestTitle: "正在生成标签推荐",
     suggestMessage: "正在读取当前库上下文并请求 AI 服务返回结构化建议。",
+    suggestReadCurrentNote: "正在读取启动任务时的笔记",
+    suggestPrepareTagIndex: "正在准备标签索引上下文",
+    suggestRequestProvider: "正在等待 AI provider 返回结构化建议",
+    suggestCancelled: "已取消；正在等待并丢弃晚到结果",
+    suggestModel: (model) => `模型：${model}`,
+    suggestElapsed: (elapsed) => `已用时间：${elapsed}`,
+    suggestCancel: "取消推荐",
+    suggestCancelBoundary: "取消会丢弃晚到结果；已经发出的 provider 请求仍可能继续运行。",
     minimize: "最小化",
     expand: "展开"
   },
@@ -412,6 +430,8 @@ const ZH_LABELS: LabelTree = {
     providerTestSucceeded: (model, jsonMode) => `Provider 测试通过：模型 ${model}，JSON mode ${jsonMode}。`,
     providerTestFailed: (message) => `Provider 测试失败：${message}`,
     suggestStarted: "正在后台生成标签推荐，完成后会弹出结果。",
+    suggestAlreadyRunning: "已有当前笔记推荐正在运行，已显示其进度面板。",
+    suggestCancelAccepted: "已取消当前笔记推荐；晚到结果将被丢弃。",
     noRecommendations: "没有返回标签推荐。",
     suggestFailed: "标签推荐失败。",
     openMarkdownForUndo: "请先打开一篇 Markdown 笔记再撤销标签修改。",
@@ -784,6 +804,14 @@ const EN_LABELS: LabelTree = {
     refreshMessage: "Scanning Markdown notes and collecting vault tag usage.",
     suggestTitle: "Generating tag recommendations",
     suggestMessage: "Scanning vault context and asking the AI provider for structured suggestions.",
+    suggestReadCurrentNote: "Reading the note captured when this task started",
+    suggestPrepareTagIndex: "Preparing tag-index context",
+    suggestRequestProvider: "Waiting for the AI provider to return structured suggestions",
+    suggestCancelled: "Cancelled; waiting to discard the late result",
+    suggestModel: (model) => `Model: ${model}`,
+    suggestElapsed: (elapsed) => `Elapsed: ${elapsed}`,
+    suggestCancel: "Cancel recommendation",
+    suggestCancelBoundary: "Cancellation discards late results. A provider request already sent may keep running.",
     minimize: "Minimize",
     expand: "Expand"
   },
@@ -799,6 +827,8 @@ const EN_LABELS: LabelTree = {
     providerTestSucceeded: (model, jsonMode) => `Provider test passed: model ${model}, JSON mode ${jsonMode}.`,
     providerTestFailed: (message) => `Provider test failed: ${message}`,
     suggestStarted: "Generating tag recommendations in the background. Results will open when ready.",
+    suggestAlreadyRunning: "A current-note recommendation is already running. Its progress panel is now visible.",
+    suggestCancelAccepted: "Current-note recommendation cancelled. Any late result will be discarded.",
     noRecommendations: "No tag recommendations returned.",
     suggestFailed: "Failed to suggest tags.",
     openMarkdownForUndo: "Open a Markdown note before undoing a tag change.",

@@ -240,6 +240,9 @@ export class Modal {
   modalEl: HTMLElement;
   titleEl: HTMLElement;
   contentEl: HTMLElement;
+  scope = {
+    register: () => ({})
+  };
 
   constructor(app: FakeObsidianApp) {
     this.app = app;

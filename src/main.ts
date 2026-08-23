@@ -7,6 +7,7 @@ import {
   validateProviderSettings,
   type ProviderConfigIssue
 } from "./ai/AiProviderFactory";
+import type { RecommendationResult } from "./ai/RecommendationSchema";
 import type { CleanupPlanItem } from "./cleanup/CleanupPlan";
 import { buildCleanupPlan } from "./cleanup/CleanupPlanBuilder";
 import { applyCleanupPreviewToFrontmatterTags } from "./cleanup/CleanupTagTransform";
@@ -21,6 +22,7 @@ import { VaultReader } from "./obsidian/VaultReader";
 import { OperationLog, type CleanupOperationRecord, type OperationRecord } from "./operations/OperationLog";
 import { UndoService } from "./operations/UndoService";
 import { RecommendationModal } from "./preview/RecommendationModal";
+import { CurrentNoteRecommendationProgressModal } from "./preview/CurrentNoteRecommendationProgressModal";
 import { LoadingModal } from "./preview/LoadingModal";
 import { TagHealthReportModal } from "./preview/TagHealthReportModal";
 import { TagIndexSummaryModal } from "./preview/TagIndexSummaryModal";
@@ -52,6 +54,11 @@ interface PluginData {
   healthAiAnalysisCache?: CachedTagHealthAiAnalysis;
 }
 
+interface CurrentNoteRecommendationJob {
+  isCancelled: () => boolean;
+  progress: CurrentNoteRecommendationProgressModal;
+}
+
 export default class TagCuratorPlugin extends Plugin {
   settings: TagCuratorSettings = { ...DEFAULT_SETTINGS };
   uiLanguage: UiLanguage = "en";
@@ -62,6 +69,7 @@ export default class TagCuratorPlugin extends Plugin {
   private tagIndex: TagIndex | undefined;
   private healthAiAnalysisCache: CachedTagHealthAiAnalysis | undefined;
   private folderBatchRecoveryService!: FolderBatchRecoveryService;
+  private currentNoteRecommendationJob: CurrentNoteRecommendationJob | null = null;
 
   async onload(): Promise<void> {
     await this.loadPluginData();
@@ -272,6 +280,12 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private async suggestTagsForCurrentNote(): Promise<void> {
+    if (this.currentNoteRecommendationJob) {
+      this.currentNoteRecommendationJob.progress.reveal();
+      new Notice(this.labels.notices.suggestAlreadyRunning);
+      return;
+    }
+
     const file = this.vaultReader.getCurrentMarkdownFile();
     if (!file) {
       new Notice(this.labels.notices.openMarkdownForSuggest);
@@ -284,40 +298,66 @@ export default class TagCuratorPlugin extends Plugin {
       return;
     }
 
+    let cancelRequested = false;
+    const progress = new CurrentNoteRecommendationProgressModal(this.app, this.labels, this.settings.model, () => {
+      cancelRequested = true;
+      new Notice(this.labels.notices.suggestCancelAccepted);
+    });
+    const job: CurrentNoteRecommendationJob = {
+      isCancelled: () => cancelRequested,
+      progress
+    };
+    this.currentNoteRecommendationJob = job;
+    job.progress.open();
+
     try {
       const timer = this.settings.devMode ? new OperationTimer() : null;
       new Notice(this.labels.notices.suggestStarted);
 
+      job.progress.updateStage("read-current-note");
       timer?.startStage("read-current-note");
       const currentNote = await this.vaultReader.readNote(file);
       timer?.endStage("read-current-note");
+      if (job.isCancelled()) {
+        return;
+      }
 
+      job.progress.updateStage("prepare-tag-index");
       timer?.startStage("prepare-tag-index");
       const index = this.tagIndex ?? (await this.buildAndSaveTagIndex());
       this.tagIndex = index;
       timer?.endStage("prepare-tag-index");
+      if (job.isCancelled()) {
+        return;
+      }
 
       const provider = createAiProvider(this.settings);
       const service = new TagRecommendationService(provider, this.settings, this.uiLanguage);
+      job.progress.updateStage("request-ai-recommendations");
       timer?.startStage("request-ai-recommendations");
-      let result;
+      let result: RecommendationResult | null = null;
       try {
         result = await service.recommendForNote(currentNote, index);
       } catch (error) {
-        const message = error instanceof Error ? error.message : this.labels.notices.suggestFailed;
-        result = {
-          notePath: currentNote.path,
-          existingTags: currentNote.frontmatterTags,
-          frontmatterTags: currentNote.frontmatterTags,
-          inlineTags: currentNote.inlineTags,
-          allTags: currentNote.allTags,
-          sourceContentHash: currentNote.sourceContentHash,
-          recommendations: [],
-          warnings: [this.labels.recommendations.aiFailed(message)],
-          aiError: message
-        };
+        if (!job.isCancelled()) {
+          const message = error instanceof Error ? error.message : this.labels.notices.suggestFailed;
+          result = {
+            notePath: currentNote.path,
+            existingTags: currentNote.frontmatterTags,
+            frontmatterTags: currentNote.frontmatterTags,
+            inlineTags: currentNote.inlineTags,
+            allTags: currentNote.allTags,
+            sourceContentHash: currentNote.sourceContentHash,
+            recommendations: [],
+            warnings: [this.labels.recommendations.aiFailed(message)],
+            aiError: message
+          };
+        }
       }
       timer?.endStage("request-ai-recommendations");
+      if (job.isCancelled() || result === null) {
+        return;
+      }
 
       const hasUnsyncedInlineTags = currentNote.inlineTags.some((tag) => !currentNote.frontmatterTags.includes(tag));
       if (result.recommendations.length === 0 && !hasUnsyncedInlineTags) {
@@ -334,7 +374,14 @@ export default class TagCuratorPlugin extends Plugin {
         await this.savePluginData();
       }).open();
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : this.labels.notices.suggestFailed);
+      if (!job.isCancelled()) {
+        new Notice(error instanceof Error ? error.message : this.labels.notices.suggestFailed);
+      }
+    } finally {
+      job.progress.finish();
+      if (this.currentNoteRecommendationJob === job) {
+        this.currentNoteRecommendationJob = null;
+      }
     }
   }
 

@@ -12,6 +12,7 @@
 - provider capability 显式记录是否支持 JSON mode、推荐并发、prompt profile 和本地/远端隐私边界。
 - 支持 LiteRT-LM CLI、Ollama、LM Studio 和自定义本地 endpoint 的预设；不自动安装、启动或下载任何模型。
 - 增加 provider 连接测试，验证 base URL、模型名、鉴权和 JSON 输出能力，并展示明确失败原因。
+- 当前笔记推荐改为持续可见、可最小化和可取消的非阻塞任务面板；同一时刻只允许一个当前笔记推荐任务，取消后丢弃晚到结果。
 - 增加 `edge-small` prompt profile，为端上小模型收窄当前笔记、标签索引和健康报告上下文。
 - 文件夹批次在本地 provider 下默认使用 1 并发；远端 provider 保持现有有界并发。
 - 设置页展示当前笔记内容、标签索引摘要和健康报告证据会发送给 provider 的说明；对非 loopback endpoint 提示内容可能离开当前设备。
@@ -33,6 +34,7 @@
 - AI provider：新增 provider factory / capability 模型，扩展 `src/ai/OpenAICompatibleProvider.ts`，可能新增 provider 测试服务。
 - Prompt：扩展 `src/ai/PromptBuilder.ts`、`src/health/TagHealthAiPromptBuilder.ts`，支持默认和 `edge-small` profile。
 - 编排入口：更新 `src/main.ts` 和文件夹批次 runner 的 provider 创建、配置前置检查和并发选择。
+- 长任务交互：新增当前笔记推荐进度面板、单请求状态和取消后的晚到结果隔离。
 - 预览与批次：更新批次设置快照，确保不持久化 API key，并记录 provider 类型、模型和 prompt profile。
 - 文档：更新 README、路线图、产品交接文档，并引用 `docs/on-device-model-support-research.zh-CN.md`。
 - 验证：新增 provider 配置、空 key、本地 preset、prompt profile、连接测试和批次并发相关单元/E2E 测试；不新增模型运行时依赖。

@@ -213,6 +213,7 @@ describe("plugin e2e workflows", () => {
       }
     });
     const plugin = await loadPlugin(app);
+    const recommendationGate = createDeferred<void>();
     queueAiResponse(
       JSON.stringify({
         recommendations: [
@@ -230,11 +231,20 @@ describe("plugin e2e workflows", () => {
           }
         ],
         warnings: ["Synthetic deterministic e2e response."]
-      })
+      }),
+      recommendationGate
     );
 
     runCommand(plugin, "suggest-tags-for-current-note");
-    await waitForText(labels.recommendations.title);
+    await waitForText(labels.loading.suggestRequestProvider);
+    clickButton(labels.loading.minimize);
+    expect(pageText()).toContain(labels.loading.suggestTitle);
+    expect(findButtons(labels.loading.expand)).toHaveLength(1);
+    app.workspace.setActiveFile(app.vault.getAbstractFileByPath("notes/hyphen.md"));
+    expect(app.workspace.getActiveFile()?.path).toBe("notes/hyphen.md");
+
+    recommendationGate.resolve();
+    await waitForText(labels.recommendations.devTimingTitle);
     expect(requestUrlMock).toHaveBeenCalledTimes(1);
     expect(pageText()).toContain(labels.recommendations.devTimingTitle);
 
@@ -244,11 +254,71 @@ describe("plugin e2e workflows", () => {
     });
     await waitFor(() => expect(notices).toContain(labels.notices.tagsUpdated));
 
+    app.workspace.setActiveFile(app.vault.getAbstractFileByPath("notes/current.md"));
     runCommand(plugin, "undo-last-tag-curator-change");
     await waitFor(() => {
       expect(app.getNoteTags("notes/current.md")).toEqual(["project/ai"]);
     });
     await waitFor(() => expect(notices).toContain(labels.notices.undoComplete));
+  });
+
+  it("keeps recommendation progress visible, blocks duplicates, and discards a cancelled late result", async () => {
+    setMockLanguage("zh-CN");
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(sampleNotes(), {
+      activeFilePath: "notes/current.md",
+      pluginData: {
+        settings: {
+          providerType: "local-openai-compatible",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3:4b",
+          uiLanguage: "zh-CN"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    const lateResultGate = createDeferred<void>();
+    queueAiResponse(
+      JSON.stringify({
+        recommendations: [{ tag: "research", type: "existing", confidence: "high", reason: "late" }],
+        warnings: []
+      }),
+      lateResultGate
+    );
+
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitForText(labels.loading.suggestRequestProvider);
+    expect(pageText()).toContain(labels.loading.suggestModel("qwen3:4b"));
+    expect(pageText()).toContain(labels.loading.suggestElapsed("0:00"));
+
+    app.workspace.setActiveFile(app.vault.getAbstractFileByPath("notes/hyphen.md"));
+    runCommand(plugin, "suggest-tags-for-current-note");
+    expect(requestUrlMock).toHaveBeenCalledTimes(1);
+    expect(notices).toContain(labels.notices.suggestAlreadyRunning);
+
+    clickButton(labels.loading.suggestCancel);
+    expect(pageText()).toContain(labels.loading.suggestCancelled);
+    expect(requiredElement(findButtons(labels.loading.suggestCancel)[0]).disabled).toBe(true);
+    runCommand(plugin, "suggest-tags-for-current-note");
+    expect(requestUrlMock).toHaveBeenCalledTimes(1);
+
+    lateResultGate.resolve();
+    await waitFor(() => expect(pageText()).not.toContain(labels.loading.suggestTitle));
+    expect(pageText()).not.toContain(labels.recommendations.title);
+    expect(app.getNoteTags("notes/current.md")).toEqual(["project/ai"]);
+    expect(app.fileManager.getWriteCount()).toBe(0);
+
+    app.workspace.setActiveFile(app.vault.getAbstractFileByPath("notes/current.md"));
+    queueAiResponse(
+      JSON.stringify({
+        recommendations: [{ tag: "research", type: "existing", confidence: "high", reason: "retry" }],
+        warnings: []
+      })
+    );
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitFor(() => expect(findButtons(labels.recommendations.apply)).toHaveLength(1));
+    expect(requestUrlMock).toHaveBeenCalledTimes(2);
   });
 
   it("runs current-note recommendations against a local provider without an API key", async () => {
@@ -276,7 +346,7 @@ describe("plugin e2e workflows", () => {
     );
 
     runCommand(plugin, "suggest-tags-for-current-note");
-    await waitForText(labels.recommendations.title);
+    await waitFor(() => expect(findButtons(labels.recommendations.apply)).toHaveLength(1));
     expect(requestUrlMock).toHaveBeenCalledTimes(1);
     const request = requestUrlMock.mock.calls[0][0] as { headers: Record<string, string>; body: string };
     expect(request.headers.Authorization).toBeUndefined();
@@ -304,6 +374,33 @@ describe("plugin e2e workflows", () => {
     runCommand(plugin, "suggest-tags-for-current-note");
     await waitFor(() => expect(notices).toContain("AI response must be valid JSON."));
     expect(app.getNoteTags("notes/current.md")).toEqual([]);
+    expect(app.fileManager.getWriteCount()).toBe(0);
+  });
+
+  it("closes progress and preserves local inline sync items after provider failure", async () => {
+    setMockLanguage("zh-CN");
+    const labels = getLabels("zh-CN");
+    const app = createFakeApp(sampleNotes(), {
+      activeFilePath: "notes/current.md",
+      pluginData: {
+        settings: {
+          providerType: "local-openai-compatible",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3:4b",
+          uiLanguage: "zh-CN"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    queueAiError(new Error("Provider is unavailable."));
+
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitForText(labels.recommendations.aiFailed("Provider is unavailable."));
+    expect(pageText()).toContain(labels.recommendations.aiFailed("Provider is unavailable."));
+    expect(pageText()).toContain("#workflow");
+    expect(pageText()).not.toContain(labels.loading.suggestTitle);
+    expect(app.getNoteTags("notes/current.md")).toEqual(["project/ai"]);
     expect(app.fileManager.getWriteCount()).toBe(0);
   });
 

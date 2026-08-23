@@ -233,6 +233,52 @@
 - **THEN** UI 提示每篇笔记会请求当前远端 provider
 - **AND** UI 不得暗示内容只留在本机
 
+### Requirement: 当前笔记推荐必须提供持续可见且可取消的非阻塞任务状态
+
+系统 SHALL 在当前笔记推荐运行期间持续展示局部任务状态，允许无关工作区交互，并隔离取消后的晚到结果。
+
+#### Scenario: 分钟级推荐保持持续可见
+
+- **GIVEN** 当前笔记和 provider 配置满足运行要求
+- **WHEN** 用户运行当前笔记标签推荐
+- **THEN** 系统持续展示当前阶段、模型名和已用时间
+- **AND** 用户可以最小化或展开任务面板
+- **AND** 最小化后任务状态仍保持可见
+- **AND** 工作区不被遮罩阻塞，用户可以切换和编辑其他笔记
+
+#### Scenario: 推荐运行时阻止重复请求
+
+- **GIVEN** 一个当前笔记推荐任务尚未 settle
+- **WHEN** 用户再次运行当前笔记标签推荐
+- **THEN** 系统不发送第二个 provider 请求
+- **AND** 系统提示已有推荐正在运行
+- **AND** 现有任务面板保持可见
+
+#### Scenario: 用户取消当前笔记推荐
+
+- **GIVEN** 当前笔记推荐已经发出 provider 请求
+- **WHEN** 用户点击取消
+- **THEN** 任务面板立即显示已取消并禁用重复取消
+- **AND** UI 说明已发出的 provider 请求仍可能继续运行
+- **AND** provider 晚到结果不得打开结果 modal、修改 Markdown 或写入操作日志
+- **AND** 底层请求 settle 前系统继续阻止新的当前笔记推荐，避免本地 provider 并发过载
+
+#### Scenario: 用户在推荐期间切换笔记
+
+- **GIVEN** 当前笔记推荐正在请求 provider
+- **WHEN** 用户打开另一篇笔记
+- **THEN** 任务面板仍持续展示
+- **AND** 正常完成后结果仍对应启动任务时的原始笔记
+
+#### Scenario: Provider 失败但存在本地同步项
+
+- **GIVEN** 当前笔记包含尚未同步到 frontmatter 的 inline 标签
+- **AND** provider 请求失败
+- **WHEN** 当前笔记推荐完成失败处理
+- **THEN** 系统关闭任务面板
+- **AND** 结果预览保留本地确定的 inline 同步项
+- **AND** Markdown 在用户确认前保持不变
+
 ### Requirement: 原生端上 SDK 不得直接进入插件运行时
 
 系统 SHALL 将 Apple、Android 和 Chrome 原生端上模型能力视为后续桥接或伴生应用范围，本次能力只通过 OpenAI-compatible 本地 endpoint 接入。

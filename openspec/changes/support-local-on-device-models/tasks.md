@@ -50,3 +50,18 @@
 - [x] 7.4 运行 `npm run build`。
 - [x] 7.5 运行 `git diff --check`。
 - [x] 7.6 使用本地 mock OpenAI-compatible provider smoke 测试：空 API key、本地 preset、JSON mode 关闭、当前笔记推荐、健康报告 AI 分析和文件夹批量推荐。
+
+## 8. 当前笔记长耗时交互优化
+
+- [x] 8.1 新增当前笔记推荐任务面板，持续展示阶段、模型名、已用时间、最小化/展开和取消入口，同时保持工作区可交互。
+- [x] 8.2 在当前笔记推荐编排中加入 single-flight 与取消状态；阻止重复请求，并丢弃取消后的晚到结果。
+- [x] 8.3 增加中英文文案和样式，明确已发 provider 请求可能继续运行的取消边界。
+- [x] 8.4 增加 E2E 覆盖持续进度、无关笔记切换、重复提交、取消、晚到结果丢弃、失败保留和正常完成。
+
+## 9. 长耗时交互验证
+
+- [x] 9.1 运行 `npm run test:unit` 和 `npm run test:e2e`。
+- [x] 9.2 运行 `npm run spec:validate -- support-local-on-device-models` 和 `npm run spec:validate -- --all`。
+- [x] 9.3 运行 `npm test`、`npm run build`、`npm audit` 和 `git diff --check`。
+- [x] 9.4 使用延迟 mock provider 在真实 Obsidian 中验证持续进度、无关交互、取消和完成，并保留必要截图。
+- [x] 9.5 使用本机 Ollama/Qwen3.8 验证真实分钟级请求期间的持续任务状态与取消隔离。
