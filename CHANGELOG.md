@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 - 2026-08-25
 
 中文
 
@@ -16,6 +16,11 @@
 - 标准 preset 下允许调整 model、JSON mode、prompt profile 和并发而不隐式切换为 custom；只有 custom preset 展示 provider type 和可编辑 base URL。
 - 连接测试取消只隔离后续阶段和晚到结果；已发送请求可能继续运行，在 settle 前仍阻止重复测试。
 
+### 验证
+
+- 通过 35 个文件、105 个用例的单元测试，2 个文件、25 个用例的 E2E，以及 37 个文件、130 个用例的完整 Vitest 回归。
+- 在真实 Obsidian 中验证持续进度、非阻塞设置交互、取消与晚到结果隔离，并在 Apple M2 Pro / 32GB 上使用 Ollama `qwen3.8:27b` 完成连接测试。
+
 English
 
 ### Added
@@ -29,6 +34,11 @@ English
 - Apply destination endpoint, model defaults, and capability settings atomically when the provider preset changes; clear the previous API key so credentials cannot be sent to the new endpoint.
 - Allow model, JSON mode, prompt profile, and concurrency overrides without silently changing a standard preset to Custom; show provider type and editable base URL only for Custom.
 - Treat provider-test cancellation as result isolation rather than a claim that an already-sent request or inference was aborted; keep tests single-flight until the request settles.
+
+### Verification
+
+- Pass 35 files / 105 unit tests, 2 files / 25 E2E tests, and the complete 37 files / 130 Vitest regression suite.
+- Verify persistent progress, non-blocking settings interaction, cancellation, and late-result isolation in real Obsidian, then pass the provider connection test with Ollama `qwen3.8:27b` on an Apple M2 Pro with 32GB unified memory.
 
 ## 0.3.0
 

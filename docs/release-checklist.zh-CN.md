@@ -18,6 +18,7 @@
 npm install
 npm test
 npm run build
+npm run release:verify
 ```
 
 构建后根目录应包含这些发布资产：
@@ -36,6 +37,14 @@ npm run build
 - `分析标签健康度` 能打开健康报告。
 - AI 增强健康分析能返回优先处理项。
 - `撤销当前笔记最近标签修改` 能回退最近一次写入。
+
+准备真实 Obsidian smoke 与截图测试库时，必须显式指定隔离目标路径：
+
+```bash
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault npm run release:vault:prepare
+```
+
+只有需要复用指定主题时才设置 `OBSIDIAN_THEME_SOURCE_VAULT`。脚本会重置合成测试笔记，因此不得把个人库作为目标路径。
 
 ## 3. 创建 GitHub Release
 
@@ -148,3 +157,45 @@ Obsidian 客户端会从 GitHub Release 拉取新版本。
 - 2026-08-07 至 2026-08-09 在隔离测试库完成范围确认、生成进度、逐文件风险预览、应用、整体回退、立即取消、深色主题和窄窗口检查。
 - 发布截图与详细边界记录见 `docs/acceptance/0.3-folder-batch-acceptance.zh-CN.md`。
 - provider 失败重试、内容漂移以及 before/after 故障恢复注入尚未逐项手工执行；这些边界已由 E2E 故障注入覆盖，OpenSpec 任务 10.7 保持未完成，不把自动化结果描述为人工证明。
+
+## 9. 0.4.0 发布验收记录
+
+发布日期：2026-08-25
+
+版本信息：
+
+- `package.json`、`package-lock.json` 和 `manifest.json`：`0.4.0`
+- `versions.json`：包含 `0.4.0 -> 1.8.7`
+- `CHANGELOG.md`：包含 `0.4.0 - 2026-08-25` 正式版本条目
+
+发布资产：
+
+- `main.js`：171453 bytes，SHA-256 `fb85030813b57ed18b1c8b84f247a2a2cf19cbd2955ca82bf3de40699c427dda`
+- `manifest.json`：273 bytes，SHA-256 `898c16d375a362b78aeb68158ae9d3bd49b91cd415d5a8adc781985af66187a5`
+- `styles.css`：24679 bytes，SHA-256 `335cfc4d4019d7f3229806faedca4f0b67119444d055f18411f53f3bcc966e46`
+
+本次自动验证：
+
+- `npm ci --no-audit`：通过，基于锁文件重新安装 200 个包。
+- `npm run test:unit`：通过，35 个测试文件、105 个测试全部成功。
+- `npm run test:e2e`：通过，2 个测试文件、25 个测试全部成功。
+- `npm test`：通过，37 个测试文件、130 个测试全部成功。
+- `npm run build`：通过 TypeScript 检查与生产构建。
+- `npm run release:verify`：通过版本一致性、最低 Obsidian 版本映射、Changelog 标题和三个发布资产校验，并输出上述大小与 SHA-256。
+- `npm run spec:validate -- harden-local-provider-settings`：通过。
+- `npm run spec:validate -- --all`：通过，8 项全部有效。
+- `npm audit` 与 `npm audit --omit=dev`：通过，均为 0 个漏洞。
+- `git diff --check`：通过。
+- 缺少 `OBSIDIAN_RELEASE_VAULT_PATH` 时，发布测试库脚本会在写入前安全失败。
+- 显式临时目标库在默认外观和可选主题源两种模式下均准备成功；安装的 `ai-tag-curator-dev` 为 `0.4.0`，本地 mock API key 为空，Obsidian Sync 与 Publish 均关闭。
+
+真实运行验收证据：
+
+- 在真实 Obsidian 设置页验证六组设置、provider preset 原子切换、连接测试的持续阶段/已用时间/取消入口，以及完成、失败、取消结果的持久展示；截图见 `docs/images/settings.png` 与 `docs/images/settings-provider-test-progress.png`。
+- 30 秒延迟的确定性本地 mock 验证长耗时期间其他设置仍可操作、取消后晚到结果被隔离、失败信息保留且可重试。
+- Apple M2 Pro / 32GB 机器上的 Ollama `0.32.15` 与 `qwen3.8:27b` 已通过服务端口、原生 API、OpenAI-compatible API 和插件连接测试。
+
+已知边界与发布动作：
+
+- Obsidian 的 `requestUrl` 不提供请求级中止；取消会立即结束 UI 等待并丢弃晚到结果，但已发送给本地 runtime 的推理可能继续到自然结束。
+- 本记录只证明发布候选准备完成；创建 `0.4.0` tag、GitHub Release 并上传三个资产仍属于合并后的发布动作。

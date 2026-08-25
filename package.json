@@ -1,6 +1,6 @@
 {
   "name": "obsidian-ai-tag-curator",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI tag management and governance plugin for Obsidian vaults.",
   "main": "main.js",
   "scripts": {
@@ -10,6 +10,7 @@
     "local:install-dev": "npm run build && node scripts/install-local.mjs --dev",
     "release:vault:prepare": "npm run build && node scripts/prepare-release-vault.mjs",
     "release:mock": "node scripts/mock-provider.mjs",
+    "release:verify": "node scripts/verify-release.mjs",
     "spec:list": "openspec list",
     "spec:status": "openspec status",
     "spec:validate": "openspec validate",

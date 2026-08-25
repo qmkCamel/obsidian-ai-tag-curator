@@ -195,6 +195,37 @@ OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install-dev
 
 安装脚本要求显式设置 `OBSIDIAN_VAULT_PATH`，避免把插件写入错误或未登记的 Obsidian 库。
 
+### 发布截图测试库
+
+准备或重置用于真实 Obsidian smoke 与发布截图的合成测试库：
+
+```bash
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault npm run release:vault:prepare
+```
+
+必须显式设置 `OBSIDIAN_RELEASE_VAULT_PATH`，因为命令会重置合成发布笔记。脚本会安装并排的开发版插件并关闭 Obsidian Sync；未提供主题源时使用 Obsidian 默认外观。如需复用某个测试库的主题，可选设置：
+
+```bash
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \
+OBSIDIAN_THEME_SOURCE_VAULT=/path/to/theme-source \
+npm run release:vault:prepare
+```
+
+脚本只会从可选主题源复制当前外观配置、对应主题目录和核心插件配置，不会复制个人笔记或凭据。
+
+启动确定性的本地 provider 后再验证 AI 流程：
+
+```bash
+npm run release:mock
+```
+
+发布候选构建完成后，校验版本元数据并输出三个必需发布资产的大小与 SHA-256：
+
+```bash
+npm run build
+npm run release:verify
+```
+
 ## 使用流程
 
 1. 配置 provider 类型、preset、API base URL、API key（本地 provider 可留空）和 model。

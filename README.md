@@ -200,16 +200,18 @@ The install script requires an explicit `OBSIDIAN_VAULT_PATH` so it cannot silen
 Prepare or reset the dedicated synthetic vault used for real Obsidian smoke tests and release screenshots:
 
 ```bash
-npm run release:vault:prepare
+OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault npm run release:vault:prepare
 ```
 
-The default vault is `/Users/edge/work/obsidian-ai-tag-curator-test-vault`. The command copies only the active appearance configuration and theme from `/Users/edge/personal/edge-notes`, installs the development plugin, resets the synthetic release notes, and disables Obsidian Sync. Override either path when needed:
+`OBSIDIAN_RELEASE_VAULT_PATH` is required because the command resets the synthetic release notes. It installs the development plugin and disables Obsidian Sync. The default Obsidian appearance is used unless an optional theme-source vault is provided:
 
 ```bash
 OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \
 OBSIDIAN_THEME_SOURCE_VAULT=/path/to/theme-source \
 npm run release:vault:prepare
 ```
+
+Only the active appearance configuration, its theme directory, and the core-plugin configuration are copied from the optional theme source. Personal notes and credentials are never copied.
 
 Start the deterministic local provider before exercising AI-backed release flows:
 
@@ -218,6 +220,13 @@ npm run release:mock
 ```
 
 The mock listens on `127.0.0.1:18765`, keeps external APIs and real credentials out of the screenshot workflow, and adds a short response delay so progress and cancellation states can be verified.
+
+After building a release candidate, verify version metadata and print the size and SHA-256 digest of every required release asset:
+
+```bash
+npm run build
+npm run release:verify
+```
 
 ## Usage
 

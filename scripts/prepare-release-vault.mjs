@@ -8,32 +8,34 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-const vaultPath = resolve(
-  process.env.OBSIDIAN_RELEASE_VAULT_PATH ?? "/Users/edge/work/obsidian-ai-tag-curator-test-vault"
-);
-const themeSourceVault = resolve(
-  process.env.OBSIDIAN_THEME_SOURCE_VAULT ?? "/Users/edge/personal/edge-notes"
-);
+const configuredVaultPath = process.env.OBSIDIAN_RELEASE_VAULT_PATH?.trim();
+if (!configuredVaultPath) {
+  throw new Error(
+    "OBSIDIAN_RELEASE_VAULT_PATH is required because this command resets the synthetic release fixtures."
+  );
+}
+
+const vaultPath = resolve(configuredVaultPath);
+const configuredThemeSourceVault = process.env.OBSIDIAN_THEME_SOURCE_VAULT?.trim();
+const themeSourceVault = configuredThemeSourceVault
+  ? resolve(configuredThemeSourceVault)
+  : undefined;
 const obsidianDir = join(vaultPath, ".obsidian");
-const sourceObsidianDir = join(themeSourceVault, ".obsidian");
-
-const appearance = readJson(join(sourceObsidianDir, "appearance.json"));
-const themeName = appearance.cssTheme;
-if (!themeName) {
-  throw new Error(`No cssTheme is configured in ${join(sourceObsidianDir, "appearance.json")}`);
-}
-
-const sourceThemeDir = join(sourceObsidianDir, "themes", themeName);
-if (!existsSync(sourceThemeDir)) {
-  throw new Error(`Theme directory does not exist: ${sourceThemeDir}`);
-}
+const sourceObsidianDir = themeSourceVault
+  ? join(themeSourceVault, ".obsidian")
+  : undefined;
+const theme = sourceObsidianDir ? loadTheme(sourceObsidianDir) : undefined;
 
 mkdirSync(obsidianDir, { recursive: true });
 resetFixtureNotes();
-syncAppearance(themeName, appearance);
+if (theme) {
+  syncAppearance(theme.name, theme.appearance, theme.sourceDirectory);
+} else {
+  writeJson(join(obsidianDir, "appearance.json"), {});
+}
 writeJson(join(obsidianDir, "app.json"), {});
 writeJson(join(obsidianDir, "community-plugins.json"), ["ai-tag-curator-dev"]);
-writeJson(join(obsidianDir, "core-plugins.json"), buildCorePluginConfig());
+writeJson(join(obsidianDir, "core-plugins.json"), buildCorePluginConfig(sourceObsidianDir));
 
 process.env.OBSIDIAN_VAULT_PATH = vaultPath;
 if (!process.argv.includes("--dev")) process.argv.push("--dev");
@@ -42,9 +44,14 @@ await import("./install-local.mjs");
 writeJson(join(obsidianDir, "plugins", "ai-tag-curator-dev", "data.json"), {
   settings: {
     uiLanguage: "zh-CN",
+    providerType: "local-openai-compatible",
+    providerPreset: "custom",
     apiBaseUrl: "http://127.0.0.1:18765/v1",
-    apiKey: "local-e2e-only",
+    apiKey: "",
     model: "deterministic-local-mock",
+    supportsJsonMode: true,
+    providerConcurrency: 1,
+    promptProfile: "edge-small",
     maxRecommendations: 5,
     maxFolderBatchFiles: 50,
     allowNewTags: true,
@@ -58,7 +65,11 @@ writeJson(join(obsidianDir, "plugins", "ai-tag-curator-dev", "data.json"), {
 });
 
 console.log(`Prepared release vault: ${vaultPath}`);
-console.log(`Synced theme: ${themeName} from ${themeSourceVault}`);
+console.log(
+  theme
+    ? `Synced theme: ${theme.name} from ${themeSourceVault}`
+    : "Using the default Obsidian appearance (no theme source configured)."
+);
 console.log("The vault contains synthetic notes only and has Obsidian Sync disabled.");
 
 function resetFixtureNotes() {
@@ -113,17 +124,41 @@ This note must remain outside the default folder scope.
   );
 }
 
-function syncAppearance(activeTheme, sourceAppearance) {
+function loadTheme(sourceDirectory) {
+  const appearancePath = join(sourceDirectory, "appearance.json");
+  if (!existsSync(appearancePath)) {
+    throw new Error(`Appearance configuration does not exist: ${appearancePath}`);
+  }
+
+  const appearance = readJson(appearancePath);
+  const name = appearance.cssTheme;
+  if (!name) {
+    throw new Error(`No cssTheme is configured in ${appearancePath}`);
+  }
+
+  const sourceDirectoryPath = join(sourceDirectory, "themes", name);
+  if (!existsSync(sourceDirectoryPath)) {
+    throw new Error(`Theme directory does not exist: ${sourceDirectoryPath}`);
+  }
+
+  return { name, appearance, sourceDirectory: sourceDirectoryPath };
+}
+
+function syncAppearance(activeTheme, sourceAppearance, sourceThemeDirectory) {
   writeJson(join(obsidianDir, "appearance.json"), sourceAppearance);
   const targetThemeDir = join(obsidianDir, "themes", activeTheme);
   rmSync(targetThemeDir, { recursive: true, force: true });
   mkdirSync(dirname(targetThemeDir), { recursive: true });
-  cpSync(sourceThemeDir, targetThemeDir, { recursive: true });
+  cpSync(sourceThemeDirectory, targetThemeDir, { recursive: true });
 }
 
-function buildCorePluginConfig() {
-  const sourceConfigPath = join(sourceObsidianDir, "core-plugins.json");
-  const sourceConfig = existsSync(sourceConfigPath) ? readJson(sourceConfigPath) : {};
+function buildCorePluginConfig(sourceDirectory) {
+  const sourceConfigPath = sourceDirectory
+    ? join(sourceDirectory, "core-plugins.json")
+    : undefined;
+  const sourceConfig = sourceConfigPath && existsSync(sourceConfigPath)
+    ? readJson(sourceConfigPath)
+    : {};
   return {
     ...sourceConfig,
     sync: false,
