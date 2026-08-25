@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+中文
+
+### 新增
+
+- 将设置页分为通用、AI 服务连接、高级模型设置、标签推荐、索引与批量处理、诊断与反馈六组，并按 preset 和开关条件展示相关字段。
+- Provider 连接测试增加设置页内持续阶段、已用时间、取消入口以及持久成功、失败和取消结果；测试期间其他设置保持可交互。
+- 中英文 README 增加 Ollama/Qwen3.8 安装、API 验证、插件配置、能力边界和故障排查。
+
+### 变更
+
+- Provider preset 切换改为原子应用目标 endpoint、模型默认值和能力参数；跨 provider 切换会清空旧 API key，避免向新 endpoint 发送旧凭据。
+- 标准 preset 下允许调整 model、JSON mode、prompt profile 和并发而不隐式切换为 custom；只有 custom preset 展示 provider type 和可编辑 base URL。
+- 连接测试取消只隔离后续阶段和晚到结果；已发送请求可能继续运行，在 settle 前仍阻止重复测试。
+
+English
+
+### Added
+
+- Group settings into General, AI service connection, Advanced model settings, Tag recommendations, Indexing and batch processing, and Diagnostics and feedback, with conditional fields for the active preset and toggles.
+- Keep provider-test stage, elapsed time, cancellation, and persistent success/failure/cancelled results inside settings while unrelated controls remain interactive.
+- Add bilingual Ollama/Qwen3.8 installation, API verification, plugin configuration, capability boundaries, and troubleshooting guidance.
+
+### Changed
+
+- Apply destination endpoint, model defaults, and capability settings atomically when the provider preset changes; clear the previous API key so credentials cannot be sent to the new endpoint.
+- Allow model, JSON mode, prompt profile, and concurrency overrides without silently changing a standard preset to Custom; show provider type and editable base URL only for Custom.
+- Treat provider-test cancellation as result isolation rather than a claim that an already-sent request or inference was aborted; keep tests single-flight until the request settles.
+
 ## 0.3.0
 
 中文

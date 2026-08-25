@@ -3,7 +3,10 @@ import { join, resolve } from "node:path";
 
 const projectRoot = resolve(new URL("..", import.meta.url).pathname);
 const isDevInstall = process.argv.includes("--dev");
-const vaultPath = process.env.OBSIDIAN_VAULT_PATH ?? "/Users/edge/personal/edge-notes";
+const vaultPath = process.env.OBSIDIAN_VAULT_PATH;
+if (!vaultPath) {
+  throw new Error("Set OBSIDIAN_VAULT_PATH to the target Obsidian vault before installing.");
+}
 const pluginId = isDevInstall ? "ai-tag-curator-dev" : "ai-tag-curator";
 const pluginName = isDevInstall ? "AI Tag Curator Dev" : "AI Tag Curator";
 const targetDir = join(vaultPath, ".obsidian", "plugins", pluginId);

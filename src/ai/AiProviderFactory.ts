@@ -7,6 +7,7 @@ export type ProviderConfigIssue = "missing-base-url" | "invalid-base-url" | "mis
 export type ProviderEndpointBoundary = "loopback" | "custom" | "remote";
 export type ProviderTestErrorKind =
   | ProviderConfigIssue
+  | "cancelled"
   | "endpoint-unreachable"
   | "auth-error"
   | "model-error"
@@ -43,6 +44,13 @@ export interface ProviderTestResult {
   modelsEndpoint: "available" | "unavailable" | "not-tested";
   errorKind?: ProviderTestErrorKind;
   message: string;
+}
+
+export type ProviderTestStage = "validating" | "probing-models" | "testing-chat";
+
+export interface ProviderTestOptions {
+  onStage?: (stage: ProviderTestStage) => void;
+  isCancelled?: () => boolean;
 }
 
 interface ModelsProbeResult {
@@ -99,7 +107,11 @@ export function describeProviderEndpoint(settings: TagCuratorSettings): {
   };
 }
 
-export async function testProviderConnection(settings: TagCuratorSettings): Promise<ProviderTestResult> {
+export async function testProviderConnection(
+  settings: TagCuratorSettings,
+  options: ProviderTestOptions = {}
+): Promise<ProviderTestResult> {
+  options.onStage?.("validating");
   const state = validateProviderSettings(settings);
   if (!state.ok) {
     return {
@@ -114,10 +126,23 @@ export async function testProviderConnection(settings: TagCuratorSettings): Prom
     };
   }
 
+  if (options.isCancelled?.()) {
+    return cancelledProviderTestResult(settings, "not-tested");
+  }
+
+  options.onStage?.("probing-models");
   const modelsProbe = await probeModelsEndpoint(settings);
+  if (options.isCancelled?.()) {
+    return cancelledProviderTestResult(settings, modelsProbe.status);
+  }
+
+  options.onStage?.("testing-chat");
   const provider = createAiProvider(settings);
   try {
     const raw = await provider.completeJson(providerTestMessages());
+    if (options.isCancelled?.()) {
+      return cancelledProviderTestResult(settings, modelsProbe.status);
+    }
     const parsed = parseProviderJson(raw);
     if (!parsed.ok) {
       return {
@@ -153,6 +178,22 @@ export async function testProviderConnection(settings: TagCuratorSettings): Prom
       message: classified.message
     };
   }
+}
+
+function cancelledProviderTestResult(
+  settings: TagCuratorSettings,
+  modelsEndpoint: ProviderTestResult["modelsEndpoint"]
+): ProviderTestResult {
+  return {
+    ok: false,
+    providerType: settings.providerType,
+    baseUrl: settings.apiBaseUrl,
+    model: settings.model,
+    supportsJsonMode: settings.supportsJsonMode,
+    modelsEndpoint,
+    errorKind: "cancelled",
+    message: "Provider test was cancelled. An already-sent request may still finish in the provider."
+  };
 }
 
 export function providerConfigIssueMessage(issue: ProviderConfigIssue): string {

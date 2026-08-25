@@ -143,4 +143,50 @@ describe("AI provider factory", () => {
       modelsEndpoint: "available"
     });
   });
+
+  it("reports provider-test stages without sending requests before validation", async () => {
+    const stages: string[] = [];
+    const invalid = await testProviderConnection(
+      mergeSettings({ providerType: "local-openai-compatible", apiBaseUrl: "", model: "qwen3.8:27b" }),
+      { onStage: (stage) => stages.push(stage) }
+    );
+
+    expect(stages).toEqual(["validating"]);
+    expect(invalid).toMatchObject({ ok: false, errorKind: "missing-base-url" });
+    expect(requestUrlMock).not.toHaveBeenCalled();
+
+    queueAiResponse(JSON.stringify({ models: [] }));
+    queueAiResponse(JSON.stringify({ ok: true }));
+    const successStages: string[] = [];
+    await testProviderConnection(
+      mergeSettings({
+        providerType: "local-openai-compatible",
+        apiBaseUrl: "http://127.0.0.1:11434/v1",
+        model: "qwen3.8:27b"
+      }),
+      { onStage: (stage) => successStages.push(stage) }
+    );
+    expect(successStages).toEqual(["validating", "probing-models", "testing-chat"]);
+  });
+
+  it("stops before chat completion when cancellation is observed after the model probe", async () => {
+    queueAiResponse(JSON.stringify({ models: [] }));
+    let cancellationChecks = 0;
+
+    const result = await testProviderConnection(
+      mergeSettings({
+        providerType: "local-openai-compatible",
+        apiBaseUrl: "http://127.0.0.1:11434/v1",
+        model: "qwen3.8:27b"
+      }),
+      { isCancelled: () => ++cancellationChecks >= 2 }
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      errorKind: "cancelled",
+      modelsEndpoint: "available"
+    });
+    expect(requestUrlMock).toHaveBeenCalledTimes(1);
+  });
 });

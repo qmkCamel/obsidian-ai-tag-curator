@@ -64,6 +64,13 @@ type LabelTree = {
   };
   settings: {
     heading: string;
+    sectionGeneral: string;
+    sectionProvider: string;
+    sectionProviderAdvanced: string;
+    sectionProviderAdvancedSummary: (profile: string, concurrency: number, jsonMode: boolean) => string;
+    sectionRecommendations: string;
+    sectionIndexing: string;
+    sectionDiagnostics: string;
     languageName: string;
     languageDesc: string;
     languageAuto: string;
@@ -83,8 +90,11 @@ type LabelTree = {
     providerPresetCustom: string;
     apiBaseUrlName: string;
     apiBaseUrlDesc: string;
+    apiBaseUrlPresetDesc: string;
     apiKeyName: string;
     apiKeyDesc: string;
+    apiKeyRemoteDesc: string;
+    apiKeyLocalDesc: string;
     modelName: string;
     modelDesc: string;
     supportsJsonModeName: string;
@@ -104,6 +114,17 @@ type LabelTree = {
     providerTestDesc: string;
     providerTestButton: string;
     providerTestRunning: string;
+    providerTestCancelButton: string;
+    providerTestIdle: string;
+    providerTestStageValidating: string;
+    providerTestStageModels: string;
+    providerTestStageChat: string;
+    providerTestProgress: (model: string, stage: string, elapsed: string) => string;
+    providerTestCancelRequested: string;
+    providerTestCancelBoundary: string;
+    providerTestSucceededStatus: (model: string, jsonMode: string, completedAt: string) => string;
+    providerTestFailedStatus: (failure: string, completedAt: string) => string;
+    providerTestCancelledStatus: (completedAt: string) => string;
     maxRecommendationsName: string;
     maxRecommendationsDesc: string;
     maxFolderBatchFilesName: string;
@@ -452,6 +473,14 @@ const ZH_LABELS: LabelTree = {
   },
   settings: {
     heading: "AI Tag Curator 设置",
+    sectionGeneral: "通用",
+    sectionProvider: "AI 服务连接",
+    sectionProviderAdvanced: "高级模型设置",
+    sectionProviderAdvancedSummary: (profile, concurrency, jsonMode) =>
+      `${profile} · 并发 ${concurrency} · JSON mode ${jsonMode ? "开启" : "关闭"}`,
+    sectionRecommendations: "标签推荐",
+    sectionIndexing: "索引与批量处理",
+    sectionDiagnostics: "诊断与反馈",
     languageName: "界面语言",
     languageDesc: "选择插件 UI 语言。Auto 会跟随 Obsidian 当前语言。",
     languageAuto: "Auto（跟随 Obsidian）",
@@ -462,7 +491,7 @@ const ZH_LABELS: LabelTree = {
     providerTypeRemote: "远端 OpenAI-compatible",
     providerTypeLocal: "本地 OpenAI-compatible",
     providerPresetName: "Provider preset",
-    providerPresetDesc: "选择常见 provider 默认值。插件不会安装、启动或下载任何模型。",
+    providerPresetDesc: "选择 provider；切换到另一个 provider 会清空旧 API key，并应用目标安全默认值。插件不会安装、启动或下载模型。",
     providerPresetOpenAI: "OpenAI",
     providerPresetDeepSeek: "DeepSeek",
     providerPresetLiteRT: "LiteRT-LM CLI",
@@ -471,8 +500,11 @@ const ZH_LABELS: LabelTree = {
     providerPresetCustom: "自定义",
     apiBaseUrlName: "API base URL",
     apiBaseUrlDesc: "OpenAI-compatible endpoint，例如 https://api.deepseek.com 或 https://api.openai.com/v1。",
+    apiBaseUrlPresetDesc: "由当前 provider preset 管理；选择“自定义”后可以编辑。",
     apiKeyName: "API key",
     apiKeyDesc: "保存在本地 Obsidian 插件数据中。",
+    apiKeyRemoteDesc: "远端 provider 必填。保存在本地 Obsidian 插件数据中，切换 provider 时会清空。",
+    apiKeyLocalDesc: "本地 provider 可留空；仅在 endpoint 明确要求鉴权时填写。切换 provider 时会清空。",
     modelName: "Model",
     modelDesc: "OpenAI-compatible provider 的模型名，例如 deepseek-v4-flash。",
     supportsJsonModeName: "JSON mode",
@@ -493,6 +525,18 @@ const ZH_LABELS: LabelTree = {
     providerTestDesc: "手动发送模型列表探测和最小 JSON chat completion；打开设置页不会自动请求。",
     providerTestButton: "测试连接",
     providerTestRunning: "测试中...",
+    providerTestCancelButton: "取消测试",
+    providerTestIdle: "尚未测试当前配置。测试只会在你点击按钮后发送请求。",
+    providerTestStageValidating: "校验配置",
+    providerTestStageModels: "探测模型列表",
+    providerTestStageChat: "验证最小 JSON 请求",
+    providerTestProgress: (model, stage, elapsed) => `模型 ${model || "未配置"} · ${stage} · 已用时间 ${elapsed}`,
+    providerTestCancelRequested: "已请求取消，正在等待已发送的请求结束。",
+    providerTestCancelBoundary: "已发送的 provider 请求可能继续运行；晚到结果不会覆盖当前配置或测试状态。",
+    providerTestSucceededStatus: (model, jsonMode, completedAt) =>
+      `连接成功 · 模型 ${model} · JSON mode ${jsonMode} · 完成于 ${completedAt}`,
+    providerTestFailedStatus: (failure, completedAt) => `连接失败 · ${failure} · 完成于 ${completedAt}`,
+    providerTestCancelledStatus: (completedAt) => `测试已取消 · ${completedAt}`,
     maxRecommendationsName: "推荐数量上限",
     maxRecommendationsDesc: "预览中最多展示多少个标签。",
     maxFolderBatchFilesName: "单批最多文件数",
@@ -849,6 +893,14 @@ const EN_LABELS: LabelTree = {
   },
   settings: {
     heading: "AI Tag Curator Settings",
+    sectionGeneral: "General",
+    sectionProvider: "AI service connection",
+    sectionProviderAdvanced: "Advanced model settings",
+    sectionProviderAdvancedSummary: (profile, concurrency, jsonMode) =>
+      `${profile} · concurrency ${concurrency} · JSON mode ${jsonMode ? "on" : "off"}`,
+    sectionRecommendations: "Tag recommendations",
+    sectionIndexing: "Indexing and batch processing",
+    sectionDiagnostics: "Diagnostics and feedback",
     languageName: "Interface language",
     languageDesc: "Choose the plugin UI language. Auto follows the current Obsidian language.",
     languageAuto: "Auto (follow Obsidian)",
@@ -859,7 +911,8 @@ const EN_LABELS: LabelTree = {
     providerTypeRemote: "Remote OpenAI-compatible",
     providerTypeLocal: "Local OpenAI-compatible",
     providerPresetName: "Provider preset",
-    providerPresetDesc: "Choose defaults for common providers. The plugin does not install, start, or download models.",
+    providerPresetDesc:
+      "Choose a provider. Switching providers clears the previous API key and applies safe destination defaults. The plugin does not install, start, or download models.",
     providerPresetOpenAI: "OpenAI",
     providerPresetDeepSeek: "DeepSeek",
     providerPresetLiteRT: "LiteRT-LM CLI",
@@ -868,8 +921,13 @@ const EN_LABELS: LabelTree = {
     providerPresetCustom: "Custom",
     apiBaseUrlName: "API base URL",
     apiBaseUrlDesc: "OpenAI-compatible endpoint, for example https://api.deepseek.com or https://api.openai.com/v1.",
+    apiBaseUrlPresetDesc: "Managed by the current provider preset. Choose Custom to edit it.",
     apiKeyName: "API key",
     apiKeyDesc: "Stored locally in Obsidian plugin data.",
+    apiKeyRemoteDesc:
+      "Required for remote providers. Stored in local Obsidian plugin data and cleared when the provider changes.",
+    apiKeyLocalDesc:
+      "Optional for local providers. Enter one only when the endpoint explicitly requires authentication. Cleared when the provider changes.",
     modelName: "Model",
     modelDesc: "Model name for your OpenAI-compatible provider, for example deepseek-v4-flash.",
     supportsJsonModeName: "JSON mode",
@@ -896,6 +954,19 @@ const EN_LABELS: LabelTree = {
       "Manually sends a model-list probe and a minimal JSON chat completion. Opening settings never sends requests automatically.",
     providerTestButton: "Test connection",
     providerTestRunning: "Testing...",
+    providerTestCancelButton: "Cancel test",
+    providerTestIdle: "The current configuration has not been tested. Requests are sent only after you click the button.",
+    providerTestStageValidating: "Validating configuration",
+    providerTestStageModels: "Probing model list",
+    providerTestStageChat: "Testing minimal JSON request",
+    providerTestProgress: (model, stage, elapsed) => `Model ${model || "not configured"} · ${stage} · elapsed ${elapsed}`,
+    providerTestCancelRequested: "Cancellation requested; waiting for the already-sent request to settle.",
+    providerTestCancelBoundary:
+      "An already-sent provider request may continue running. Late results cannot replace the current configuration or test state.",
+    providerTestSucceededStatus: (model, jsonMode, completedAt) =>
+      `Connection succeeded · model ${model} · JSON mode ${jsonMode} · completed ${completedAt}`,
+    providerTestFailedStatus: (failure, completedAt) => `Connection failed · ${failure} · completed ${completedAt}`,
+    providerTestCancelledStatus: (completedAt) => `Test cancelled · ${completedAt}`,
     maxRecommendationsName: "Maximum recommendations",
     maxRecommendationsDesc: "Upper bound for tags shown in the preview.",
     maxFolderBatchFilesName: "Maximum files per batch",

@@ -149,8 +149,18 @@ export function applyProviderPresetSettings(
   preset: AiProviderPreset
 ): TagCuratorSettings {
   const normalizedPreset = normalizeProviderPreset(preset);
+  const presetChanged = settings.providerPreset !== normalizedPreset;
+
+  if (!presetChanged) {
+    return mergeSettings({ ...settings, providerPreset: normalizedPreset });
+  }
+
   if (normalizedPreset === "custom") {
-    return mergeSettings({ ...settings, providerPreset: "custom" });
+    return mergeSettings({
+      ...settings,
+      providerPreset: "custom",
+      apiKey: ""
+    });
   }
 
   const defaults = PROVIDER_PRESET_DEFAULTS[normalizedPreset];
@@ -159,7 +169,8 @@ export function applyProviderPresetSettings(
     providerPreset: normalizedPreset,
     providerType: defaults.providerType,
     apiBaseUrl: defaults.apiBaseUrl,
-    model: settings.model.trim() || defaults.model,
+    apiKey: "",
+    model: defaults.model,
     supportsJsonMode: defaults.supportsJsonMode,
     providerConcurrency: defaults.providerConcurrency,
     promptProfile: defaults.promptProfile

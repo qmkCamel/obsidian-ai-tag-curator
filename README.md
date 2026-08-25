@@ -58,19 +58,21 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 
 **Settings**
 ![设置](docs/images/settings.png)
+![Provider connection test progress](docs/images/settings-provider-test-progress.png)
 - Support remote OpenAI-compatible providers such as DeepSeek and OpenAI, plus local OpenAI-compatible endpoints such as Ollama, LM Studio, and LiteRT-LM CLI.
 - Local providers may leave the API key blank, disable JSON mode, and default to the smaller `edge-small` prompt profile with one concurrent folder-batch request.
-- Provide an explicit provider test button and show which content the current endpoint receives.
+- Group settings into General, AI service connection, Advanced model settings, Tag recommendations, Indexing and batch, and Diagnostics and feedback; advanced model settings are collapsed by default.
+- Provide an explicit provider test with persistent stage and elapsed-time feedback, cancellation, late-result isolation, and a disclosure of which content the current endpoint receives.
 - Show dev-mode timing for tag recommendations and AI-enhanced health analysis.
 - Support Chinese, English, and `Auto` language mode following Obsidian.
 - Configure the maximum complete folder batch size from 1 to 200 files.
 
 ## Provider Configuration
 
-Open the plugin settings and configure:
+Choose a `Provider preset` first, then configure as needed:
 
-- `Provider type` and `Provider preset`
-- `API base URL`
+- `Provider type` (shown only for the `Custom` preset)
+- `API base URL` (read-only for standard presets and editable for `Custom`)
 - `API key` (required for remote providers, optional for local providers)
 - `Model`
 - `JSON mode`
@@ -83,13 +85,66 @@ Example OpenAI-compatible settings:
 | --- | --- | --- | --- | --- |
 | OpenAI | Remote | `https://api.openai.com/v1` | Required | `gpt-4o-mini` |
 | DeepSeek | Remote | `https://api.deepseek.com` | Required | `deepseek-chat` |
-| Ollama | Local | `http://127.0.0.1:11434/v1` | Optional | `qwen3:4b` |
+| Ollama | Local | `http://127.0.0.1:11434/v1` | Optional | `qwen3.8:27b` |
 | LM Studio | Local | `http://127.0.0.1:1234/v1` | Optional | The locally loaded model name |
 | LiteRT-LM CLI | Local | `http://127.0.0.1:9379/v1` | Optional | The model exposed by `litert-lm serve` |
 
 The API key is stored locally in Obsidian plugin data and is not written into folder-batch snapshots or operation logs. The plugin does not install, start, download, or manage local models. If a local endpoint is not `127.0.0.1` / `localhost`, settings and folder-scope confirmation warn that content is sent to that address.
 
 Apple Foundation Models, Android Gemini Nano/AICore, Chrome Prompt API, and LiteRT-LM JS are not bundled directly into the Obsidian plugin runtime. This stage only connects through an explicit local OpenAI-compatible endpoint. See the Chinese [on-device model support research](docs/on-device-model-support-research.zh-CN.md).
+
+### Ollama + Qwen3.8 quick start
+
+This path was validated on an Apple M2 Pro with 32GB unified memory using Ollama `0.32.15` and the approximately 17GB `qwen3.8:27b` model. Choose a smaller model on machines with less available memory.
+
+1. Install and start Ollama:
+
+```bash
+brew install --cask ollama-app
+ollama --version
+```
+
+Launch the Ollama app. When you need to run the service manually, use `ollama serve`.
+
+2. Download and confirm the model:
+
+```bash
+ollama pull qwen3.8:27b
+ollama list
+```
+
+3. Verify the native and OpenAI-compatible APIs:
+
+```bash
+curl -fsS http://127.0.0.1:11434/api/version
+curl -fsS http://127.0.0.1:11434/v1/models
+curl -fsS http://127.0.0.1:11434/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3.8:27b","messages":[{"role":"user","content":"Return exactly {\"ok\":true} as JSON."}],"stream":false}'
+```
+
+4. In the plugin's **AI service connection** group, select:
+
+- Provider preset: `Ollama`
+- API base URL: `http://127.0.0.1:11434/v1` (managed by the preset)
+- Model: `qwen3.8:27b`
+- API key: blank
+- Advanced model settings: `edge-small`, concurrency `1`; JSON mode starts off and can be enabled after a successful compatibility test
+- Click **Test connection** and keep the settings page open for the persistent stage, elapsed time, and final result
+
+Switching providers clears the previous API key and applies safe destination defaults. Local model tests and recommendations may take several minutes. Cancelling discards late UI results, but a request already sent to Ollama may continue inference until it settles.
+
+### Capability boundary
+
+The plugin currently uses text `chat/completions` and requires parseable structured JSON. Even when Ollama, LocalAI, or another runtime supports more, the plugin does not currently call vision, image generation, speech, embeddings, tools/agents, streaming, or native Apple/Google on-device SDKs.
+
+### Troubleshooting
+
+- Endpoint unreachable: confirm Ollama is running, then check `lsof -nP -iTCP:11434 -sTCP:LISTEN` and `/api/version`.
+- Model 404: run `ollama list` and use the exact model name in plugin settings.
+- JSON mode / `response_format` incompatibility: expand **Advanced model settings**, turn JSON mode off, and test again.
+- Non-JSON response: keep `edge-small`, confirm the model follows structured-output instructions, or choose a model with stronger instruction following.
+- Slow inference: run `ollama ps`, avoid keeping multiple large models resident, reduce batch concurrency, or use a smaller model.
 
 ## Local Installation
 
@@ -129,16 +184,16 @@ Generated plugin files:
 For local development, you can install directly into an Obsidian vault:
 
 ```bash
-npm run local:install
+OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install
 ```
 
 To install a side-by-side development copy without replacing the Marketplace plugin:
 
 ```bash
-npm run local:install-dev
+OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install-dev
 ```
 
-By default these commands target `/Users/edge/personal/edge-notes`. Override it with `OBSIDIAN_VAULT_PATH=/path/to/vault`.
+The install script requires an explicit `OBSIDIAN_VAULT_PATH` so it cannot silently write to the wrong or unregistered Obsidian vault.
 
 ### Release screenshot vault
 

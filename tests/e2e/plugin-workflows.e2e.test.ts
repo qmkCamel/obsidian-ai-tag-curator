@@ -94,14 +94,42 @@ describe("plugin e2e workflows", () => {
 
     expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackName);
     expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackButton);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionGeneral);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionProvider);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionProviderAdvanced);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionRecommendations);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionIndexing);
+    expect(tab.containerEl.textContent).toContain(getLabels("en").settings.sectionDiagnostics);
+    expect(requiredElement(tab.containerEl.querySelector<HTMLDetailsElement>("details")).open).toBe(false);
+    expect(
+      Array.from(tab.containerEl.querySelectorAll<HTMLSelectElement>("select")).some((select) =>
+        Array.from(select.options).some((option) => option.value === "local-openai-compatible")
+      )
+    ).toBe(false);
+    expect(tab.containerEl.textContent).not.toContain(getLabels("en").settings.newTagStrictnessName);
 
     const language = requiredElement(tab.containerEl.querySelector<HTMLSelectElement>("select"));
     setSelectValue(language, "zh-CN");
     await waitFor(() => expect(plugin.settings.uiLanguage).toBe("zh-CN"));
     await waitFor(() => expect(notices).toContain(getLabels("zh-CN").notices.languageChanged));
 
+    const customPreset = Array.from(tab.containerEl.querySelectorAll<HTMLSelectElement>("select")).find((select) =>
+      Array.from(select.options).some((option) => option.value === "custom")
+    );
+    setSelectValue(requiredElement(customPreset), "custom");
+    await waitFor(() => expect(plugin.settings.providerPreset).toBe("custom"));
+    await waitFor(() =>
+      expect(
+        Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input")).find(
+          (input) => input.placeholder.includes("https://api") && !input.disabled
+        )
+      ).toBeTruthy()
+    );
+
     const freshInputs = () => Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input"));
-    const apiBaseUrl = requiredElement(freshInputs().find((input) => input.placeholder.includes("https://api")));
+    const apiBaseUrl = requiredElement(
+      freshInputs().find((input) => input.placeholder.includes("https://api") && !input.disabled)
+    );
     setInputValue(apiBaseUrl, "https://provider.example/v1");
 
     const apiKey = requiredElement(freshInputs().find((input) => input.type === "password"));
@@ -419,7 +447,19 @@ describe("plugin e2e workflows", () => {
       Array.from(select.options).some((option) => option.value === "ollama")
     );
     setSelectValue(requiredElement(presetSelect), "ollama");
-    const model = requiredElement(Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input")).find((input) => input.value === "gpt-4o-mini"));
+    await waitFor(() => expect(plugin.settings.providerPreset).toBe("ollama"));
+    await waitFor(() =>
+      expect(
+        Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input")).find(
+          (input) => input.type === "text" && !input.disabled && input.value === ""
+        )
+      ).toBeTruthy()
+    );
+    const model = requiredElement(
+      Array.from(tab.containerEl.querySelectorAll<HTMLInputElement>("input")).find(
+        (input) => input.type === "text" && !input.disabled && input.value === ""
+      )
+    );
     setInputValue(model, "qwen3:4b");
     queueAiResponse(JSON.stringify({ models: [] }));
     queueAiResponse(JSON.stringify({ ok: true }));
@@ -430,7 +470,88 @@ describe("plugin e2e workflows", () => {
       )
     ).click();
     await waitFor(() => expect(notices).toContain(labels.notices.providerTestSucceeded("qwen3:4b", "disabled")));
+    await waitFor(() => expect(tab.containerEl.textContent).toContain("Connection succeeded"));
     expect(requestUrlMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps provider-test progress local, supports unrelated settings, and discards a late result after cancellation", async () => {
+    setMockLanguage("en");
+    const labels = getLabels("en");
+    const app = createFakeApp(sampleNotes(), {
+      pluginData: {
+        settings: {
+          uiLanguage: "en",
+          providerType: "local-openai-compatible",
+          providerPreset: "ollama",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3.8:27b",
+          supportsJsonMode: true,
+          providerConcurrency: 1,
+          promptProfile: "edge-small"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    const tab = plugin.settingTabs[0];
+    tab.display();
+    const chatGate = createDeferred<void>();
+    queueAiResponse(JSON.stringify({ models: [] }));
+    queueAiResponse(JSON.stringify({ ok: true }), chatGate);
+
+    findSettingButton(tab.containerEl, labels.settings.providerTestButton).click();
+    await waitFor(() => expect(requestUrlMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(tab.containerEl.textContent).toContain(labels.settings.providerTestStageChat));
+    expect(findSettingButton(tab.containerEl, labels.settings.providerTestRunning).disabled).toBe(true);
+    expect(tab.containerEl.textContent).toContain("qwen3.8:27b");
+    expect(tab.containerEl.textContent).toContain("00:00");
+
+    const allowNewTags = findSettingInput(tab.containerEl, labels.settings.allowNewTagsName, 'input[type="checkbox"]');
+    setCheckboxValue(allowNewTags, true);
+    await waitFor(() => expect(plugin.settings.allowNewTags).toBe(true));
+    await waitFor(() => expect(tab.containerEl.textContent).toContain(labels.settings.providerTestStageChat));
+    expect(tab.containerEl.textContent).toContain(labels.settings.newTagStrictnessName);
+
+    findSettingButton(tab.containerEl, labels.settings.providerTestRunning).click();
+    expect(requestUrlMock).toHaveBeenCalledTimes(2);
+    findSettingButton(tab.containerEl, labels.settings.providerTestCancelButton).click();
+    await waitFor(() => expect(tab.containerEl.textContent).toContain(labels.settings.providerTestCancelRequested));
+    expect(findSettingButton(tab.containerEl, labels.settings.providerTestRunning).disabled).toBe(true);
+
+    chatGate.resolve();
+    await waitFor(() => expect(tab.containerEl.textContent).toContain("Test cancelled"));
+    expect(tab.containerEl.textContent).not.toContain("Connection succeeded");
+    expect(notices).not.toContain(labels.notices.providerTestSucceeded("qwen3.8:27b", "enabled"));
+  });
+
+  it("keeps provider settings after a connection-test failure and renders a recoverable inline result", async () => {
+    setMockLanguage("en");
+    const labels = getLabels("en");
+    const app = createFakeApp(sampleNotes(), {
+      pluginData: {
+        settings: {
+          uiLanguage: "en",
+          providerType: "local-openai-compatible",
+          providerPreset: "ollama",
+          apiBaseUrl: "http://127.0.0.1:11434/v1",
+          apiKey: "",
+          model: "qwen3.8:27b"
+        }
+      }
+    });
+    const plugin = await loadPlugin(app);
+    const tab = plugin.settingTabs[0];
+    tab.display();
+    const before = { ...plugin.settings };
+    queueAiResponse(JSON.stringify({ models: [] }));
+    queueAiError(new Error("404 model not found"));
+
+    findSettingButton(tab.containerEl, labels.settings.providerTestButton).click();
+    await waitFor(() => expect(tab.containerEl.textContent).toContain("Connection failed"));
+
+    expect(tab.containerEl.textContent).toContain("model-error");
+    expect(plugin.settings).toEqual(before);
+    expect(findSettingButton(tab.containerEl, labels.settings.providerTestButton).disabled).toBe(false);
   });
 
   it("runs tag health AI review, keeps evidence usable during loading, applies cleanup, and undoes cleanup", async () => {
@@ -690,6 +811,23 @@ function findButtons(text: string): HTMLButtonElement[] {
   return Array.from(document.querySelectorAll<HTMLButtonElement>("button")).filter(
     (button) => button.textContent?.trim() === text
   );
+}
+
+function findSettingButton(containerEl: HTMLElement, text: string): HTMLButtonElement {
+  return requiredElement(
+    Array.from(containerEl.querySelectorAll<HTMLButtonElement>("button")).find(
+      (button) => button.textContent?.trim() === text
+    )
+  );
+}
+
+function findSettingInput(containerEl: HTMLElement, name: string, selector: string): HTMLInputElement {
+  const setting = requiredElement(
+    Array.from(containerEl.querySelectorAll<HTMLElement>(".setting-item")).find(
+      (item) => item.querySelector(".setting-item-name")?.textContent?.trim() === name
+    )
+  );
+  return requiredElement(setting.querySelector<HTMLInputElement>(selector));
 }
 
 function requiredElement<T>(value: T | null | undefined): T {

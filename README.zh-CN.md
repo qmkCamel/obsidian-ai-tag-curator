@@ -58,19 +58,21 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 
 **设置**
 ![设置](docs/images/settings.png)
+![Provider 连接测试进度](docs/images/settings-provider-test-progress.png)
 - 支持 DeepSeek、OpenAI 等远端 OpenAI-compatible provider，也支持 Ollama、LM Studio、LiteRT-LM CLI 等本地 OpenAI-compatible endpoint。
 - 本地 provider 允许空 API key，可关闭 JSON mode，并默认使用更小的 `edge-small` prompt profile 与 1 并发文件夹批次。
-- 设置页提供手动 provider 连接测试，并展示当前 endpoint 会接收哪些内容。
+- 设置按通用、AI 服务连接、高级模型设置、标签推荐、索引与批量处理、诊断与反馈分组；高级模型设置默认折叠。
+- 设置页提供手动 provider 连接测试，持续显示阶段和已用时间，允许取消并隔离晚到结果，同时展示当前 endpoint 会接收哪些内容。
 - 支持中文、英文和跟随 Obsidian 当前语言的 `Auto` 模式。
 - 开发模式支持展示标签推荐和 AI 增强分析的总耗时与阶段耗时。
 - 可配置 1–200 的单批完整文件上限。
 
 ## Provider 配置
 
-在插件设置中配置：
+在插件设置中先选择 `Provider preset`，再按需配置：
 
-- `Provider 类型` 和 `Provider preset`
-- `API base URL`
+- `Provider 类型`（仅 `自定义` preset 展示）
+- `API base URL`（标准 preset 只读，`自定义` preset 可编辑）
 - `API key`（远端 provider 必填；本地 provider 可留空）
 - `Model`
 - `JSON mode`
@@ -83,13 +85,66 @@ AI Tag Curator 不是普通的“给当前笔记生成几个标签”的插件�
 | --- | --- | --- | --- | --- |
 | OpenAI | 远端 | `https://api.openai.com/v1` | 必填 | `gpt-4o-mini` |
 | DeepSeek | 远端 | `https://api.deepseek.com` | 必填 | `deepseek-chat` |
-| Ollama | 本地 | `http://127.0.0.1:11434/v1` | 可空 | `qwen3:4b` |
+| Ollama | 本地 | `http://127.0.0.1:11434/v1` | 可空 | `qwen3.8:27b` |
 | LM Studio | 本地 | `http://127.0.0.1:1234/v1` | 可空 | 本地已加载模型名 |
 | LiteRT-LM CLI | 本地 | `http://127.0.0.1:9379/v1` | 可空 | `litert-lm serve` 暴露的模型名 |
 
 API key 会保存在本地 Obsidian 插件数据中，不会进入文件夹批次快照或操作日志。插件不会自动安装、启动、下载或管理任何本地模型；如果配置的本地 endpoint 不是 `127.0.0.1` / `localhost`，设置页和文件夹范围确认会提示内容会发送到该地址。
 
 Apple Foundation Models、Android Gemini Nano/AICore、Chrome Prompt API 和 LiteRT-LM JS 这类原生端上 SDK 不会直接打包进 Obsidian 插件运行时；本阶段只通过显式本地 OpenAI-compatible endpoint 接入。详细调研见 [端上模型支持调研](docs/on-device-model-support-research.zh-CN.md)。
+
+### Ollama + Qwen3.8 快速开始
+
+以下路径已在 Apple M2 Pro、32GB 统一内存上使用 Ollama `0.32.15` 和约 17GB 的 `qwen3.8:27b` 验证。其他硬件请根据可用内存选择更小模型。
+
+1. 安装并启动 Ollama：
+
+```bash
+brew install --cask ollama-app
+ollama --version
+```
+
+启动 Ollama 应用；也可以在需要手动运行服务时使用 `ollama serve`。
+
+2. 下载并确认模型：
+
+```bash
+ollama pull qwen3.8:27b
+ollama list
+```
+
+3. 验证原生接口和 OpenAI-compatible 接口：
+
+```bash
+curl -fsS http://127.0.0.1:11434/api/version
+curl -fsS http://127.0.0.1:11434/v1/models
+curl -fsS http://127.0.0.1:11434/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3.8:27b","messages":[{"role":"user","content":"Return exactly {\"ok\":true} as JSON."}],"stream":false}'
+```
+
+4. 在插件设置的“AI 服务连接”分组中选择：
+
+- Provider preset：`Ollama`
+- API base URL：`http://127.0.0.1:11434/v1`（由 preset 管理）
+- Model：`qwen3.8:27b`
+- API key：留空
+- 高级模型设置：`edge-small`、并发 `1`；JSON mode 默认关闭，如模型连接测试确认支持可再开启
+- 点击“测试连接”，等待设置页内的阶段、已用时间和最终结果
+
+切换 provider 会清空旧 API key，并应用目标 provider 的安全默认值。本地模型连接测试和推荐可能耗时数分钟；取消后 UI 会丢弃晚到结果，但已经发给 Ollama 的推理请求仍可能继续运行到结束。
+
+### 能力边界
+
+插件当前只使用文本 `chat/completions` 并要求可解析的结构化 JSON。即使 Ollama、LocalAI 或其他 runtime 本身支持更多能力，插件目前也不会调用 vision、图像生成、语音、embeddings、tools/agent、流式输出或原生 Apple/Google 端上 SDK。
+
+### 常见问题
+
+- endpoint 不可达：确认 Ollama 已启动，并运行 `lsof -nP -iTCP:11434 -sTCP:LISTEN` 和 `/api/version` 检查。
+- 模型 404：运行 `ollama list`，把插件中的 Model 改为完全一致的名称。
+- JSON mode / `response_format` 不兼容：展开“高级模型设置”，关闭 JSON mode 后重新测试。
+- 返回内容不是 JSON：保留 `edge-small`，确认模型遵循结构化输出；必要时换用指令遵循更稳定的模型。
+- 推理很慢：运行 `ollama ps` 查看驻留模型；避免同时驻留多个大模型，并降低批次并发或改用更小模型。
 
 ## 本地安装
 
@@ -129,16 +184,16 @@ cp main.js manifest.json styles.css .hotreload /path/to/your-vault/.obsidian/plu
 本地开发时，也可以直接安装到 Obsidian 库：
 
 ```bash
-npm run local:install
+OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install
 ```
 
 如果要和插件市场版本并排安装，使用 dev 版本：
 
 ```bash
-npm run local:install-dev
+OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install-dev
 ```
 
-默认会安装到 `/Users/edge/personal/edge-notes`。如需换库，可以设置 `OBSIDIAN_VAULT_PATH=/path/to/vault`。
+安装脚本要求显式设置 `OBSIDIAN_VAULT_PATH`，避免把插件写入错误或未登记的 Obsidian 库。
 
 ## 使用流程
 
