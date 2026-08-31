@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.4.1 - 2026-08-31
+
+中文
+
+### 修复
+
+- 清理 Obsidian Community Scorecard 报告的样式、全局对象、类型安全和过时依赖告警。
+- 为 Obsidian 1.13 增加可搜索的声明式设置定义，同时保留 1.8.7–1.12 的旧版设置页兼容路径。
+- 收紧 frontmatter 和 AI 响应解析的未知输入边界，避免非字符串标签或异常元数据进入标签处理流程。
+
+### 验证
+
+- 通过 37 个文件、131 个用例的完整 Vitest 回归、生产构建和 8 项 OpenSpec 校验。
+- 使用 `eslint-plugin-obsidianmd` 0.4.2 扫描 `src` 和 `package.json`，结果为 0 个问题。
+
+English
+
+### Fixed
+
+- Remove style, global-object, type-safety, and obsolete-dependency warnings reported by the Obsidian Community Scorecard.
+- Add searchable declarative settings for Obsidian 1.13 while preserving the legacy settings path for Obsidian 1.8.7–1.12.
+- Harden unknown-input boundaries for frontmatter and AI response parsing so malformed metadata cannot enter tag processing.
+
+### Verification
+
+- Pass the complete Vitest regression suite with 37 files and 131 tests, the production build, and all 8 OpenSpec validations.
+- Scan `src` and `package.json` with `eslint-plugin-obsidianmd` 0.4.2 with 0 problems.
+
 ## 0.4.0 - 2026-08-27
 
 中文
