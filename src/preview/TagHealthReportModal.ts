@@ -78,7 +78,7 @@ export class TagHealthReportModal extends Modal {
     const header = contentEl.createDiv({ cls: "tag-curator-health__header" });
     header.createEl("h2", { text: this.labels.health.title });
     header.createEl("p", { text: this.labels.health.subtitle });
-    header.createEl("div", {
+    header.createDiv({
       cls: "tag-curator-health__meta",
       text: `${this.labels.health.generatedAt(new Date(this.report.generatedAt).toLocaleString())} · ${this.labels.health.indexUpdatedAt(
         new Date(this.report.indexUpdatedAt).toLocaleString()

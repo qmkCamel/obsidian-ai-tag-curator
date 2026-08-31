@@ -29,6 +29,10 @@ type LoadedPlugin = {
   settingTabs: Array<{
     containerEl: HTMLElement;
     display: () => void;
+    getSettingDefinitions?: () => Array<{
+      heading: string;
+      items: Array<{ name: string; visible?: boolean | (() => boolean) }>;
+    }>;
   }>;
 };
 
@@ -91,6 +95,31 @@ describe("plugin e2e workflows", () => {
 
     const tab = plugin.settingTabs[0];
     tab.display();
+
+    const definitions = tab.getSettingDefinitions?.() ?? [];
+    const searchableNames = definitions.flatMap((group) => group.items.map((item) => item.name));
+    expect(searchableNames).toEqual(
+      expect.arrayContaining([
+        getLabels("en").settings.languageName,
+        getLabels("en").settings.providerPresetName,
+        getLabels("en").settings.providerTypeName,
+        getLabels("en").settings.apiBaseUrlName,
+        getLabels("en").settings.modelName,
+        getLabels("en").settings.apiKeyName,
+        getLabels("en").settings.providerTestName,
+        getLabels("en").settings.supportsJsonModeName,
+        getLabels("en").settings.promptProfileName,
+        getLabels("en").settings.providerConcurrencyName,
+        getLabels("en").settings.maxRecommendationsName,
+        getLabels("en").settings.allowNewTagsName,
+        getLabels("en").settings.newTagStrictnessName,
+        getLabels("en").settings.maxFolderBatchFilesName,
+        getLabels("en").settings.readInlineTagsName,
+        getLabels("en").settings.refreshIndexOnLoadName,
+        getLabels("en").settings.devModeName,
+        getLabels("en").settings.feedbackName
+      ])
+    );
 
     expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackName);
     expect(tab.containerEl.textContent).toContain(getLabels("en").settings.feedbackButton);

@@ -1,14 +1,13 @@
 // Extracts tags from frontmatter values and Markdown body text.
 import { normalizeTag, uniqueTags } from "../utils/normalizeTag";
 
-export type FrontmatterTagValue = string | string[] | null | undefined;
-
-export function parseFrontmatterTags(value: FrontmatterTagValue): string[] {
-  if (!value) {
+export function parseFrontmatterTags(value: unknown): string[] {
+  if (typeof value !== "string" && !Array.isArray(value)) {
     return [];
   }
 
-  const rawValues = Array.isArray(value) ? value : [value];
+  const candidates: unknown[] = Array.isArray(value) ? value : [value];
+  const rawValues = candidates.filter((candidate): candidate is string => typeof candidate === "string");
   const tags = rawValues.flatMap((rawValue) =>
     rawValue
       .split(/[\s,]+/)

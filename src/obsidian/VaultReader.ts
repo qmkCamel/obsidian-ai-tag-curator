@@ -78,7 +78,7 @@ export class VaultReader {
   async readNote(file: TFile): Promise<IndexedNote> {
     const content = await this.app.vault.cachedRead(file);
     const cache = this.app.metadataCache.getFileCache(file);
-    const frontmatterTags = parseFrontmatterTags(cache?.frontmatter?.tags);
+    const frontmatterTags = parseFrontmatterTags(readFrontmatterProperty(cache?.frontmatter, "tags"));
     const inlineTags =
       cache?.tags === undefined ? parseInlineTags(content) : parseObsidianTags(cache.tags.map((entry) => entry.tag));
     const inventory = createNoteTagInventory(frontmatterTags, inlineTags);
@@ -90,6 +90,14 @@ export class VaultReader {
       sourceContentHash: await hashContent(content)
     };
   }
+}
+
+function readFrontmatterProperty(frontmatter: unknown, key: string): unknown {
+  return isRecord(frontmatter) ? frontmatter[key] : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 /** Pure path filter shared with tests to make root, recursion, and same-prefix boundaries explicit. */

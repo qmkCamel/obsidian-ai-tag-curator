@@ -995,6 +995,10 @@ export function getLanguage(): string {
   return mockLanguage;
 }
 
+export function requireApiVersion(): boolean {
+  return false;
+}
+
 export async function requestUrl(request: unknown): Promise<unknown> {
   return requestUrlMock(request);
 }
@@ -1015,5 +1019,6 @@ export const obsidianMock = {
   TFolder,
   getAllTags,
   getLanguage,
+  requireApiVersion,
   requestUrl
 };

@@ -15,7 +15,7 @@ export class CurrentNoteRecommendationProgressModal extends Modal {
   private cancelled = false;
   private finishing = false;
   private readonly startedAt = Date.now();
-  private elapsedTimer: ReturnType<typeof globalThis.setInterval> | null = null;
+  private elapsedTimer: number | null = null;
 
   constructor(
     app: ConstructorParameters<typeof Modal>[0],
@@ -33,12 +33,12 @@ export class CurrentNoteRecommendationProgressModal extends Modal {
     this.modalEl.addClass("tag-curator-current-recommendation-progress-modal");
     this.modalEl.querySelector(".modal-header-button, .modal-close-button")?.remove();
     this.render();
-    this.elapsedTimer = globalThis.setInterval(() => this.updateElapsed(), 1000);
+    this.elapsedTimer = window.setInterval(() => this.updateElapsed(), 1000);
   }
 
   onClose(): void {
     if (this.elapsedTimer !== null) {
-      globalThis.clearInterval(this.elapsedTimer);
+      window.clearInterval(this.elapsedTimer);
       this.elapsedTimer = null;
     }
     this.contentEl.empty();
