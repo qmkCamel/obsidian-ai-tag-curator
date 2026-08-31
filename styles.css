@@ -193,30 +193,31 @@
   pointer-events: none;
 }
 
-.tag-curator-current-recommendation-progress-container .modal-bg {
-  display: none !important;
+.modal-container.tag-curator-current-recommendation-progress-container .modal-bg {
+  display: none;
 }
 
 .tag-curator-current-recommendation-progress-container .modal {
   pointer-events: auto;
 }
 
-.tag-curator-current-recommendation-progress-container .modal-close-button,
-.tag-curator-current-recommendation-progress-container .modal-header-button {
-  display: none !important;
+.modal-container.tag-curator-current-recommendation-progress-container .modal .modal-close-button,
+.modal-container.tag-curator-current-recommendation-progress-container .modal .modal-header-button {
+  display: none;
 }
 
-.tag-curator-current-recommendation-progress-modal {
-  bottom: 16px !important;
+.modal-container.tag-curator-current-recommendation-progress-container
+  .modal.tag-curator-current-recommendation-progress-modal {
+  bottom: 16px;
   height: auto;
-  left: auto !important;
+  left: auto;
   margin: 0;
   max-height: min(520px, calc(100vh - 32px));
   max-width: min(480px, calc(100vw - 32px));
-  position: fixed !important;
-  right: 16px !important;
-  top: auto !important;
-  transform: none !important;
+  position: fixed;
+  right: 16px;
+  top: auto;
+  transform: none;
   width: min(480px, calc(100vw - 32px));
 }
 
@@ -383,13 +384,14 @@
     width: 100%;
   }
 
-  .tag-curator-current-recommendation-progress-modal,
-  .tag-curator-current-recommendation-progress-container--minimized
-    .tag-curator-current-recommendation-progress-modal {
-    bottom: 8px !important;
+  .modal-container.tag-curator-current-recommendation-progress-container
+    .modal.tag-curator-current-recommendation-progress-modal,
+  .modal-container.tag-curator-current-recommendation-progress-container--minimized
+    .modal.tag-curator-current-recommendation-progress-modal {
+    bottom: 8px;
     max-height: calc(100vh - 16px);
     max-width: calc(100vw - 16px);
-    right: 8px !important;
+    right: 8px;
     width: calc(100vw - 16px);
   }
 }

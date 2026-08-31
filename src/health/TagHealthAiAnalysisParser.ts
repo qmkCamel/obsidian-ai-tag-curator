@@ -98,11 +98,19 @@ function parsePriority(value: unknown): TagHealthAiPriority {
 }
 
 function parseTags(value: unknown, errorMessage: string): string[] {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== "string" || item.trim().length === 0)) {
+  if (!Array.isArray(value)) {
     throw new Error(errorMessage);
   }
 
-  return value.map((item) => item.trim().replace(/^#+/, ""));
+  const items: unknown[] = value;
+  const tags: string[] = [];
+  for (const item of items) {
+    if (typeof item !== "string" || item.trim().length === 0) {
+      throw new Error(errorMessage);
+    }
+    tags.push(item.trim().replace(/^#+/, ""));
+  }
+  return tags;
 }
 
 function parseRequiredString(value: unknown, errorMessage: string): string {

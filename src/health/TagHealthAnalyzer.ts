@@ -3,15 +3,6 @@ import type { TagIndex, TagUsage } from "../index/TagIndex";
 import { summarizeTagIndex } from "../index/TagIndexSummary";
 import type { TagHealthIssue, TagHealthIssueType, TagHealthReport, TagHealthSection } from "./TagHealthReport";
 
-const SECTION_TYPES: TagHealthIssueType[] = [
-  "lowFrequency",
-  "nearDuplicates",
-  "hierarchyInconsistency",
-  "overBroad",
-  "overNarrow",
-  "namingDrift"
-];
-
 export function analyzeTagHealth(index: TagIndex, now = new Date()): TagHealthReport {
   const usages = Object.values(index.tags).sort((a, b) => a.tag.localeCompare(b.tag));
   const summary = summarizeTagIndex(index);

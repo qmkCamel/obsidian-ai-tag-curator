@@ -19,6 +19,11 @@ describe("parseFrontmatterTags", () => {
       "draft"
     ]);
   });
+
+  it("ignores malformed non-string frontmatter values at the Obsidian metadata boundary", () => {
+    expect(parseFrontmatterTags({ nested: "tag" })).toEqual([]);
+    expect(parseFrontmatterTags(["valid", 42, null, { tag: "ignored" }])).toEqual(["valid"]);
+  });
 });
 
 describe("parseInlineTags", () => {

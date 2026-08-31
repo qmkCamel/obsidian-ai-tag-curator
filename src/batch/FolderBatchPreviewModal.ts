@@ -64,7 +64,7 @@ export class FolderBatchPreviewModal extends Modal {
       );
 
     for (const file of view.files) {
-      const details = this.contentEl.createEl("details", { cls: "tag-curator-folder-batch__file" }) as HTMLDetailsElement;
+      const details = this.contentEl.createEl("details", { cls: "tag-curator-folder-batch__file" });
       details.open = file.planStatus === "ready" || file.sourceStatus === "failed" || file.aiStatus === "failed";
       details.createEl("summary", { text: file.notePath });
       this.renderTagLine(details, this.labels.folderBatch.frontmatterSource, file.frontmatterTags);

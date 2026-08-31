@@ -51,7 +51,7 @@ export class FrontmatterWriter {
 
   readCurrentTags(file: TFile): string[] {
     const cache = this.app.metadataCache.getFileCache(file);
-    return parseFrontmatterTags(cache?.frontmatter?.tags);
+    return parseFrontmatterTags(readFrontmatterProperty(cache?.frontmatter, "tags"));
   }
 
   async readSnapshot(file: TFile): Promise<FrontmatterSnapshot> {
@@ -74,14 +74,15 @@ export class FrontmatterWriter {
     }
 
     let change: FrontmatterTagChange = { beforeTags: [], afterTags: [] };
-    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-      const beforeTags = parseFrontmatterTags(frontmatter.tags);
+    await this.app.fileManager.processFrontMatter(file, (frontmatter: unknown) => {
+      const record = requireFrontmatterRecord(frontmatter);
+      const beforeTags = parseFrontmatterTags(record.tags);
       if (!sameTagSet(beforeTags, snapshot.beforeTags)) {
         throw new SnapshotConflictError("tagsChanged");
       }
 
       const afterTags = normalizeTagList(nextTags);
-      frontmatter.tags = afterTags;
+      record.tags = afterTags;
       change = { beforeTags, afterTags };
     });
 
@@ -97,10 +98,11 @@ export class FrontmatterWriter {
       afterTags: []
     };
 
-    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-      const beforeTags = parseFrontmatterTags(frontmatter.tags);
+    await this.app.fileManager.processFrontMatter(file, (frontmatter: unknown) => {
+      const record = requireFrontmatterRecord(frontmatter);
+      const beforeTags = parseFrontmatterTags(record.tags);
       const afterTags = normalizeTagList(transform(beforeTags));
-      frontmatter.tags = afterTags;
+      record.tags = afterTags;
       change = { beforeTags, afterTags };
     });
 
@@ -116,6 +118,21 @@ export class FrontmatterWriter {
       return nextTags;
     });
   }
+}
+
+function readFrontmatterProperty(frontmatter: unknown, key: string): unknown {
+  return isRecord(frontmatter) ? frontmatter[key] : undefined;
+}
+
+function requireFrontmatterRecord(frontmatter: unknown): Record<string, unknown> {
+  if (!isRecord(frontmatter)) {
+    throw new Error("Obsidian frontmatter must be an object.");
+  }
+  return frontmatter;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function normalizeTagList(tags: string[]): string[] {
