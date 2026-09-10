@@ -95,6 +95,22 @@ export type OperationRecord = RecommendationOperationRecord | AnyCleanupOperatio
 
 export class OperationLog {
   private records: OperationRecord[];
+  private mutationRunning = false;
+
+  get isMutationRunning(): boolean {
+    return this.mutationRunning;
+  }
+
+  /** Acquire synchronously, before any preflight await, and retain through compensation. */
+  async runMutation<T>(action: () => Promise<T>): Promise<T> {
+    if (this.mutationRunning) throw new MutationInProgressError();
+    this.mutationRunning = true;
+    try {
+      return await action();
+    } finally {
+      this.mutationRunning = false;
+    }
+  }
 
   constructor(records: OperationRecord[] = []) {
     this.records = records.map(cloneOperationRecord);
@@ -252,6 +268,21 @@ export class OperationLog {
     this.records = this.records.filter((record) => record.id !== id);
   }
 
+  /** Restore the same record and position if deleting it cannot be persisted. */
+  async removeAndPersist(id: string, persist: () => Promise<void>): Promise<void> {
+    const index = this.records.findIndex((record) => record.id === id);
+    const record = index < 0 ? undefined : cloneOperationRecord(this.records[index]);
+    this.remove(id);
+    try {
+      await persist();
+    } catch (error) {
+      if (record && !this.records.some((entry) => entry.id === id)) {
+        this.records.splice(index, 0, record);
+      }
+      throw error;
+    }
+  }
+
   toJSON(): OperationRecord[] {
     return this.records.map(cloneOperationRecord);
   }
@@ -364,10 +395,17 @@ function cloneOperationRecord(record: OperationRecord): OperationRecord {
       beforeTags: [...record.plan.beforeTags],
       afterTags: [...record.plan.afterTags],
       addedTags: [...record.plan.addedTags],
-      syncedInlineTags: [...record.plan.syncedInlineTags],
-      aiAddedTags: [...record.plan.aiAddedTags],
+      syncedInlineTags: [...(record.plan.syncedInlineTags ?? [])],
+      aiAddedTags: [...(record.plan.aiAddedTags ?? record.plan.addedTags)],
       unchangedTags: [...record.plan.unchangedTags],
       skippedTags: [...record.plan.skippedTags]
     }
   };
+}
+
+export class MutationInProgressError extends Error {
+  constructor() {
+    super("Another tag operation is in progress. Wait for it to finish before retrying.");
+    this.name = "MutationInProgressError";
+  }
 }

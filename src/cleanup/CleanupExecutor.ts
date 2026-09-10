@@ -79,6 +79,10 @@ export class CleanupExecutor {
   constructor(private readonly dependencies: CleanupExecutorDependencies) {}
 
   async execute(plan: SelectedCleanupPlan, operationLogLimit: number): Promise<CleanupExecutionResult> {
+    return this.dependencies.operationLog.runMutation(() => this.executeLocked(plan, operationLogLimit));
+  }
+
+  private async executeLocked(plan: SelectedCleanupPlan, operationLogLimit: number): Promise<CleanupExecutionResult> {
     validateSelectedCleanupPlan(plan);
     const orderedPatches = [...plan.files].sort((left, right) => left.notePath.localeCompare(right.notePath));
     const resolved = orderedPatches.map((patch) => ({ patch, file: this.dependencies.findFile(patch.notePath) }));
@@ -166,8 +170,7 @@ export class CleanupExecutor {
       }
 
       if (!compensationFailed) {
-        this.dependencies.operationLog.remove(record.id);
-        await this.dependencies.persist();
+        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
         return { status: "rolledBack", conflicts: [], error: errorMessage(error) };
       }
 

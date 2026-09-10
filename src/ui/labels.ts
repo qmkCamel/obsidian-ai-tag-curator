@@ -300,6 +300,7 @@ type LabelTree = {
     retryRecovery: string;
     close: string;
     unresolvedMutationBlocked: string;
+    mutationInProgress: string;
     noAppliedCleanup: string;
     copySourceSummary: string;
     copyUnavailablePending: string;
@@ -775,6 +776,7 @@ const ZH_LABELS: LabelTree = {
     retryRecovery: "重试固定目标恢复",
     close: "关闭",
     unresolvedMutationBlocked: "存在尚未解决的标签写入事务，请先完成其固定目标恢复。",
+    mutationInProgress: "标签操作正在执行，请等待完成后重试。",
     noAppliedCleanup: "没有可整体回退的 V2 标签清理。",
     copySourceSummary: "frontmatter tags + 逐 occurrence inline token（仅精确缓存位置可写）",
     copyUnavailablePending: "审查 hydrate 时计算；不可用位置保持只读"
@@ -1262,6 +1264,7 @@ const EN_LABELS: LabelTree = {
     retryRecovery: "Retry fixed-target recovery",
     close: "Close",
     unresolvedMutationBlocked: "An unresolved tag mutation must reach its fixed recovery target before another write.",
+    mutationInProgress: "A tag operation is in progress. Wait for it to finish before retrying.",
     noAppliedCleanup: "No V2 tag cleanup is available to undo.",
     copySourceSummary: "frontmatter tags + per-occurrence inline tokens (exact cache positions only)",
     copyUnavailablePending: "Calculated during review hydration; unavailable positions remain view-only"

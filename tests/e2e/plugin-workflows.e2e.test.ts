@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TagCuratorSettings } from "../../src/settings/PluginSettings";
 import type { TagHealthAiAnalysis } from "../../src/health/TagHealthAiAnalysis";
+import type { OperationLog } from "../../src/operations/OperationLog";
 import { getLabels } from "../../src/ui/labels";
 import {
   createDeferred,
@@ -22,6 +23,7 @@ type CommandLike = {
 };
 
 type LoadedPlugin = {
+  operationLog: OperationLog;
   onload: () => Promise<void> | void;
   commands: Record<string, CommandLike>;
   labels: ReturnType<typeof getLabels>;
@@ -69,6 +71,48 @@ describe("plugin e2e workflows", () => {
         writeText: vi.fn().mockResolvedValue(undefined)
       }
     });
+  });
+
+  it("loads historical recommendation data and undoes it after upgrading", async () => {
+    const app = createFakeApp([{ path: "a.md", content: "body", frontmatterTags: ["keep", "old"] }], {
+      activeFilePath: "a.md",
+      pluginData: {
+        settings: { uiLanguage: "en", refreshIndexOnLoad: false },
+        operations: [{ id: "legacy", plan: {
+          notePath: "a.md", beforeTags: ["keep"], afterTags: ["keep", "old"], addedTags: ["old"],
+          unchangedTags: ["keep"], skippedTags: [], createdAt: "2026-05-01"
+        } }]
+      }
+    });
+    const plugin = await loadPlugin(app);
+    runCommand(plugin, "undo-last-tag-curator-change");
+    await waitFor(() => expect(notices).toContain(plugin.labels.notices.undoComplete));
+    expect(app.getNoteTags("a.md")).toEqual(["keep"]);
+    expect(plugin.operationLog.toJSON()).toEqual([]);
+  });
+
+  it("blocks a previously opened recommendation preview while another mutation owns the lock", async () => {
+    const app = createFakeApp(sampleNotes(), {
+      activeFilePath: "notes/current.md",
+      pluginData: { settings: { apiKey: "test", uiLanguage: "en", refreshIndexOnLoad: false } }
+    });
+    const plugin = await loadPlugin(app);
+    queueAiResponse(JSON.stringify({ recommendations: [{ tag: "research", type: "existing", confidence: "high", reason: "reuse" }], warnings: [] }));
+    runCommand(plugin, "suggest-tags-for-current-note");
+    await waitFor(() => expect(findButtons(plugin.labels.recommendations.apply)).toHaveLength(1));
+    const gate = createDeferred<void>();
+    const held = plugin.operationLog.runMutation(() => gate.promise);
+    clickButton(plugin.labels.recommendations.apply);
+    await waitFor(() => expect(notices).toContain(plugin.labels.cleanupReview.mutationInProgress));
+    expect(app.fileManager.getWriteCount()).toBe(0);
+    runCommand(plugin, "suggest-tags-for-folder");
+    expect(app.fileManager.getWriteCount()).toBe(0);
+    gate.resolve();
+    await held;
+    await waitFor(() => expect(requiredElement(findButtons(plugin.labels.recommendations.apply)[0]).disabled).toBe(false));
+    clickButton(plugin.labels.recommendations.apply);
+    await waitFor(() => expect(notices).toContain(plugin.labels.notices.tagsUpdated));
+    expect(app.getNoteTags("notes/current.md")).toContain("research");
   });
 
   it("loads commands and persists settings from the settings tab", async () => {

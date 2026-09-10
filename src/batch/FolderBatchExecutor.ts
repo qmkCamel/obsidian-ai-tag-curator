@@ -57,6 +57,14 @@ export class FolderBatchExecutor {
     changePlans: ChangePlan[],
     operationLogLimit: number
   ): Promise<FolderBatchExecutionResult> {
+    return this.dependencies.operationLog.runMutation(() => this.executeLocked(batchPlan, changePlans, operationLogLimit));
+  }
+
+  private async executeLocked(
+    batchPlan: FolderBatchPlan,
+    changePlans: ChangePlan[],
+    operationLogLimit: number
+  ): Promise<FolderBatchExecutionResult> {
     const plans = [...changePlans].sort((left, right) => left.notePath.localeCompare(right.notePath));
     validateFolderBatchChangePlans(plans);
 
@@ -129,8 +137,7 @@ export class FolderBatchExecutor {
       }
 
       if (!compensationFailed) {
-        this.dependencies.operationLog.remove(record.id);
-        await this.dependencies.persist();
+        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
         return { status: "rolledBack", conflicts: [], error: errorMessage(error) };
       }
 

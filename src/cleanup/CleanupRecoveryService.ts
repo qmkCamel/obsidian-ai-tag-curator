@@ -55,6 +55,10 @@ export class CleanupRecoveryService {
   constructor(private readonly dependencies: CleanupRecoveryDependencies) {}
 
   async reconcileInterruptedCleanup(): Promise<CleanupRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.reconcileInterruptedCleanupLocked());
+  }
+
+  private async reconcileInterruptedCleanupLocked(): Promise<CleanupRecoveryResult> {
     const record = this.dependencies.operationLog.latestUnresolvedCleanup();
     if (!record || record.status === "recoveryRequired") {
       return { status: record ? "recoveryRequired" : "none", record, files: record?.files ?? [] };
@@ -64,8 +68,7 @@ export class CleanupRecoveryService {
     const allBefore = classified.every((item) => item.state === "before");
     const allAfter = classified.every((item) => item.state === "after");
     if (allBefore) {
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -88,6 +91,10 @@ export class CleanupRecoveryService {
   }
 
   async retryRecovery(record = this.dependencies.operationLog.latestUnresolvedCleanup()): Promise<CleanupRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.retryRecoveryLocked(record));
+  }
+
+  private async retryRecoveryLocked(record = this.dependencies.operationLog.latestUnresolvedCleanup()): Promise<CleanupRecoveryResult> {
     if (!record || record.status !== "recoveryRequired" || !record.recoveryTarget) {
       return { status: "none", files: [] };
     }
@@ -129,6 +136,10 @@ export class CleanupRecoveryService {
   }
 
   async undoLatestAppliedCleanup(): Promise<CleanupRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.undoLatestAppliedCleanupLocked());
+  }
+
+  private async undoLatestAppliedCleanupLocked(): Promise<CleanupRecoveryResult> {
     const record = this.dependencies.operationLog.latestCleanupV2("applied");
     if (!record) return { status: "none", files: [] };
     const classified = await this.classify(record);
@@ -144,8 +155,7 @@ export class CleanupRecoveryService {
         attempted.push(item);
         await this.moveToTarget(item, "before");
       }
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     } catch (error) {
@@ -196,8 +206,7 @@ export class CleanupRecoveryService {
     target: CleanupRecoveryTarget
   ): Promise<CleanupRecoveryResult> {
     if (target === "before") {
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: record.files, indexRefreshError };
     }

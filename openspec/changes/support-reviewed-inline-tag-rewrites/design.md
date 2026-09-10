@@ -289,3 +289,10 @@ interface CleanupOperationRecordV2 {
 ## Open Questions
 
 没有阻塞开发的产品或架构问题。实现阶段仍需在最低支持版本与当前稳定版 Obsidian 中验证 `TagCache.position` 的 Unicode/CRLF offset 和活动编辑器行为；这些验证已经列入任务与发布门禁，若实际 API 行为不满足 exact-slice 契约，则对应 occurrence 必须保持不可执行，而不是放宽为正则写入。
+
+## Review 修复补充（2026-09-10）
+
+- exact-slice 匹配仍不足以证明完整 token：reader 和 writer 共用边界校验，拒绝较长/嵌套标签前缀、Unicode 后缀、单词内拼接和转义位置；fallback 不获得写权限。
+- OperationLog 提供插件实例内共享、同步获取的 runMutation 互斥锁。清理/批次执行器、恢复服务与当前笔记/历史撤销写入从第一个 await 前持锁，直到持久化、补偿和索引刷新结束；重入立即拒绝而不排队执行旧授权。finally 保证异常释放，未解决事务门禁继续独立生效。
+- 所有事务删除日志通过 removeAndPersist：保存失败时恢复原记录和顺序再抛错，后续补偿能够更新同一记录；不得因删除保存失败产生无记录的已应用正文。
+- 0.1.2 推荐记录的 syncedInlineTags 缺失时为 []，aiAddedTags 缺失时继承已有 addedTags；保留 before/after 等历史撤销依据，不推断不存在的内容 hash。

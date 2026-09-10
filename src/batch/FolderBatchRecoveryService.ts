@@ -48,6 +48,10 @@ export class FolderBatchRecoveryService {
 
   /** Resolves an interrupted applying/undoing record or persists its one valid recovery direction. */
   async reconcileInterruptedBatch(): Promise<FolderBatchRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.reconcileInterruptedBatchLocked());
+  }
+
+  private async reconcileInterruptedBatchLocked(): Promise<FolderBatchRecoveryResult> {
     const record = this.dependencies.operationLog.latestUnresolvedBatch();
     if (!record || record.status === "recoveryRequired") {
       return { status: record ? "recoveryRequired" : "none", record, files: record?.files ?? [] };
@@ -58,8 +62,7 @@ export class FolderBatchRecoveryService {
     const allAfter = classified.every((item) => item.state === "after");
 
     if ((record.status === "applying" && allBefore) || (record.status === "undoing" && allBefore)) {
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -83,6 +86,10 @@ export class FolderBatchRecoveryService {
 
   /** Retries only the persisted target after a zero-write full classification rejects third states. */
   async retryRecovery(record = this.dependencies.operationLog.latestUnresolvedBatch()): Promise<FolderBatchRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.retryRecoveryLocked(record));
+  }
+
+  private async retryRecoveryLocked(record = this.dependencies.operationLog.latestUnresolvedBatch()): Promise<FolderBatchRecoveryResult> {
     if (!record || record.status !== "recoveryRequired" || !record.recoveryTarget) {
       return { status: "none", files: [] };
     }
@@ -130,8 +137,7 @@ export class FolderBatchRecoveryService {
     }
 
     if (target === "before") {
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -143,6 +149,10 @@ export class FolderBatchRecoveryService {
 
   /** Undoes the latest applied batch in reverse order and compensates back to after on failure. */
   async undoLatestAppliedBatch(): Promise<FolderBatchRecoveryResult> {
+    return this.dependencies.operationLog.runMutation(() => this.undoLatestAppliedBatchLocked());
+  }
+
+  private async undoLatestAppliedBatchLocked(): Promise<FolderBatchRecoveryResult> {
     const record = this.dependencies.operationLog.latestBatch("applied");
     if (!record) {
       return { status: "none", files: [] };
@@ -166,8 +176,7 @@ export class FolderBatchRecoveryService {
         written.push({ item, beforeContentHash: change.afterContentHash ?? item.change.sourceContentHash ?? item.snapshot!.sourceContentHash });
       }
 
-      this.dependencies.operationLog.remove(record.id);
-      await this.dependencies.persist();
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     } catch (error) {

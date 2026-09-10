@@ -390,3 +390,45 @@
 - **WHEN** 系统展示结果
 - **THEN** UI 分别报告文件状态与索引刷新错误
 - **AND** applied 或 recoveryRequired 记录不得因此被删除
+
+### Requirement: 陈旧缓存不能授权标签前缀写入
+
+系统 SHALL 在读取可信 occurrence 和写入 patch 时校验完整 token 边界，即使缓存区间仍逐字匹配，也 SHALL NOT 替换更长标签的前缀。
+
+#### Scenario: source 已变为嵌套标签
+
+- **GIVEN** 正文为 `#old/nested` 而缓存仍指向 `#old`
+- **WHEN** 用户审查或执行 `old -> new`
+- **THEN** 该区间不可执行且正文保持不变
+
+### Requirement: 标签事务必须从预检起共享互斥
+
+系统 SHALL 在异步预检前同步取得插件实例级共享写入锁，覆盖推荐、清理、批次、撤销及恢复，且在成功或失败结束后释放。
+
+#### Scenario: 两个写入同时进入预检
+
+- **GIVEN** 第一个事务正在预检且尚未创建 intent
+- **WHEN** 第二个清理、推荐、批次或恢复请求开始写入
+- **THEN** 第二个请求被拒绝且不进行预检、写入或补偿
+- **AND** 第一个事务完成后才允许新的请求
+
+### Requirement: 删除日志失败必须保留恢复依据
+
+系统 SHALL 在删除操作记录的持久化失败时恢复原记录，确保补偿及重试仍使用同一事务身份。
+
+#### Scenario: 回退成功后保存删除失败
+
+- **GIVEN** 文件已回退到 before 且日志删除保存失败
+- **WHEN** 系统补偿回 after
+- **THEN** 补偿成功保留 applied 记录，补偿失败保留 target=after 的 recoveryRequired 记录
+- **AND** 不得出现正文已应用但日志丢失或空记录访问异常
+
+### Requirement: 旧版推荐操作必须可加载和撤销
+
+系统 SHALL 兼容不含 syncedInlineTags 和 aiAddedTags 的历史推荐记录，保留其原始撤销依据。
+
+#### Scenario: 从 0.1.2 历史日志升级
+
+- **GIVEN** 推荐记录只有 beforeTags、afterTags、addedTags 等旧字段
+- **WHEN** 插件加载并执行历史撤销
+- **THEN** 插件正常加载并恢复 beforeTags，不因为缺少新数组字段抛错

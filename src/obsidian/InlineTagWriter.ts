@@ -2,7 +2,7 @@
 import type { App, TFile } from "obsidian";
 import type { InlineTextEdit } from "../cleanup/CleanupReviewPlan";
 import { hashContent } from "../utils/hashContent";
-import { isInlineTagToken } from "./InlineTagOccurrenceReader";
+import { isCompleteInlineTagAt, isInlineTagToken } from "./InlineTagOccurrenceReader";
 import { joinMarkdownBody, splitMarkdownBody } from "./MarkdownBody";
 
 export type InlineTagWriteConflictKind = "contentChanged" | "tokenChanged" | "invalidPatch";
@@ -156,7 +156,7 @@ function validatePatchShape(edits: InlineTextEdit[]): void {
 
 function validateReviewedSlices(body: string, edits: InlineTextEdit[]): void {
   for (const edit of edits) {
-    if (edit.beforeBodyEnd > body.length || body.slice(edit.beforeBodyStart, edit.beforeBodyEnd) !== edit.beforeText) {
+    if (!isCompleteInlineTagAt(body, edit.beforeBodyStart, edit.beforeBodyEnd, edit.beforeText)) {
       throw new InlineTagWriteError("tokenChanged", "An inline tag no longer matches the reviewed token and position.");
     }
   }

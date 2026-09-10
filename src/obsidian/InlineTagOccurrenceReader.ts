@@ -104,7 +104,7 @@ function collectOccurrences(
       bodyEnd <= body.length &&
       fullEnd <= content.length &&
       sourceText === entry.tag &&
-      isInlineTagToken(sourceText);
+      isCompleteInlineTagAt(body, bodyStart, bodyEnd, sourceText);
     const location = trusted
       ? { line: entry.position.start.line, column: entry.position.start.col }
       : locateBodyOffset(body, clamp(bodyStart ?? 0, 0, body.length));
@@ -285,6 +285,14 @@ function stripSingleHash(value: string): string {
 
 export function isInlineTagToken(value: string): boolean {
   return /^#[\p{L}\p{N}_\-/]+$/u.test(value) && Boolean(normalizeTag(value.slice(1)));
+}
+
+/** Cache slices must describe a complete token, not a still-matching stale prefix. */
+export function isCompleteInlineTagAt(body: string, start: number, end: number, token: string): boolean {
+  return Number.isInteger(start) && Number.isInteger(end) && start >= 0 && end > start && end <= body.length &&
+    body.slice(start, end) === token && isInlineTagToken(token) &&
+    !/[\p{L}\p{N}\p{M}_/#\\-]$/u.test(body.slice(0, start)) &&
+    !/^[\p{L}\p{N}\p{M}_/#-]/u.test(body.slice(end));
 }
 
 function compareOccurrences(left: InlineTagOccurrence, right: InlineTagOccurrence): number {

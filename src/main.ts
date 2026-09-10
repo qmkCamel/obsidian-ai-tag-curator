@@ -418,9 +418,11 @@ export default class TagCuratorPlugin extends Plugin {
         if (this.blockWriteForUnresolvedMutation()) {
           throw new Error(this.labels.cleanupReview.unresolvedMutationBlocked);
         }
-        await this.frontmatterWriter.applyChangePlan(file, plan);
-        this.operationLog.add(plan, this.settings.operationLogLimit);
-        await this.savePluginData();
+        await this.operationLog.runMutation(async () => {
+          await this.frontmatterWriter.applyChangePlan(file, plan);
+          this.operationLog.add(plan, this.settings.operationLogLimit);
+          await this.savePluginData();
+        });
       }).open();
     } catch (error) {
       if (!job.isCancelled()) {
@@ -676,9 +678,10 @@ export default class TagCuratorPlugin extends Plugin {
         return;
       }
 
-      await undoService.undo(target, record.plan);
-      this.operationLog.remove(record.id);
-      await this.savePluginData();
+      await this.operationLog.runMutation(async () => {
+        await undoService.undo(target, record.plan);
+        await this.operationLog.removeAndPersist(record.id, () => this.savePluginData());
+      });
       new Notice(this.labels.notices.undoComplete);
     } catch (error) {
       new Notice(error instanceof Error ? error.message : this.labels.notices.undoFailed);
@@ -753,17 +756,19 @@ export default class TagCuratorPlugin extends Plugin {
       throw new Error(this.labels.health.cleanupPlan.noCleanupUndoRecord);
     }
 
-    for (const fileChange of record.files) {
-      const target = this.app.vault.getAbstractFileByPath(fileChange.notePath);
-      if (!(target instanceof TFile)) {
-        throw new Error(this.labels.notices.noteMissing);
+    await this.operationLog.runMutation(async () => {
+      for (const fileChange of record.files) {
+        const target = this.app.vault.getAbstractFileByPath(fileChange.notePath);
+        if (!(target instanceof TFile)) {
+          throw new Error(this.labels.notices.noteMissing);
+        }
+
+        await this.frontmatterWriter.replaceTagsIfCurrent(target, fileChange.afterTags, fileChange.beforeTags);
       }
 
-      await this.frontmatterWriter.replaceTagsIfCurrent(target, fileChange.afterTags, fileChange.beforeTags);
-    }
-
-    this.operationLog.remove(record.id);
-    await this.buildAndSaveTagIndex();
+      await this.operationLog.removeAndPersist(record.id, () => this.savePluginData());
+      await this.buildAndSaveTagIndex();
+    });
   }
 
   private async retryCleanupRecovery(record: CleanupOperationRecordV2): Promise<void> {
@@ -800,6 +805,10 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private blockWriteForUnresolvedMutation(): boolean {
+    if (this.operationLog.isMutationRunning) {
+      new Notice(this.labels.cleanupReview.mutationInProgress);
+      return true;
+    }
     const unresolved = this.operationLog.latestUnresolvedMutation();
     if (!unresolved) return false;
     if (isBatchRecord(unresolved)) {
@@ -813,6 +822,7 @@ export default class TagCuratorPlugin extends Plugin {
   }
 
   private blockRecoveryBehindDifferentMutation(recordId: string): boolean {
+    if (this.operationLog.isMutationRunning) return this.blockWriteForUnresolvedMutation();
     const unresolved = this.operationLog.latestUnresolvedMutation();
     if (!unresolved || unresolved.id === recordId) return false;
     return this.blockWriteForUnresolvedMutation();
