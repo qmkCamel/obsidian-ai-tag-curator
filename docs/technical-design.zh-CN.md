@@ -252,11 +252,19 @@ export interface ChangePlan {
 
 写入策略则更保守：
 
-- 默认只写入 frontmatter `tags`；
-- 不主动修改正文中的 inline tags；
-- 推荐结果中可以提示正文已有 inline tag，但不做自动迁移。
+- 当前笔记推荐和文件夹批次只写入 frontmatter `tags`；
+- 推荐结果中可以提示正文已有 inline tag，并允许同步到 frontmatter，但不迁移正文位置；
+- 健康报告中的本地确定性 rename/merge 是唯一正文写入入口，且必须先完成 occurrence 级审查和二次确认。
 
-这样可以覆盖用户实际库中常见标签来源，同时降低写入风险。
+健康清理的正文写入边界：
+
+- 只接受当前 `CachedMetadata.tags[].position` 与 `content.slice(start, end)` 精确一致的完整 `#tag` token；
+- position 转为 frontmatter 之后的 body-relative offset，变长替换同时持久化 before/after range；
+- cache 缺失、陈旧、越界、重叠或 fallback parser 结果只有查看权；
+- 写入前校验完整内容 SHA-256、body SHA-256 和每个 token slice，在 `Vault.process` callback 内再次逐字比较预读内容；
+- frontmatter 与 inline edit 共用一个 schemaVersion 2 cleanup intent，执行顺序为 inline 后 frontmatter，补偿/回退顺序为 frontmatter 后 inline；
+- 未完成事务固定恢复到 before 或 after，并阻断 recommendation、folder batch、cleanup 及对应 undo 的新写入；索引、健康报告、hydrate 审查和复制继续可用；
+- 操作日志不保存完整 Markdown 或 UI 上下文。
 
 ## 8. 标签规范化规则
 
@@ -321,6 +329,8 @@ Provider 层只接受结构化 JSON。解析失败时应提示用户重试，而
 - 避免重复标签；
 - 写入前构造 `ChangePlan`；
 - 写入后记录 `OperationLog`。
+
+健康清理不复用上述“只新增 frontmatter”计划。它由 `CleanupReviewPlanBuilder` 按需读取当前 cleanup item、`CleanupReviewModal` 逐来源选择、`CleanupExecutor` 全量预检并持久化 V2 intent，再由 `InlineTagWriter` 与 `FrontmatterWriter` 执行混合事务。`CleanupRecoveryService` 在加载时对账 applying/undoing，并负责固定目标重试和整体回退。
 
 ## 11. 配置项
 
@@ -387,6 +397,9 @@ Provider 层只接受结构化 JSON。解析失败时应提示用户重试，而
 - AI JSON 结果解析；
 - ChangePlan 生成；
 - frontmatter 写入边界。
+- 可信/不可用 inline occurrence、变长 offset 和正反向逐字往返；
+- 混合 cleanup 的全量预检、零写入冲突、补偿、固定目标恢复和跨重载回退；
+- 未解决 batch/cleanup 对其他写入口的共享门禁。
 
 集成验证重点：
 
@@ -396,6 +409,9 @@ Provider 层只接受结构化 JSON。解析失败时应提示用户重试，而
 - 确认写入后 Markdown frontmatter 正确；
 - 撤销后恢复原标签；
 - API 请求失败时不写入文件。
+- 健康 rename/merge 在审查期间零写入，逐位置取消后只修改选中 token；
+- cache 缺失/陈旧 occurrence 禁用，fallback inventory 不能获得写权限；
+- 应用、回退、插件重载和 before/after 恢复目标均保持精确可逆。
 
 ## 15. 分阶段实施计划
 

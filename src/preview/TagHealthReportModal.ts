@@ -5,7 +5,7 @@ import { applyAiAssistanceToCleanupPlan } from "../cleanup/CleanupPlanAiAssistan
 import { buildTagHealthReportViewModel, type HealthActionItemView, type HealthEvidenceSectionView } from "../health/TagHealthReportViewModel";
 import type { CachedTagHealthAiAnalysis, TagHealthAiAnalysis } from "../health/TagHealthAiAnalysis";
 import type { TagHealthIssue, TagHealthIssueType, TagHealthReport } from "../health/TagHealthReport";
-import type { CleanupOperationRecord } from "../operations/OperationLog";
+import type { AnyCleanupOperationRecord } from "../operations/OperationLog";
 import type { getLabels } from "../ui/labels";
 import { formatDuration } from "../utils/formatDuration";
 import type { OperationStageTiming, OperationTimingReport } from "../utils/OperationTimer";
@@ -21,8 +21,8 @@ interface TagHealthAiAnalysisResult {
 }
 type RequestAiAnalysis = () => Promise<TagHealthAiAnalysisResult>;
 interface CleanupActionHandlers {
-  latestCleanupRecord: CleanupOperationRecord | null;
-  applyCleanupItem: (item: CleanupPlanItem) => Promise<CleanupOperationRecord>;
+  latestCleanupRecord: AnyCleanupOperationRecord | null;
+  reviewCleanupItem: (item: CleanupPlanItem) => void;
   undoLatestCleanup: () => Promise<void>;
 }
 
@@ -52,7 +52,7 @@ export class TagHealthReportModal extends Modal {
   private lastAnalyzedAt: string | null = null;
   private aiTimingReport: OperationTimingReport | null = null;
   private aiLoading = false;
-  private latestCleanupRecord: CleanupOperationRecord | null = null;
+  private latestCleanupRecord: AnyCleanupOperationRecord | null = null;
   private activeEvidenceSection: TagHealthIssueType = "nearDuplicates";
 
   onOpen(): void {
@@ -239,10 +239,12 @@ export class TagHealthReportModal extends Modal {
     });
 
     if (item.cleanupItem && item.capability.availability === "executable") {
-      const latestAppliesToItem = this.latestCleanupRecord?.itemId === item.cleanupItem.id;
+      const latestAppliesToItem =
+        this.latestCleanupRecord?.itemId === item.cleanupItem.id &&
+        (!("status" in this.latestCleanupRecord) || this.latestCleanupRecord.status === "applied");
       const actionButton = controls.createEl("button", {
         cls: latestAppliesToItem ? "" : "mod-cta",
-        text: latestAppliesToItem ? this.labels.health.cleanupPlan.undoThisOperation : this.labels.health.cleanupPlan.applyThisSuggestion
+        text: latestAppliesToItem ? this.labels.health.cleanupPlan.undoThisOperation : this.labels.cleanupReview.reviewChanges
       });
       actionButton.type = "button";
       actionButton.onClickEvent(() => {
@@ -255,7 +257,8 @@ export class TagHealthReportModal extends Modal {
           return;
         }
 
-        void this.applyCleanupItem(item.cleanupItem);
+        this.close();
+        this.cleanupActions.reviewCleanupItem(item.cleanupItem);
       });
     }
   }
@@ -450,6 +453,11 @@ export class TagHealthReportModal extends Modal {
     );
     lines.push(`- ${this.labels.health.cleanupPlan.affectedFiles(item.affectedFileCount)}`);
     lines.push(`- ${this.labels.health.impact}: ${item.rationale}`);
+    if (item.capability.availability === "executable") {
+      lines.push(`- ${this.labels.cleanupReview.reviewChanges}: ${this.labels.cleanupReview.subtitle}`);
+      lines.push(`- ${this.labels.health.cleanupPlan.filePreview}: ${this.labels.cleanupReview.copySourceSummary}`);
+      lines.push(`- ${this.labels.health.cleanupPlan.status}: ${this.labels.cleanupReview.copyUnavailablePending}`);
+    }
     this.appendAiAssistanceMarkdown(lines, item);
     lines.push("");
 
@@ -458,17 +466,6 @@ export class TagHealthReportModal extends Modal {
     }
 
     return lines.join("\n").trim();
-  }
-
-  private async applyCleanupItem(item: CleanupPlanItem): Promise<void> {
-    try {
-      const record = await this.cleanupActions.applyCleanupItem(item);
-      this.latestCleanupRecord = record;
-      new Notice(this.labels.health.cleanupPlan.cleanupApplied(record.files.length));
-      this.render();
-    } catch (error) {
-      new Notice(error instanceof Error ? error.message : this.labels.notices.updateFailed);
-    }
   }
 
   private async undoCleanupItem(): Promise<void> {

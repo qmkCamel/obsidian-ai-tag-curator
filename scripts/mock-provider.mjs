@@ -21,18 +21,18 @@ const recommendationBody = JSON.stringify({
   warnings: []
 });
 const healthBody = JSON.stringify({
-  summary: "Local mock health summary.",
+  summary: "优先合并仅分隔符不同的机器学习标签。",
   priorities: [
     {
       issueType: "nearDuplicates",
       tags: ["ml_notes", "ml-notes"],
       severity: "high",
       confidence: "high",
-      diagnosis: "These tags represent the same taxonomy entry.",
+      diagnosis: "#ml_notes 与 #ml-notes 表达同一分类，仅分隔符不同。",
       suggestedAction: "merge",
-      targetTag: "ml_notes",
-      reason: "Keep one spelling for the same topic.",
-      riskNote: "Review affected files before applying."
+      targetTag: "ml-notes",
+      reason: "复用出现次数更多的 #ml-notes 可统一检索入口。",
+      riskNote: "仅写入用户逐项确认且位置精确匹配的 frontmatter 与 inline token。"
     }
   ]
 });
