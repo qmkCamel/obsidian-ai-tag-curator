@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakeApp, TFile } from "./e2e/obsidian-harness";
+import { createFakeApp, withFrontmatter } from "./e2e/obsidian-harness";
 import { FolderBatchRecoveryService } from "../src/batch/FolderBatchRecoveryService";
 import { FrontmatterWriter } from "../src/obsidian/FrontmatterWriter";
 import { OperationLog, type BatchOperationRecord, type BatchOperationStatus } from "../src/operations/OperationLog";
@@ -104,7 +104,15 @@ async function setup(
       return actualWriter.replaceTagsIfSnapshotMatches(file as never, snapshot, tags);
     }
   };
-  const hashes = { a: await hashContent("body a"), b: await hashContent("body b") };
+  const files = await Promise.all(["a.md", "b.md"].map(async (path) => ({
+    notePath: path,
+    beforeTags: ["before"],
+    afterTags: ["before", "after"],
+    syncedInlineTags: ["after"],
+    aiAddedTags: [],
+    sourceContentHash: await hashContent(withFrontmatter(app.vault.getNote(path).content, { tags: ["before"] })),
+    afterContentHash: await hashContent(withFrontmatter(app.vault.getNote(path).content, { tags: ["before", "after"] }))
+  })));
   const record: BatchOperationRecord = {
     id: "batch",
     type: "batch",
@@ -114,15 +122,7 @@ async function setup(
     indexUpdatedAt: "2026-08-04T00:00:00.000Z",
     settings: createFolderBatchSettingsSnapshot(DEFAULT_SETTINGS, "en"),
     createdAt: "2026-08-04T00:00:00.000Z",
-    files: ["a.md", "b.md"].map((path) => ({
-      notePath: path,
-      beforeTags: ["before"],
-      afterTags: ["before", "after"],
-      syncedInlineTags: ["after"],
-      aiAddedTags: [],
-      sourceContentHash: path === "a.md" ? hashes.a : hashes.b,
-      afterContentHash: path === "a.md" ? hashes.a : hashes.b
-    }))
+    files
   };
   const log = new OperationLog([record]);
   let refreshed = 0;

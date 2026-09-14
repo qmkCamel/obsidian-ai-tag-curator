@@ -1,9 +1,11 @@
 // Creates a safe before-and-after tag write plan from selected recommendations.
 import { normalizeTag } from "../utils/normalizeTag";
+import { createAdditiveTagValuePatch, normalizedSnapshotTags, tagValueFields, validateTagLiteral, type TagValueFields, type TagValueSnapshot } from "../obsidian/TagValuePatch";
 
 export interface CreateChangePlanInput {
   notePath: string;
   beforeTags: string[];
+  tagValueSnapshot?: TagValueSnapshot;
   sourceContentHash: string;
   selectedInlineTags?: string[];
   selectedAiTags?: string[];
@@ -12,7 +14,7 @@ export interface CreateChangePlanInput {
   createdAt?: Date;
 }
 
-export interface ChangePlan {
+export interface ChangePlan extends TagValueFields {
   notePath: string;
   beforeTags: string[];
   afterTags: string[];
@@ -27,9 +29,10 @@ export interface ChangePlan {
 
 /** Builds an additive-only frontmatter plan while preserving inline and AI source attribution. */
 export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
-  const beforeTags = normalizeTagList(input.beforeTags);
-  const selectedInlineTags = normalizeTagList(input.selectedInlineTags ?? []);
-  const selectedAiTags = normalizeTagList(input.selectedAiTags ?? input.selectedTags ?? []);
+  const beforeTags = input.tagValueSnapshot ? normalizedSnapshotTags(input.tagValueSnapshot) : normalizeTagList(input.beforeTags);
+  const selectedTags = (tags: string[]) => input.tagValueSnapshot ? tags.map(validateTagLiteral) : normalizeTagList(tags);
+  const selectedInlineTags = selectedTags(input.selectedInlineTags ?? []);
+  const selectedAiTags = selectedTags(input.selectedAiTags ?? input.selectedTags ?? []);
   const beforeSet = new Set(beforeTags);
   const afterTags = [...beforeTags];
   const addedTags: string[] = [];
@@ -45,6 +48,7 @@ export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
   }
 
   return {
+    ...tagValueFields(input.tagValueSnapshot ? createAdditiveTagValuePatch(input.tagValueSnapshot, [...syncedInlineTags, ...aiAddedTags]) : undefined),
     notePath: input.notePath,
     beforeTags,
     afterTags,
@@ -59,18 +63,19 @@ export function createChangePlan(input: CreateChangePlanInput): ChangePlan {
 
   function appendSelectedTags(tags: string[], destination: string[]): void {
     for (const tag of tags) {
-      if (beforeSet.has(tag)) {
+      const key = normalizeTag(tag);
+      if (beforeSet.has(key)) {
         skippedTags.push(tag);
         continue;
       }
 
-      if (afterTags.includes(tag)) {
+      if (afterTags.includes(key)) {
         skippedTags.push(tag);
         continue;
       }
 
-      afterTags.push(tag);
-      addedTags.push(tag);
+      afterTags.push(key);
+      addedTags.push(key);
       destination.push(tag);
     }
   }

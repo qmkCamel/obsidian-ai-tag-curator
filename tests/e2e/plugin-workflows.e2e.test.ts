@@ -8,6 +8,7 @@ import {
   createDeferred,
   createFakeApp,
   installDomHelpers,
+  markdownBody,
   notices,
   obsidianMock,
   queueAiError,
@@ -129,6 +130,7 @@ describe("plugin e2e workflows", () => {
     expect(Object.keys(plugin.commands).sort()).toEqual([
       "analyze-tag-health",
       "handle-unfinished-tag-operation",
+      "open-tag-manager",
       "refresh-tag-index",
       "show-tag-index-summary",
       "suggest-tags-for-current-note",
@@ -585,7 +587,7 @@ describe("plugin e2e workflows", () => {
     setCheckboxValue(allowNewTags, true);
     await waitFor(() => expect(plugin.settings.allowNewTags).toBe(true));
     await waitFor(() => expect(tab.containerEl.textContent).toContain(labels.settings.providerTestStageChat));
-    expect(tab.containerEl.textContent).toContain(labels.settings.newTagStrictnessName);
+    await waitFor(() => expect(tab.containerEl.textContent).toContain(labels.settings.newTagStrictnessName));
 
     findSettingButton(tab.containerEl, labels.settings.providerTestRunning).click();
     expect(requestUrlMock).toHaveBeenCalledTimes(2);
@@ -723,7 +725,7 @@ describe("plugin e2e workflows", () => {
       expect(app.getNoteTags("notes/hyphen.md")).toEqual(["ml-notes"]);
       expect(app.getNoteTags("notes/shared.md")).toEqual(["ml-notes"]);
       expect(app.vault.getNote("notes/hyphen.md").content).toContain("#ml-notes");
-      expect(app.vault.getNote("notes/shared.md").content).toBe(
+      expect(markdownBody(app.vault.getNote("notes/shared.md").content)).toBe(
         "Mixed #ml-notes and #ml_notes then #ml-notes and #ml-notes tags."
       );
     });
@@ -733,7 +735,7 @@ describe("plugin e2e workflows", () => {
     await waitFor(() => {
       expect(app.getNoteTags("notes/hyphen.md")).toEqual(["ml-notes"]);
       expect(app.getNoteTags("notes/shared.md")).toEqual(["ml-notes", "ml_notes"]);
-      expect(app.vault.getNote("notes/shared.md").content).toBe(
+      expect(markdownBody(app.vault.getNote("notes/shared.md").content)).toBe(
         "Mixed #ml-notes and #ml_notes then #ml-notes and #ml_notes tags."
       );
     });
@@ -847,7 +849,7 @@ describe("plugin e2e workflows", () => {
     expect(pageText()).toContain(labels.health.workflow.evidenceTitle);
   });
 
-  it("keeps legacy frontmatter-only cleanup undo compatible", async () => {
+  it("keeps legacy frontmatter-only cleanup read-only without discarding its evidence", async () => {
     setMockLanguage("en");
     const app = createFakeApp([{ path: "legacy.md", content: "body #old", frontmatterTags: ["new"] }], {
       pluginData: {
@@ -867,11 +869,14 @@ describe("plugin e2e workflows", () => {
     });
     const plugin = await loadPlugin(app);
 
-    await (plugin as unknown as { undoLatestCleanup(): Promise<void> }).undoLatestCleanup();
+    const originalContent = app.vault.getNote("legacy.md").content;
+    await expect((plugin as unknown as { undoLatestCleanup(): Promise<void> }).undoLatestCleanup()).rejects.toThrow("read-only");
 
-    expect(app.getNoteTags("legacy.md")).toEqual(["old"]);
-    expect(app.vault.getNote("legacy.md").content).toBe("body #old");
-    expect((app.savedData as PluginDataSnapshot).operations).toEqual([]);
+    expect(app.getNoteTags("legacy.md")).toEqual(["new"]);
+    expect(app.vault.getNote("legacy.md").content).toBe(originalContent);
+    expect(plugin.operationLog.toJSON()).toHaveLength(1);
+    expect(app.vault.getProcessCount()).toBe(0);
+    expect(app.fileManager.getWriteCount()).toBe(0);
   });
 });
 

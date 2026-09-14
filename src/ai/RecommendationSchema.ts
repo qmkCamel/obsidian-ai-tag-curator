@@ -1,4 +1,5 @@
 // Shared data shapes for AI tag recommendation results.
+import type { TagValueSnapshot } from "../obsidian/TagValuePatch";
 export type RecommendationType = "existing" | "new";
 export type RecommendationConfidence = "high" | "medium" | "low";
 
@@ -26,6 +27,8 @@ export interface RecommendationResult {
   recommendations: TagRecommendation[];
   warnings: string[];
   aiError?: string;
+  blockedTags?: string[];
+  tagValueSnapshot?: TagValueSnapshot;
 }
 
 export interface RecommendationParseContext {

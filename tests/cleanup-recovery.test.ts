@@ -10,7 +10,7 @@ import {
   type CleanupOperationStatus
 } from "../src/operations/OperationLog";
 import { hashContent } from "../src/utils/hashContent";
-import { createFakeApp } from "./e2e/obsidian-harness";
+import { createFakeApp, withFrontmatter } from "./e2e/obsidian-harness";
 
 describe("CleanupRecoveryService", () => {
   it.each([
@@ -41,8 +41,8 @@ describe("CleanupRecoveryService", () => {
     expect(result.status).toBe("removed");
     expect(fixture.app.getNoteTags("a.md")).toEqual(["old"]);
     expect(fixture.app.getNoteTags("b.md")).toEqual(["old"]);
-    expect(fixture.app.vault.getNote("a.md").content).toBe("#old");
-    expect(fixture.app.vault.getNote("b.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("a.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
+    expect(fixture.app.vault.getNote("b.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
     expect(fixture.log.latestCleanupV2()).toBeUndefined();
   });
 
@@ -56,7 +56,7 @@ describe("CleanupRecoveryService", () => {
     expect(result.record?.id).toBe(recordId);
     expect(fixture.app.getNoteTags("a.md")).toEqual(["new"]);
     expect(fixture.app.getNoteTags("b.md")).toEqual(["new"]);
-    expect(fixture.app.vault.getNote("a.md").content).toBe("#new");
+    expect(fixture.app.vault.getNote("a.md").content).toBe(withFrontmatter("#new", { tags: ["new"] }));
   });
 
   it("performs zero writes on missing or conflict and never switches the persisted target", async () => {
@@ -76,12 +76,12 @@ describe("CleanupRecoveryService", () => {
 
   it("undoes applied mixed cleanup while preserving unrelated frontmatter properties", async () => {
     const fixture = await setup("applied", "after");
-    fixture.app.vault.getNote("a.md").frontmatter.owner = "keep";
+    fixture.app.vault.getNote("a.md").frontmatter = { owner: "keep" };
     const result = await fixture.service.undoLatestAppliedCleanup();
 
     expect(result.status).toBe("removed");
     expect(fixture.app.getNoteTags("a.md")).toEqual(["old"]);
-    expect(fixture.app.vault.getNote("a.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("a.md").content).toBe(withFrontmatter("#old", { owner: "keep", tags: ["old"] }));
     expect(fixture.app.vault.getNote("a.md").frontmatter).toEqual({ owner: "keep" });
   });
 
@@ -101,7 +101,7 @@ describe("CleanupRecoveryService", () => {
     const applied = await compensated.service.undoLatestAppliedCleanup();
     expect(applied.status).toBe("applied");
     expect(compensated.log.latestCleanupV2()?.status).toBe("applied");
-    expect(compensated.app.vault.getNote("b.md").content).toBe("#new");
+    expect(compensated.app.vault.getNote("b.md").content).toBe(withFrontmatter("#new", { tags: ["new"] }));
 
     const incomplete = await setup("applied", "after", {
       failReversePath: "a.md",
@@ -213,10 +213,10 @@ async function cleanupFile(notePath: string): Promise<CleanupFileChangeV2> {
     notePath,
     beforeTags: ["old"],
     afterTags: ["new"],
-    sourceContentHash: await hashContent("#old"),
+    sourceContentHash: await hashContent(withFrontmatter("#old", { tags: ["old"] })),
     beforeBodyHash: await hashContent("#old"),
     afterBodyHash: await hashContent("#new"),
-    afterContentHash: await hashContent("#new"),
+    afterContentHash: await hashContent(withFrontmatter("#new", { tags: ["new"] })),
     inlineEdits
   };
 }

@@ -11,6 +11,7 @@ import type { NoteTagInventory } from "../tags/NoteTagInventory";
 import { findUnsyncedInlineTags } from "../tags/NoteTagInventory";
 import type { UiLanguage } from "../ui/labels";
 import { normalizeTag } from "../utils/normalizeTag";
+import type { TagValueSnapshot } from "../obsidian/TagValuePatch";
 
 export type FolderBatchPlanStatus = "generating" | "ready" | "partial";
 export type FolderBatchRisk = "low" | "medium" | "high";
@@ -49,6 +50,8 @@ export interface FolderBatchCandidate {
 export interface FolderBatchPlanItem {
   notePath: string;
   beforeTags?: string[];
+  tagValueSnapshot?: TagValueSnapshot;
+  tagValueError?: string;
   sourceContentHash?: string;
   inventory?: NoteTagInventory;
   sourceStatus: FolderBatchSourceStatus;
@@ -61,6 +64,8 @@ export interface FolderBatchPlanItem {
 }
 
 export interface FolderBatchPlan {
+  origin?: "recommendation" | "batch";
+  policyRevision?: number;
   id: string;
   folderPath: string;
   includeSubfolders: boolean;
@@ -73,6 +78,8 @@ export interface FolderBatchPlan {
 }
 
 export interface CreateFolderBatchPlanInput {
+  origin?: "recommendation" | "batch";
+  policyRevision?: number;
   folderPath: string;
   includeSubfolders: boolean;
   filePaths: string[];
@@ -110,6 +117,8 @@ export function createFolderBatchPlan(input: CreateFolderBatchPlanInput): Folder
 
   return {
     id: input.randomId ?? `${createdAt}-${Math.random().toString(36).slice(2)}`,
+    policyRevision: input.policyRevision,
+    origin: input.origin,
     folderPath: normalizeFolderPath(input.folderPath),
     includeSubfolders: input.includeSubfolders,
     filePaths,
@@ -220,6 +229,7 @@ export function clearAllCandidates(plan: FolderBatchPlan): FolderBatchPlan {
 
 /** Keeps source, AI, and writable-plan state orthogonal so partial local results remain reviewable. */
 export function deriveFolderBatchItemPlanStatus(item: FolderBatchPlanItem): FolderBatchItemPlanStatus {
+  if (item.tagValueError || item.tagValueSnapshot?.kind === "scalar") return "unavailable";
   if (item.sourceStatus === "pending" || item.aiStatus === "pending") {
     return "pending";
   }
@@ -254,7 +264,7 @@ export function deriveFolderBatchStatus(items: FolderBatchPlanItem[]): FolderBat
 /** Converts only explicitly selected executable candidates into additive frontmatter plans. */
 export function deriveChangePlans(plan: FolderBatchPlan): ChangePlan[] {
   return plan.items.flatMap((item) => {
-    if (!item.beforeTags || !item.sourceContentHash || item.planStatus !== "ready") {
+    if (!item.beforeTags || !item.sourceContentHash || item.planStatus !== "ready" || item.tagValueError || item.tagValueSnapshot?.kind === "scalar") {
       return [];
     }
 
@@ -262,6 +272,7 @@ export function deriveChangePlans(plan: FolderBatchPlan): ChangePlan[] {
     const changePlan = createChangePlan({
       notePath: item.notePath,
       beforeTags: item.beforeTags,
+      tagValueSnapshot: item.tagValueSnapshot,
       sourceContentHash: item.sourceContentHash,
       selectedInlineTags: selected.filter((candidate) => candidate.source === "inline").map((candidate) => candidate.tag),
       selectedAiTags: selected.filter((candidate) => candidate.source === "ai").map((candidate) => candidate.tag)

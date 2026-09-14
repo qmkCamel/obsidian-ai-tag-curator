@@ -3,6 +3,26 @@ import type { TagHealthSuggestion } from "../health/TagHealthReport";
 import type { InlineOccurrenceAvailability, InlineTagOccurrence } from "../obsidian/InlineTagOccurrenceReader";
 import { isInlineTagToken } from "../obsidian/InlineTagOccurrenceReader";
 import { normalizeTag } from "../utils/normalizeTag";
+import { exactTagValuePatch, sameTagValue, tagValueFields, validateTagLiteral, type TagValueFields } from "../obsidian/TagValuePatch";
+
+export interface ReviewContext {
+  origin: "manual" | "health";
+  indexRevision: number;
+  vaultRevision: number;
+  policyRevision: number;
+  scope: { include: Array<{ path: string; recursive: boolean }> };
+  candidatePaths: string[];
+}
+
+export interface DeterministicCleanupInput {
+  id: string;
+  title: string;
+  action: CleanupReviewAction;
+  sourceTags: string[];
+  targetTag: string;
+  candidatePaths: string[];
+  context?: ReviewContext;
+}
 
 export type CleanupReviewAction = Extract<TagHealthSuggestion, "merge" | "rename">;
 export type CleanupReviewFileStatus = "pending" | "ready" | "unavailable" | "failed" | "cancelled";
@@ -23,7 +43,7 @@ export interface InlineTextEdit {
   afterText: string;
 }
 
-export interface CleanupReviewFile {
+export interface CleanupReviewFile extends TagValueFields {
   notePath: string;
   status: CleanupReviewFileStatus;
   sourceContentHash?: string;
@@ -37,6 +57,7 @@ export interface CleanupReviewFile {
 }
 
 export interface CleanupReviewPlan {
+  context?: ReviewContext;
   itemId: string;
   title: string;
   action: CleanupReviewAction;
@@ -47,7 +68,7 @@ export interface CleanupReviewPlan {
   cancelled: boolean;
 }
 
-export interface SelectedCleanupFilePatch {
+export interface SelectedCleanupFilePatch extends TagValueFields {
   notePath: string;
   sourceContentHash: string;
   beforeBodyHash: string;
@@ -59,6 +80,7 @@ export interface SelectedCleanupFilePatch {
 export type CleanupReviewFilePatch = SelectedCleanupFilePatch;
 
 export interface SelectedCleanupPlan {
+  context?: ReviewContext;
   itemId: string;
   title: string;
   action: CleanupReviewAction;
@@ -137,6 +159,7 @@ export function clearAllCleanupChanges(plan: CleanupReviewPlan): CleanupReviewPl
 }
 
 export function buildSelectedCleanupPlan(plan: CleanupReviewPlan): SelectedCleanupPlan {
+  if (plan.cancelled) throw new InvalidCleanupReviewPlanError("Cancelled cleanup plans cannot be applied.");
   validateCleanupReviewIdentity(plan.action, plan.sourceTags, plan.targetTag);
   const files: SelectedCleanupFilePatch[] = [];
   let frontmatterChangeCount = 0;
@@ -158,8 +181,10 @@ export function buildSelectedCleanupPlan(plan: CleanupReviewPlan): SelectedClean
     }
 
     const inlineEdits = createInlineTextEdits(selectedOccurrences);
+    const proposedPatch = exactTagValuePatch(file);
+    const rawPatch = proposedPatch && { before: proposedPatch.before, after: file.frontmatterSelected ? proposedPatch.after : proposedPatch.before };
     const afterTags = file.frontmatterSelected ? [...file.proposedAfterTags] : [...file.beforeTags];
-    const frontmatterChanged = !sameTagList(file.beforeTags, afterTags);
+    const frontmatterChanged = rawPatch ? !sameTagValue(rawPatch.before, rawPatch.after) : !sameTagList(file.beforeTags, afterTags);
     if (!frontmatterChanged && inlineEdits.length === 0) {
       continue;
     }
@@ -167,6 +192,7 @@ export function buildSelectedCleanupPlan(plan: CleanupReviewPlan): SelectedClean
     if (frontmatterChanged) frontmatterChangeCount += 1;
     inlineEditCount += inlineEdits.length;
     files.push({
+      ...tagValueFields(rawPatch),
       notePath: file.notePath,
       sourceContentHash: file.sourceContentHash,
       beforeBodyHash: file.beforeBodyHash,
@@ -177,6 +203,7 @@ export function buildSelectedCleanupPlan(plan: CleanupReviewPlan): SelectedClean
   }
 
   return {
+    context: plan.context,
     itemId: plan.itemId,
     title: plan.title,
     action: plan.action,
@@ -200,7 +227,7 @@ export function validateCleanupReviewIdentity(
   if (action !== "merge" && action !== "rename") {
     throw new InvalidCleanupReviewPlanError("Only deterministic merge or rename cleanup actions can rewrite inline tags.");
   }
-  if (!targetTag || !isInlineTagToken(`#${targetTag}`)) {
+  if (!targetTag || !isInlineTagToken(`#${targetTag}`) || validateTagLiteral(targetTag) !== targetTag) {
     throw new InvalidCleanupReviewPlanError("A valid target tag is required for inline cleanup.");
   }
   const normalizedTarget = normalizeTag(targetTag);

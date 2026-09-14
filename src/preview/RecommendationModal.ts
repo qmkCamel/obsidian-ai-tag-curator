@@ -24,7 +24,7 @@ export class RecommendationModal extends Modal {
     super(app);
     const inventory = createNoteTagInventory(result.frontmatterTags, result.inlineTags);
     for (const tag of findUnsyncedInlineTags(inventory)) {
-      this.selectedInline.add(tag);
+      if (!result.blockedTags?.includes(tag)) this.selectedInline.add(tag);
     }
     for (const recommendation of result.recommendations) {
       this.selectedAi.add(recommendation.tag);
@@ -82,6 +82,7 @@ export class RecommendationModal extends Modal {
             const plan = createChangePlan({
               notePath: this.result.notePath,
               beforeTags: this.result.frontmatterTags,
+              tagValueSnapshot: this.result.tagValueSnapshot,
               sourceContentHash: this.result.sourceContentHash,
               selectedInlineTags: Array.from(this.selectedInline),
               selectedAiTags: Array.from(this.selectedAi)
@@ -161,7 +162,7 @@ export class RecommendationModal extends Modal {
       .setName(`#${tag} · ${this.labels.recommendations.inlineSource}`)
       .setDesc(this.labels.recommendations.inlineSyncReason)
       .addToggle((toggle) =>
-        toggle.setValue(this.selectedInline.has(tag)).onChange((value) => {
+        toggle.setValue(this.selectedInline.has(tag)).setDisabled(this.result.blockedTags?.includes(tag) ?? false).onChange((value) => {
           if (value) {
             this.selectedInline.add(tag);
           } else {

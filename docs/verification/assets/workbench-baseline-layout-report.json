@@ -1,0 +1,171 @@
+{
+  "boundary": "Synthetic browser public-API shim, actual production UI/CSS and installed Obsidian base CSS. Not an Obsidian host or vault integration test.",
+  "browser": "152.0.7977.83",
+  "obsidianCssVersion": "1.6.5",
+  "externalRequests": [],
+  "cases": [
+    {
+      "name": "900-light-tags",
+      "screenshot": "workbench-baseline-900-light-tags.png",
+      "width": 900,
+      "height": 900,
+      "controls": 213,
+      "overlaps": [],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": true,
+      "detailVisible": 0,
+      "listBounds": {
+        "x": 16,
+        "y": 182.78125,
+        "width": 868,
+        "height": 6449.453125
+      },
+      "detailBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "focused": null
+    },
+    {
+      "name": "900-light-detail",
+      "screenshot": "workbench-baseline-900-light-detail.png",
+      "width": 900,
+      "height": 900,
+      "controls": 64,
+      "overlaps": [],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": 0,
+      "detailVisible": true,
+      "listBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "detailBounds": {
+        "x": 16,
+        "y": 182.78125,
+        "width": 868,
+        "height": 3359.5
+      },
+      "focused": "返回"
+    },
+    {
+      "name": "900-light-history",
+      "screenshot": "workbench-baseline-900-light-history.png",
+      "width": 900,
+      "height": 900,
+      "controls": 7,
+      "overlaps": [],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": 0,
+      "detailVisible": true,
+      "listBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "detailBounds": {
+        "x": 16,
+        "y": 127.890625,
+        "width": 868,
+        "height": 298.5
+      },
+      "focused": "返回"
+    },
+    {
+      "name": "360-light-tags",
+      "screenshot": "workbench-baseline-360-light-tags.png",
+      "width": 360,
+      "height": 900,
+      "controls": 213,
+      "overlaps": [
+        [
+          "topic-003",
+          "合并到"
+        ]
+      ],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": true,
+      "detailVisible": 0,
+      "listBounds": {
+        "x": 8,
+        "y": 221.78125,
+        "width": 344,
+        "height": 6463.953125
+      },
+      "detailBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "focused": null
+    },
+    {
+      "name": "360-light-detail",
+      "screenshot": "workbench-baseline-360-light-detail.png",
+      "width": 360,
+      "height": 900,
+      "controls": 64,
+      "overlaps": [],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": 0,
+      "detailVisible": true,
+      "listBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "detailBounds": {
+        "x": 8,
+        "y": 221.78125,
+        "width": 344,
+        "height": 3393.5
+      },
+      "focused": "返回"
+    },
+    {
+      "name": "360-light-history",
+      "screenshot": "workbench-baseline-360-light-history.png",
+      "width": 360,
+      "height": 900,
+      "controls": 7,
+      "overlaps": [],
+      "clipped": [],
+      "overflowingText": [],
+      "rootHorizontalOverflow": false,
+      "listVisible": 0,
+      "detailVisible": true,
+      "listBounds": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "detailBounds": {
+        "x": 8,
+        "y": 119.890625,
+        "width": 344,
+        "height": 298.5
+      },
+      "focused": "返回"
+    }
+  ],
+  "pageErrors": [],
+  "passed": false
+}

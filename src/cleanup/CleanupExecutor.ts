@@ -23,6 +23,7 @@ import type {
   SelectedCleanupPlan
 } from "./CleanupReviewPlan";
 import { validateCleanupReviewIdentity } from "./CleanupReviewPlan";
+import { assertWritableTagValue, createCleanupTagValuePatch, exactTagValuePatch, normalizedSnapshotTags, reverseTagValueFields, sameTagValue, tagValueFields, type TagValueSnapshot } from "../obsidian/TagValuePatch";
 
 export interface CleanupInlineWriter {
   checkPatch(file: TFile, patch: InlineTagWritePatch): Promise<InlineTagWriteResult>;
@@ -31,7 +32,8 @@ export interface CleanupInlineWriter {
 }
 
 export interface CleanupFrontmatterWriter {
-  checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<void>;
+  readTagValueSnapshot?(file: TFile): Promise<TagValueSnapshot>;
+  checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<FrontmatterTagChange | void>;
   readCurrentTags(file: TFile): string[];
   replaceTagsIfSnapshotMatches(
     file: TFile,
@@ -47,6 +49,7 @@ export interface CleanupExecutorDependencies {
   operationLog: OperationLog;
   persist(): Promise<void>;
   refreshIndex(): Promise<void>;
+  validateContext?(plan: SelectedCleanupPlan): void;
 }
 
 export interface CleanupExecutionConflict {
@@ -97,7 +100,8 @@ export class CleanupExecutor {
       try {
         await this.dependencies.frontmatterWriter.checkSnapshot(target.file, {
           beforeTags: target.patch.beforeTags,
-          sourceContentHash: target.patch.sourceContentHash
+          sourceContentHash: target.patch.sourceContentHash,
+          ...tagValueFields(exactTagValuePatch(target.patch))
         });
         let afterBodyHash = target.patch.beforeBodyHash;
         if (target.patch.inlineEdits.length > 0) {
@@ -114,6 +118,7 @@ export class CleanupExecutor {
       return { status: "conflict", conflicts };
     }
 
+    this.dependencies.validateContext?.(plan);
     const record = this.dependencies.operationLog.addCleanupIntent(
       {
         itemId: plan.itemId,
@@ -122,6 +127,7 @@ export class CleanupExecutor {
         sourceTags: [...plan.sourceTags],
         targetTag: plan.targetTag,
         partial: plan.partial,
+        ...(plan.context ? { context: plan.context, origin: plan.context.origin } : {}),
         files: prepared.map((target) => cleanupFileFromPrepared(target))
       },
       operationLogLimit
@@ -131,6 +137,7 @@ export class CleanupExecutor {
     const attempted: PreparedCleanupTarget[] = [];
     const afterContentHashes = new Map<string, string>();
     try {
+      this.dependencies.validateContext?.(plan);
       for (const target of prepared) {
         attempted.push(target);
         let currentContentHash = target.patch.sourceContentHash;
@@ -138,10 +145,10 @@ export class CleanupExecutor {
           const inlineResult = await this.dependencies.inlineWriter.apply(target.file, inlinePatchFor(target.patch));
           currentContentHash = inlineResult.afterContentHash;
         }
-        if (!sameTags(target.patch.beforeTags, target.patch.afterTags)) {
+        if (hasFrontmatterChange(target.patch)) {
           const frontmatterResult = await this.dependencies.frontmatterWriter.replaceTagsIfSnapshotMatches(
             target.file,
-            { beforeTags: target.patch.beforeTags, sourceContentHash: currentContentHash },
+            { beforeTags: target.patch.beforeTags, sourceContentHash: currentContentHash, ...tagValueFields(exactTagValuePatch(target.patch)) },
             target.patch.afterTags
           );
           currentContentHash = frontmatterResult.afterContentHash ?? currentContentHash;
@@ -170,7 +177,7 @@ export class CleanupExecutor {
       }
 
       if (!compensationFailed) {
-        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: "rolledBack" });
         return { status: "rolledBack", conflicts: [], error: errorMessage(error) };
       }
 
@@ -190,8 +197,12 @@ export class CleanupExecutor {
 
   private async compensateToBefore(target: PreparedCleanupTarget): Promise<void> {
     const currentTags = this.dependencies.frontmatterWriter.readCurrentTags(target.file);
+    const patch = exactTagValuePatch(target.patch);
+    const raw = patch ? await this.dependencies.frontmatterWriter.readTagValueSnapshot?.(target.file) : undefined;
+    const tagsBefore = patch ? sameTagValue(raw, patch.before) : sameTags(currentTags, target.patch.beforeTags);
+    const tagsAfter = patch ? sameTagValue(raw, patch.after) : sameTags(currentTags, target.patch.afterTags);
     const currentInline = await this.dependencies.inlineWriter.readSnapshot(target.file);
-    if (!sameTags(currentTags, target.patch.beforeTags) && !sameTags(currentTags, target.patch.afterTags)) {
+    if (!tagsBefore && !tagsAfter) {
       throw new Error("Frontmatter tags conflict with both cleanup snapshots.");
     }
     if (currentInline.bodyHash !== target.patch.beforeBodyHash && currentInline.bodyHash !== target.afterBodyHash) {
@@ -199,10 +210,10 @@ export class CleanupExecutor {
     }
 
     let currentContentHash = currentInline.contentHash;
-    if (sameTags(currentTags, target.patch.afterTags) && !sameTags(target.patch.beforeTags, target.patch.afterTags)) {
+    if (tagsAfter && hasFrontmatterChange(target.patch)) {
       const restored = await this.dependencies.frontmatterWriter.replaceTagsIfSnapshotMatches(
         target.file,
-        { beforeTags: target.patch.afterTags, sourceContentHash: currentContentHash },
+        { beforeTags: target.patch.afterTags, sourceContentHash: currentContentHash, ...reverseTagValueFields(target.patch) },
         target.patch.beforeTags
       );
       currentContentHash = restored.afterContentHash ?? currentContentHash;
@@ -221,7 +232,8 @@ export class CleanupExecutor {
     try {
       const tags = this.dependencies.frontmatterWriter.readCurrentTags(file);
       const inline = await this.dependencies.inlineWriter.readSnapshot(file);
-      return { ...change, recoveryState: classifyCleanupFileState(tags, inline.bodyHash, change) };
+      const raw = exactTagValuePatch(change) ? await this.dependencies.frontmatterWriter.readTagValueSnapshot?.(file) : undefined;
+      return { ...change, recoveryState: classifyCleanupFileState(tags, inline.bodyHash, change, raw) };
     } catch {
       return { ...change, recoveryState: "conflict" };
     }
@@ -240,6 +252,7 @@ export class CleanupExecutor {
 export function validateSelectedCleanupPlan(plan: SelectedCleanupPlan): void {
   validateCleanupReviewIdentity(plan.action, plan.sourceTags, plan.targetTag);
   if (plan.files.length === 0) throw new UnsafeCleanupPlanError("At least one selected cleanup change is required.");
+  if (plan.files.length > 200) throw new UnsafeCleanupPlanError("Cleanup is limited to 200 files.");
   const sourceSet = new Set(plan.sourceTags.map(normalizeTag).filter(Boolean));
   const targetTag = normalizeTag(plan.targetTag);
   sourceSet.delete(targetTag);
@@ -250,15 +263,27 @@ export function validateSelectedCleanupPlan(plan: SelectedCleanupPlan): void {
       throw new UnsafeCleanupPlanError("Cleanup file paths must be non-empty and unique.");
     }
     paths.add(file.notePath);
-    const frontmatterChanged = !sameTags(file.beforeTags, file.afterTags);
+    const raw = exactTagValuePatch(file);
+    if (plan.context && !raw) throw new UnsafeCleanupPlanError("New cleanup plans require raw tag snapshots.");
+    if (raw) {
+      assertWritableTagValue(raw.before);
+      assertWritableTagValue(raw.after);
+      if (!sameTags(file.beforeTags, normalizedSnapshotTags(raw.before)) || !sameTags(file.afterTags, normalizedSnapshotTags(raw.after))) {
+        throw new UnsafeCleanupPlanError("Normalized tags do not match the exact patch.");
+      }
+      if (!sameTagValue(raw.before, raw.after) && !sameTagValue(raw.after, createCleanupTagValuePatch(raw.before, plan.sourceTags, plan.targetTag).after)) {
+        throw new UnsafeCleanupPlanError("Raw changes do not match the reviewed cleanup identity.");
+      }
+    }
+    const frontmatterChanged = hasFrontmatterChange(file);
     if (!frontmatterChanged && file.inlineEdits.length === 0) {
       throw new UnsafeCleanupPlanError(`${file.notePath}: empty cleanup patches are not writable.`);
     }
-    if (frontmatterChanged && !sameTags(file.afterTags, transformTags(file.beforeTags, sourceSet, targetTag))) {
+    if (!raw && frontmatterChanged && !sameTags(file.afterTags, transformTags(file.beforeTags, sourceSet, targetTag))) {
       throw new UnsafeCleanupPlanError(`${file.notePath}: frontmatter changes do not match the reviewed cleanup identity.`);
     }
     for (const edit of file.inlineEdits) {
-      if (!sourceSet.has(normalizeTag(edit.beforeText)) || normalizeTag(edit.afterText) !== targetTag) {
+      if (!sourceSet.has(normalizeTag(edit.beforeText)) || normalizeTag(edit.afterText) !== targetTag || (raw && edit.afterText !== `#${plan.targetTag}`)) {
         throw new UnsafeCleanupPlanError(`${file.notePath}: inline edits do not match the reviewed cleanup identity.`);
       }
     }
@@ -268,10 +293,12 @@ export function validateSelectedCleanupPlan(plan: SelectedCleanupPlan): void {
 export function classifyCleanupFileState(
   currentTags: string[],
   currentBodyHash: string,
-  change: CleanupFileChangeV2
+  change: CleanupFileChangeV2,
+  currentRaw?: TagValueSnapshot
 ): CleanupFileChangeV2["recoveryState"] {
-  const tagsBefore = sameTags(currentTags, change.beforeTags);
-  const tagsAfter = sameTags(currentTags, change.afterTags);
+  const raw = exactTagValuePatch(change);
+  const tagsBefore = raw ? sameTagValue(currentRaw, raw.before) : sameTags(currentTags, change.beforeTags);
+  const tagsAfter = raw ? sameTagValue(currentRaw, raw.after) : sameTags(currentTags, change.afterTags);
   const bodyBefore = currentBodyHash === change.beforeBodyHash;
   const bodyAfter = currentBodyHash === change.afterBodyHash;
   if (tagsBefore && bodyBefore) return "before";
@@ -290,6 +317,7 @@ function inlinePatchFor(patch: SelectedCleanupFilePatch): InlineTagWritePatch {
 
 function cleanupFileFromPrepared(target: PreparedCleanupTarget): CleanupFileChangeV2 {
   return {
+    ...tagValueFields(exactTagValuePatch(target.patch)),
     notePath: target.patch.notePath,
     beforeTags: [...target.patch.beforeTags],
     afterTags: [...target.patch.afterTags],
@@ -299,6 +327,11 @@ function cleanupFileFromPrepared(target: PreparedCleanupTarget): CleanupFileChan
     inlineEdits: target.patch.inlineEdits.map((edit) => ({ ...edit })),
     recoveryState: "before"
   };
+}
+
+function hasFrontmatterChange(change: SelectedCleanupFilePatch): boolean {
+  const patch = exactTagValuePatch(change);
+  return patch ? !sameTagValue(patch.before, patch.after) : !sameTags(change.beforeTags, change.afterTags);
 }
 
 function transformTags(currentTags: string[], sourceSet: Set<string>, targetTag: string): string[] {

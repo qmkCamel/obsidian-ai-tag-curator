@@ -30,7 +30,7 @@ describe("CleanupReviewPlanBuilder", () => {
     expect(plan.files.map((file) => file.status)).toEqual(["ready", "ready", "failed", "ready"]);
     expect(plan.files[0]).toMatchObject({
       beforeTags: ["old", "keep", "target", "legacy"],
-      proposedAfterTags: ["target", "keep"],
+      proposedAfterTags: ["keep", "target"],
       frontmatterSelected: true
     });
     expect(plan.files[1].occurrences[0]).toMatchObject({ selected: false, availability: "cacheUnavailable" });
@@ -132,6 +132,7 @@ function readResult(
     sourceContentHash: `content:${notePath}`,
     bodyHash: `body:${notePath}`,
     frontmatterTags: ["old", "keep", "target", "legacy"],
+    tagValueSnapshot: { kind: "list", values: ["old", "keep", "target", "legacy"] },
     occurrences: [
       {
         id: `${notePath}:0:4:old`,

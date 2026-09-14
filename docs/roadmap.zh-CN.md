@@ -1,6 +1,6 @@
 # Obsidian AI Tag Curator 路线图
 
-更新日期：2026-08-19
+更新日期：2026-09-10
 
 ## 1. 路线图原则
 
@@ -298,19 +298,23 @@ MVP 完整版不追求批量自动改写，而是完成两个可验证闭环：
 
 ## 6. 当前优先级
 
-建议下一步只做一件事：**0.4 完整操作历史**。
+当前交付主线：**统一标签管理工作台**。`feat/tag-management-workbench` 已实现并进入验证收尾，尚未发布；历史版本号不作为新的发版承诺。证据与门禁见[工作台验证记录](verification/tag-management-workbench.md)。
+
+方案入口：[产品设计](../openspec/changes/add-tag-management-workbench/product-design.md)、[技术设计](../openspec/changes/add-tag-management-workbench/design.md)、[开发任务](../openspec/changes/add-tag-management-workbench/tasks.md)。
 
 理由：
 
 - 当前笔记推荐、库级健康报告、受审查 inline 清理和文件夹安全批次四个闭环已经完成实现；
-- recommendation、batch 与 cleanup V2 已共享未解决事务门禁，但用户仍缺少统一的历史列表和按记录检查入口；
-- 下一阶段应把现有安全记录统一展示，不继续扩大正文或文件夹动作类型；
+- 新工作台补齐无需 AI 的日常管理入口、统一保护、索引状态和可见历史，recommendation、batch 与 cleanup V2 共享写入与恢复门禁；
+- 工作台复用精确 rename/merge 与位置级审查，不引入删除、子树批量迁移或后台执行；
+- 属性原值保留、策略全入口一致性、写入互斥和历史恢复证据是开放新入口的前置门禁；
 - inline 新增、删除、拆分、模糊/全局替换、AI 正文写入和后台静默执行继续不做。
 
 推荐实施顺序：
 
-1. 创建中文 OpenSpec change，明确历史列表、筛选、详情和记录保留边界；
-2. 统一展示 recommendation、legacy cleanup、cleanup V2 和 folder batch 的类型与状态；
-3. 为每类记录提供只读详情、作用文件、状态和可用动作；
-4. 保持既有 V2 固定恢复目标和全局门禁，不从历史 UI 绕过安全检查；
-5. 增加单元测试、端到端回归和真实库 smoke test，再决定后续增量索引方向。
+1. `add-tag-management-workbench` 产品/技术方案及六项能力规格已完成，并据此实现；
+2. 先实现原值 patch、保护/排除、写入协调和日志保留，再开放手动写入；
+3. 交付标签列表、相关笔记、范围选择、索引新鲜度和直接改名/单目标合并；
+4. 统一历史详情、全局最近操作撤销与固定目标恢复，不从旧命令绕过安全约束；
+5. 完成现有 inline 最低版本/视觉验收缺口及工作台单测、E2E、性能、真实宿主截图；
+6. 第二阶段再设计命名预设、用户决定记忆、增量索引和 CSV；图谱、自动改写不进入本阶段。

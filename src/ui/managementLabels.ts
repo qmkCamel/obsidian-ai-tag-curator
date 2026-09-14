@@ -1,0 +1,87 @@
+const en = {
+  title: "Tag manager", tags: "Tags", history: "History", settings: "Scope and protection",
+  historySearch: "Search history", historyOrigin: "Operation source", historyStatus: "Status", clearFilters: "Clear filters",
+  noHistoryResults: "No matching operations", relatedFiles: "Related files", distinctFiles: "Distinct files", tagUnavailable: "This tag is no longer in the current scope",
+  invalidFolders: "Folder rules no longer exist; update scope and exclusions", recordedModel: "Recorded model",
+  rawHistory: "Original tag values are retained when recorded; YAML formatting is not guaranteed.",
+  tagCount: (n: number) => `${n} tags`, resultCount: (n: number, total: number) => `${n} / ${total} tags`,
+  historyCount: (n: number, total: number) => `${n} / ${total} operations`,
+  historyOrigins: { recommendation: "Note recommendation", batch: "Folder batch", health: "Health cleanup", manual: "Manual management", unknown: "Unknown source" },
+  historyActions: { rename: "Rename", merge: "Merge", addTags: "Add tags", observe: "Observe", deprecate: "Deprecate", unknown: "Unknown action" },
+  historyStatuses: { applying: "Applying", applied: "Applied", undoing: "Undoing", recoveryRequired: "Recovery required", undone: "Undone", rolledBack: "Rolled back", unknown: "Unknown status" },
+  historyReasons: { invalidHistory: "History is invalid; writes are blocked", recoveryRequired: "Resolve the unfinished operation first", notLatest: "Undo the most recent operation first", legacyReadOnly: "Read-only: this legacy record lacks recovery evidence", completed: "This operation has already been undone or rolled back" },
+  search: "Search tags", source: "Source", sort: "Sort", all: "All", frontmatter: "Properties", inline: "Body", metadata: "Legacy metadata",
+  countSort: "File count", nameSort: "Tag name", files: "Files", tag: "Tag", scope: "Included folders", root: "Vault root",
+  recursive: "Include subfolders", addFolder: "Add folder", remove: "Remove", exclusions: "Excluded folders", protections: "Protected tags",
+  addProtection: "Add protection", excludeRoot: "Exclude the entire vault", exact: "Exact", subtree: "Subtree", save: "Save", cancel: "Cancel", back: "Back",
+  refresh: "Refresh index", cancelRefresh: "Cancel refresh", health: "Tag health report", previous: "Previous page", next: "Next page",
+  selectPage: "Select current page", clear: "Clear selection", rename: "Rename", merge: "Merge into", target: "Target tag",
+  preview: "Prepare review", confirmScope: "Confirm scope", scopeConsent: "Confirm these included folders and exclusions for this review",
+  policyNotice: "Exclusions invalidate the index and cached excerpts. Existing history paths and recovery patches are retained; previously sent data is not erased.",
+  exactNotice: "Only exact source tags will change. Body and property changes are selected separately in review.",
+  invalidTag: "Use letters, numbers, underscores, hyphens and nonempty / segments; a tag cannot contain only numbers and /.",
+  sameTag: "The target has the same identity as the source. Case-only renaming is not supported.",
+  protected: "Protected", unsupported: "Read-only: unsupported tag characters", invalidPath: "Choose an existing relative folder without . or .. segments.",
+  noSources: "No source tags remain after removing the target.", overLimit: "More than 200 candidate files. Narrow the included folders.",
+  noCandidates: "No eligible source files in this scope.", changed: "Index, scope or policy changed. Close and prepare a new review.",
+  selectionCleared: "Selection cleared because the search, source or scope changed.",
+  missing: "No index", ready: "Index current", stale: "Index outdated", refreshing: "Refreshing; previous results are read-only", error: "Index refresh failed",
+  missingBody: "No index is available. Refresh to scan local tags.", empty: "No tags in this scope", noResults: "No matching tags", noHistory: "No operation history",
+  historyError: "History recovery error", busy: "Operation in progress", recoveryBlocked: "Recovery required before new changes",
+  chooseTag: "Select a tag", chooseHistory: "Select an operation", missingFile: "File unavailable", unknown: "Unknown",
+  undo: "Undo", recover: "Retry recovery", confirmUndo: "Confirm undo", confirmRecovery: "Confirm recovery",
+  recoveryNotice: "Only this operation's original files and fixed recovery target will be used. Conflicts must pass preflight before any write.",
+  exceptions: "Current policy exceptions", legacy: "Legacy history may not contain original tag values or formatting; missing information cannot be restored.", readonly: "Read-only history",
+  before: "Before", after: "After", preparing: "Preparing review", failure: "Operation failed", targetExists: "Existing target: this is a merge",
+  selected: (n: number) => `${n} tags selected`, page: (n: number, total: number) => `${n} / ${total}`,
+  fileCount: (n: number) => `${n} ${n === 1 ? "file" : "files"}`, children: (n: number) => `${n} descendant tags will not be renamed`,
+  failed: (n: number) => `${n} files failed`, progress: (n: number, total: number) => `${n} / ${total} files`,
+};
+
+export type ManagementLabels = typeof en;
+
+const zh: ManagementLabels = {
+  title: "标签管理", tags: "标签", history: "历史", settings: "范围与保护",
+  historySearch: "搜索历史", historyOrigin: "操作来源", historyStatus: "状态", clearFilters: "清除筛选",
+  noHistoryResults: "没有匹配的操作", relatedFiles: "相关文件", distinctFiles: "去重文件数", tagUnavailable: "此标签已不在当前范围内",
+  invalidFolders: "目录规则已失效，请更新包含范围与排除目录", recordedModel: "记录的模型",
+  rawHistory: "有原值证据的记录可保留原始标签值，但不保证 YAML 排版不变。",
+  tagCount: n => `${n} 个标签`, resultCount: (n, total) => `${n} / ${total} 个标签`, historyCount: (n, total) => `${n} / ${total} 条操作`,
+  historyOrigins: { recommendation: "笔记推荐", batch: "文件夹批次", health: "健康清理", manual: "手动管理", unknown: "未知来源" },
+  historyActions: { rename: "重命名", merge: "合并", addTags: "添加标签", observe: "观察", deprecate: "弃用", unknown: "未知操作" },
+  historyStatuses: { applying: "正在应用", applied: "已应用", undoing: "正在撤销", recoveryRequired: "需要恢复", undone: "已撤销", rolledBack: "已回滚", unknown: "未知状态" },
+  historyReasons: { invalidHistory: "历史记录无效，已阻止写入", recoveryRequired: "请先处理未完成操作", notLatest: "请先撤销全局最近一次操作", legacyReadOnly: "只读：旧记录缺少恢复证据", completed: "此操作已撤销或回滚" },
+  search: "搜索标签", source: "来源", sort: "排序", all: "全部", frontmatter: "属性", inline: "正文", metadata: "旧索引来源",
+  countSort: "文件数", nameSort: "标签名", files: "文件", tag: "标签", scope: "包含目录", root: "全库根目录",
+  recursive: "包含子目录", addFolder: "添加目录", remove: "移除", exclusions: "排除目录", protections: "保护标签",
+  addProtection: "添加保护", excludeRoot: "排除整个知识库", exact: "精确", subtree: "子树", save: "保存", cancel: "取消", back: "返回",
+  refresh: "刷新索引", cancelRefresh: "取消刷新", health: "标签健康报告", previous: "上一页", next: "下一页",
+  selectPage: "选择当前页", clear: "清除选择", rename: "重命名", merge: "合并到", target: "目标标签",
+  preview: "准备审查", confirmScope: "确认范围", scopeConsent: "确认本次审查的包含目录和排除项",
+  policyNotice: "排除设置会使索引和缓存片段失效。现存历史路径与恢复补丁仍保留，不会抹除此前已发送的数据。",
+  exactNotice: "仅变更精确源标签。正文和属性的实际改写位置将在审查中分别选择。",
+  invalidTag: "仅支持字母、中文、数字、下划线、连字符及非空 / 分段；标签不能仅由数字和 / 组成。",
+  sameTag: "目标与源为同一标签，本阶段不支持仅修改大小写。", protected: "受保护", unsupported: "只读：标签含不支持的字符",
+  invalidPath: "请选择已有的相对目录，不允许 . 或 .. 路径段。", noSources: "移除目标自身后没有可变更的源标签。",
+  overLimit: "候选文件超过 200 个，请缩小包含目录。", noCandidates: "本次范围没有可处理的源文件。",
+  changed: "索引、范围或保护策略已变化，请关闭并重新准备审查。", selectionCleared: "搜索、来源或范围变化，已清除选择。",
+  missing: "尚无索引", ready: "索引有效", stale: "索引已过期", refreshing: "正在刷新，旧结果只读", error: "索引刷新失败",
+  missingBody: "尚无可用索引，可刷新以扫描本地标签。", empty: "此范围没有标签", noResults: "没有匹配标签", noHistory: "尚无操作历史",
+  historyError: "历史恢复错误", busy: "操作进行中", recoveryBlocked: "需先处理恢复，再开始新的修改",
+  chooseTag: "选择一个标签", chooseHistory: "选择一条操作", missingFile: "文件不可用", unknown: "未知",
+  undo: "撤销", recover: "重试恢复", confirmUndo: "确认撤销", confirmRecovery: "确认恢复",
+  recoveryNotice: "仅使用此记录的原始文件和固定恢复目标。写入前必须通过全量冲突预检。",
+  exceptions: "当前规则例外", legacy: "旧记录不一定保存原始标签值或排版，缺失的信息无法恢复。", readonly: "只读历史",
+  before: "变更前", after: "变更后", preparing: "正在准备审查", failure: "操作失败", targetExists: "目标已存在：本次将合并",
+  selected: n => `已选择 ${n} 个标签`, page: (n, total) => `${n} / ${total}`, fileCount: n => `${n} 个文件`,
+  children: n => `${n} 个子标签不会随之改名`, failed: n => `${n} 个文件失败`, progress: (n, total) => `${n} / ${total} 个文件`,
+};
+
+export function getManagementLabels(language: string): ManagementLabels {
+  return language.toLowerCase().startsWith("zh") ? zh : en;
+}
+
+export function managementHistoryText(labels: ManagementLabels, kind: "origin" | "action" | "status" | "reason", value: string): string {
+  const map: Record<string, string> = kind === "origin" ? labels.historyOrigins : kind === "action" ? labels.historyActions : kind === "status" ? labels.historyStatuses : labels.historyReasons;
+  return Object.prototype.hasOwnProperty.call(map, value) ? map[value] : kind === "reason" ? value : map.unknown;
+}

@@ -2,10 +2,13 @@
 import type { CleanupPlanItem } from "./CleanupPlan";
 import type { InlineTagOccurrenceReadResult } from "../obsidian/InlineTagOccurrenceReader";
 import { normalizeTag } from "../utils/normalizeTag";
+import { resolveCleanupActionCapability } from "./CleanupActionCapability";
+import { captureTagValueSnapshot, createCleanupTagValuePatch, normalizedSnapshotTags, sameTagValue, tagValueFields, validateTagLiteral } from "../obsidian/TagValuePatch";
 import {
   type CleanupReviewAction,
   type CleanupReviewFile,
   type CleanupReviewPlan,
+  type DeterministicCleanupInput,
   validateCleanupReviewIdentity
 } from "./CleanupReviewPlan";
 
@@ -35,18 +38,27 @@ export class CleanupReviewPlanBuilder {
 
   async build(item: CleanupPlanItem, onProgress?: CleanupReviewProgressListener): Promise<CleanupReviewPlan> {
     validateCleanupReviewIdentity(item.action, item.tags, item.targetTag);
-    const action = item.action as CleanupReviewAction;
-    const targetTag = normalizeTag(item.targetTag!);
-    const sourceTags = uniqueNormalized(item.tags).filter((tag) => tag !== targetTag);
+    if (item.capability.availability !== "executable" || resolveCleanupActionCapability(item.issueType, item.action).availability !== "executable") {
+      throw new Error("This health suggestion does not authorize executable cleanup.");
+    }
+    const sourceSet = new Set(uniqueNormalized(item.tags).filter((tag) => tag !== normalizeTag(item.targetTag!)));
+    return this.buildInput({
+      id: item.id, title: item.title, action: item.action as CleanupReviewAction,
+      sourceTags: item.tags, targetTag: item.targetTag!,
+      candidatePaths: item.files.filter((file) => file.beforeTags.some((tag) => sourceSet.has(normalizeTag(tag)))).map((file) => file.path)
+    }, onProgress);
+  }
+
+  async buildInput(input: DeterministicCleanupInput, onProgress?: CleanupReviewProgressListener): Promise<CleanupReviewPlan> {
+    const targetTag = validateTagLiteral(input.targetTag);
+    validateCleanupReviewIdentity(input.action, input.sourceTags, targetTag);
+    input.sourceTags.forEach(validateTagLiteral);
+    const action = input.action;
+    const sourceTags = uniqueNormalized(input.sourceTags).filter((tag) => tag !== normalizeTag(targetTag));
     const generation = ++this.generation;
-    const sourceSet = new Set(sourceTags);
-    const paths = Array.from(
-      new Set(
-        item.files
-          .filter((file) => file.beforeTags.some((tag) => sourceSet.has(normalizeTag(tag))))
-          .map((file) => file.path)
-      )
-    ).sort((left, right) => left.localeCompare(right));
+    const paths = Array.from(new Set(input.candidatePaths)).sort((left, right) => left.localeCompare(right));
+    if (paths.length > 200) throw new Error("Cleanup review is limited to 200 candidate files; narrow the scope.");
+    if (paths.some((path) => !path)) throw new Error("Candidate paths must be non-empty.");
     const files = new Map<string, CleanupReviewFile>(
       paths.map((notePath) => [notePath, emptyReviewFile(notePath)])
     );
@@ -85,8 +97,9 @@ export class CleanupReviewPlanBuilder {
     emitProgress(files, onProgress);
 
     return {
-      itemId: item.id,
-      title: item.title,
+      itemId: input.id,
+      title: input.title,
+      context: input.context,
       action,
       sourceTags,
       targetTag,
@@ -103,9 +116,14 @@ function buildReviewFile(
   targetTag: string
 ): CleanupReviewFile {
   const sourceSet = new Set(sourceTags);
-  const proposedAfterTags = transformFrontmatterTags(read.frontmatterTags, sourceSet, targetTag);
-  const frontmatterChanged = !sameTags(read.frontmatterTags, proposedAfterTags);
-  const occurrences = read.occurrences.map((occurrence) => ({
+  if (read.tagValueError) return { ...emptyReviewFile(read.notePath), status: "unavailable", error: read.tagValueError };
+  // Compatibility readers may omit the field, but their actual Markdown still supplies the evidence.
+  const before = read.tagValueSnapshot ?? captureTagValueSnapshot(read.content);
+  const patch = createCleanupTagValuePatch(before, sourceTags, targetTag);
+  const beforeTags = normalizedSnapshotTags(patch.before);
+  const proposedAfterTags = normalizedSnapshotTags(patch.after);
+  const frontmatterChanged = !sameTagValue(patch.before, patch.after);
+  const occurrences = read.occurrences.filter((occurrence) => sourceSet.has(occurrence.normalizedTag)).map((occurrence) => ({
     ...occurrence,
     afterText: `#${targetTag}`,
     selected: occurrence.availability === "trusted"
@@ -114,33 +132,17 @@ function buildReviewFile(
   const status = frontmatterChanged || hasTrusted ? "ready" : "unavailable";
 
   return {
+    ...tagValueFields(patch),
     notePath: read.notePath,
     status,
     sourceContentHash: read.sourceContentHash,
     beforeBodyHash: read.bodyHash,
-    beforeTags: [...read.frontmatterTags],
+    beforeTags,
     proposedAfterTags,
     frontmatterChanged,
     frontmatterSelected: frontmatterChanged,
     occurrences
   };
-}
-
-function transformFrontmatterTags(currentTags: string[], sourceSet: Set<string>, targetTag: string): string[] {
-  const result: string[] = [];
-  let insertedTarget = false;
-  for (const rawTag of currentTags) {
-    const tag = normalizeTag(rawTag);
-    if (!sourceSet.has(tag)) {
-      if (tag && !result.includes(tag)) result.push(tag);
-      continue;
-    }
-    if (!insertedTarget && !result.includes(targetTag)) {
-      result.push(targetTag);
-      insertedTarget = true;
-    }
-  }
-  return result;
 }
 
 function emptyReviewFile(notePath: string): CleanupReviewFile {
@@ -173,8 +175,4 @@ function emitProgress(
 
 function uniqueNormalized(tags: string[]): string[] {
   return Array.from(new Set(tags.map(normalizeTag).filter(Boolean)));
-}
-
-function sameTags(left: string[], right: string[]): boolean {
-  return left.length === right.length && left.every((tag, index) => normalizeTag(tag) === normalizeTag(right[index]));
 }

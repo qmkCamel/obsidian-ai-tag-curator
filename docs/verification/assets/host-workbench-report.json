@@ -1,0 +1,3782 @@
+{
+  "startedAt": "2026-09-14T09:05:21.288Z",
+  "mode": "installed",
+  "vault": "/tmp/tag-curator-workbench-Y7AbTM/vault",
+  "checks": [
+    {
+      "name": "host-path-and-version",
+      "status": "passed",
+      "durationMs": 2,
+      "details": {
+        "basePath": "/tmp/tag-curator-workbench-Y7AbTM/vault",
+        "title": "Tag manager - vault - Obsidian 1.13.7",
+        "activeFile": null,
+        "activeEditor": false,
+        "pluginIds": [
+          "ai-tag-curator-dev"
+        ],
+        "popout": "function"
+      }
+    },
+    {
+      "name": "real-host-yaml-codec-probes",
+      "status": "passed",
+      "durationMs": 2,
+      "details": {
+        "apiVersion": "1.13.7",
+        "functions": {
+          "parseYaml": "function",
+          "stringifyYaml": "function",
+          "getFrontMatterInfo": "function",
+          "MarkdownView": "function",
+          "ItemView": "function"
+        },
+        "samples": {
+          "array": {
+            "before": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+            "after": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "equal": true
+          },
+          "multiline": {
+            "before": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+            "after": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nested": {
+            "before": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+            "after": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "anchor": {
+            "before": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+            "after": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nonTags": {
+            "before": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+            "after": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          }
+        }
+      }
+    },
+    {
+      "name": "finish-outstanding-fixture-with-normal-undo",
+      "status": "passed",
+      "durationMs": 639,
+      "details": {
+        "id": "1789376582760-jotjxwoooq",
+        "status": "undone"
+      }
+    },
+    {
+      "name": "prepare-synthetic-fixtures-and-guards",
+      "status": "passed",
+      "durationMs": 1070,
+      "details": {
+        "fixtureRoot": "Host Workbench Acceptance",
+        "files": [
+          "mixed.md",
+          "merge.md",
+          "protected.md",
+          "active.md",
+          "Excluded/private.md"
+        ]
+      }
+    },
+    {
+      "name": "no-key-no-active-open-and-reuse",
+      "status": "passed",
+      "durationMs": 450,
+      "details": {
+        "noKey": true,
+        "activeFile": null,
+        "leaves": 1
+      }
+    },
+    {
+      "name": "refresh-and-policy-exclusions",
+      "status": "passed",
+      "durationMs": 1239,
+      "details": {
+        "state": "ready",
+        "tags": [
+          "hostactive",
+          "keepcase",
+          "hosta",
+          "hosttarget",
+          "hostb",
+          "hostold",
+          "hostprotected",
+          "hostprotected/child",
+          "ml_notes",
+          "keep",
+          "ml-notes",
+          "outside",
+          "project/ai",
+          "workflow",
+          "release-check",
+          "release-ready",
+          "research",
+          "batch-check"
+        ],
+        "scope": {
+          "include": [
+            {
+              "path": "Host Workbench Acceptance",
+              "recursive": true
+            }
+          ]
+        },
+        "policy": {
+          "schemaVersion": 1,
+          "revision": 1,
+          "excludedFolders": [
+            "Host Workbench Acceptance/Excluded"
+          ],
+          "protectedTags": [
+            {
+              "tag": "hostprotected",
+              "mode": "subtree"
+            }
+          ]
+        },
+        "excludedReads": []
+      }
+    },
+    {
+      "name": "scope-only-policy-revision-stable",
+      "status": "passed",
+      "durationMs": 121,
+      "details": {
+        "before": {
+          "revision": 1,
+          "indexRevision": 1,
+          "freshness": "ready"
+        },
+        "after": {
+          "revision": 1,
+          "indexRevision": 1,
+          "freshness": "ready",
+          "scope": {
+            "include": [
+              {
+                "path": "Host Workbench Acceptance",
+                "recursive": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "manual-rename-mixed-raw-values-and-body",
+      "status": "passed",
+      "durationMs": 2419,
+      "details": {
+        "renameId": "1789376727143-hwtzoguzs68",
+        "properties": {
+          "tags": [
+            "HostNew/Name",
+            "KeepCase",
+            "KeepCase"
+          ],
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "description": "line one\nline two\n"
+        },
+        "body": "\nBody #HostNew/Name and #KeepCase. Repeat #HostNew/Name.\n`#HostOld` must remain.\n"
+      }
+    },
+    {
+      "name": "history-and-undo-after-plugin-reload",
+      "status": "passed",
+      "durationMs": 1632,
+      "details": {
+        "receipt": {
+          "id": "1789376727143-hwtzoguzs68",
+          "createdAt": "2026-09-14T09:05:27.143Z",
+          "origin": "manual",
+          "action": "rename",
+          "status": "undone",
+          "files": [
+            {
+              "path": "Host Workbench Acceptance/mixed.md",
+              "beforeTags": [
+                "HostOld",
+                "KeepCase",
+                "KeepCase"
+              ],
+              "afterTags": [
+                "HostNew/Name",
+                "KeepCase",
+                "KeepCase"
+              ],
+              "inlineChanges": [
+                {
+                  "before": "#HostOld",
+                  "after": "#HostNew/Name"
+                },
+                {
+                  "before": "#HostOld",
+                  "after": "#HostNew/Name"
+                }
+              ]
+            }
+          ],
+          "canUndo": false,
+          "canRecover": false,
+          "legacy": false,
+          "unresolved": false,
+          "readOnlyReason": "completed",
+          "policyExceptions": []
+        },
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/mixed.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "manual-merge-existing-target-and-undo",
+      "status": "passed",
+      "durationMs": 2681,
+      "details": {
+        "id": "1789376731233-2jlv2wzby6h",
+        "tags": [
+          "HOSTTarget",
+          "KeepCase",
+          "KeepCase"
+        ],
+        "body": "\nMerge #HostTarget and #HostTarget, existing #HOSTTarget.\n",
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/merge.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "protected-source-and-target-zero-writes",
+      "status": "passed",
+      "durationMs": 1291,
+      "details": {
+        "markdownWriteCalls": 0
+      }
+    },
+    {
+      "name": "stale-confirmation-conflict-zero-plugin-writes",
+      "status": "passed",
+      "durationMs": 1426,
+      "details": {
+        "markdownWritesByPlugin": 0,
+        "operationIntentCreated": false
+      }
+    },
+    {
+      "name": "active-editor-edit-mixed-rename-and-undo",
+      "status": "passed",
+      "durationMs": 5142,
+      "details": {
+        "activePathAfterWorkbenchFocus": null,
+        "activePathAtReview": "Host Workbench Acceptance/active.md",
+        "editorEqualsDisk": true,
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/active.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "popout-workbench-policy-modal-and-close",
+      "status": "passed",
+      "durationMs": 1520,
+      "details": {
+        "basePath": "/tmp/tag-curator-workbench-Y7AbTM/vault",
+        "history": true,
+        "width": 1024,
+        "height": 800
+      }
+    },
+    {
+      "name": "original-nonfixture-notes-unchanged",
+      "status": "passed",
+      "durationMs": 17,
+      "details": {
+        "verifiedFiles": 10
+      }
+    },
+    {
+      "name": "local-plugin-network-zero-requests",
+      "status": "passed",
+      "durationMs": 0,
+      "details": {
+        "pluginRequestUrl": 0,
+        "pluginRendererRequests": 0,
+        "unrelatedRendererRequests": 0
+      }
+    }
+  ],
+  "screenshots": [
+    "docs/verification/assets/host-probe.png",
+    "docs/verification/assets/host-history-before-undo.png",
+    "docs/verification/assets/host-no-key-no-active.png",
+    "docs/verification/assets/host-refreshed.png",
+    "docs/verification/assets/host-rename-review.png",
+    "docs/verification/assets/host-manual-confirmation.png",
+    "docs/verification/assets/host-rename-applied.png",
+    "docs/verification/assets/host-history-after-reload.png",
+    "docs/verification/assets/host-undo-persisted.png",
+    "docs/verification/assets/host-merge-review.png",
+    "docs/verification/assets/host-policy-protected.png",
+    "docs/verification/assets/host-conflict-zero-writes.png",
+    "docs/verification/assets/host-active-editor-review.png",
+    "docs/verification/assets/host-active-editor-applied.png",
+    "docs/verification/assets/host-popout-workbench.png",
+    "docs/verification/assets/host-popout-policy-modal.png",
+    "docs/verification/assets/host-popout-history.png"
+  ],
+  "network": [],
+  "unverified": [
+    "Minimum supported Obsidian 1.8.7",
+    "Real mobile device",
+    "Full application restart (only dev-plugin reload exercised)",
+    "Recovery after partial I/O failure and compensation"
+  ],
+  "host": {
+    "basePath": "/tmp/tag-curator-workbench-Y7AbTM/vault",
+    "title": "Tag manager - vault - Obsidian 1.13.7",
+    "activeFile": null,
+    "activeEditor": false,
+    "pluginIds": [
+      "ai-tag-curator-dev"
+    ],
+    "popout": "function"
+  },
+  "build": {
+    "main.js": "ac3496ae926ce1409cbd2b5e786352f0d4f77b03669a7acd844a56de56cf4973",
+    "styles.css": "5f90069d131151033bd7719b551dc7455cd41962bebc9b4ec2e2daf9f07fe72f"
+  },
+  "yaml": {
+    "apiVersion": "1.13.7",
+    "functions": {
+      "parseYaml": "function",
+      "stringifyYaml": "function",
+      "getFrontMatterInfo": "function",
+      "MarkdownView": "function",
+      "ItemView": "function"
+    },
+    "samples": {
+      "array": {
+        "before": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+        "after": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "equal": true
+      },
+      "multiline": {
+        "before": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+        "after": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nested": {
+        "before": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+        "after": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "anchor": {
+        "before": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+        "after": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nonTags": {
+        "before": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+        "after": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      }
+    }
+  },
+  "networkProbe": {
+    "requestUrlBreakpoint": "7:9",
+    "filtering": "Only plugin sourceURL call stacks counted; updater/unattributed renderer requests listed separately, not failures."
+  },
+  "requestUrlCalls": [],
+  "finalHost": {
+    "basePath": "/tmp/tag-curator-workbench-Y7AbTM/vault",
+    "title": "Tag manager - vault - Obsidian 1.13.7",
+    "modals": []
+  },
+  "ioAudit": {
+    "writes": [
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376722469
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376722469
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376722471
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376722471
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376722473
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376722473
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376722475
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376722475
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376722477
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376722477
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376722480
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376722530
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1789376723500
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376723997
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376725233
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376725344
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376725359
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376727144
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727146
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727148
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376727151
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376727156
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376727164
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376728707
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728710
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728714
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376728715
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376728717
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376728727
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1789376728783
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376729411
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1789376729929
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731234
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731235
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731237
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731246
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731258
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731263
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731877
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731879
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731882
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731884
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731886
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376731893
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376732102
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376733401
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734231
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734231
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734798
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734798
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1789376735820
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736850
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736850
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376736892
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376738647
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738649
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738651
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376738664
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376738680
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376738687
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376739733
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739737
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739752
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376739754
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376739758
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1789376739765
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1789376740936
+      }
+    ],
+    "reads": [
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376722457
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376722459
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376722460
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376722461
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376722461
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376722462
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376722463
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376722463
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376722464
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376722464
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376722465
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376722465
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376722466
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376722466
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376722466
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376722474
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376722476
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376722478
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376723990
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376723990
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376723990
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376723990
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376723991
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376723991
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376723992
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376723992
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376723992
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376723993
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376723993
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376723994
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376723994
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376723994
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376725347
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376725347
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376725348
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376725349
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376725349
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376725349
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376725350
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376725350
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376725350
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376725354
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376725354
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376725354
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376725354
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376725355
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376725355
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376725355
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376725356
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376725356
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376725356
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376725357
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376725357
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376725357
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376725357
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376726188
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376726677
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376726678
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376726678
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376726679
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376726679
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376726679
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376726679
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376726680
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376726680
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376726680
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376726680
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376726681
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376726681
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376726681
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376726681
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727141
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727142
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727145
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727147
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376727157
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376727157
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376727157
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376727157
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376727157
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376727158
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376727158
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376727158
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376727158
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376727159
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376727159
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376727160
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376727161
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376727161
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376727330
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376727331
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376727331
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376727332
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376727332
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376727332
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376727333
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376727333
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376727334
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376727334
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376727334
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376727335
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376727335
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376727335
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376727336
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376727337
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728704
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728706
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728708
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728709
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728712
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376728720
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376728720
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376728720
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376728720
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376728721
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376728721
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376728721
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376728721
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376728722
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376728722
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376728723
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376728724
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376728724
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376728725
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376728896
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376728897
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376728897
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376728898
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376728898
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376728899
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376728899
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376728900
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376728900
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376728900
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376728901
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376728901
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376728902
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376728902
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376728903
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376728906
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376728907
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376728907
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376728908
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376728908
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376728908
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376728909
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376728909
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376728909
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376728909
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376728910
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376728910
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376728910
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376728910
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376728911
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376729406
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376729406
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376729406
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376729406
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376729407
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376729407
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376729408
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376729408
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376729408
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376729409
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376729409
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376729409
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376729410
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376729410
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376730242
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731231
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731232
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731235
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731237
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376731259
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731259
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376731259
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376731259
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376731260
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376731260
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376731260
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376731260
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376731261
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376731261
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376731261
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376731261
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376731262
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376731262
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376731420
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731875
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731876
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731878
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731878
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731881
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376731887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376731888
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376731888
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376731890
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376731890
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376731891
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376731891
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376731891
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376731891
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376732063
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376732064
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376732064
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376732065
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376732066
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376732067
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376732068
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376732069
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376732069
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376732070
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376732071
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376732071
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376732072
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376732072
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376732073
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376732076
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376732077
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376732077
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376732078
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376732078
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376732079
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376732079
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376732080
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376732080
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376732081
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376732081
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376732082
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376732082
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376732083
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376732083
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376732093
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376732094
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376732094
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376732094
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376732094
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376732095
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376732095
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376732096
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376732096
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376732097
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376732097
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376732098
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376732098
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376732098
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376732918
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376732919
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376732919
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376732920
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376732920
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376732920
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376732921
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376732921
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376732921
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376732922
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376732922
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376732922
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376732923
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376732923
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376732923
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376733382
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376733382
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376733382
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376733382
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376733383
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376733385
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376733386
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376733387
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376733389
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376733390
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376733391
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376733392
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376733394
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376733396
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376734215
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734233
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734237
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376734238
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376734242
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734243
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376734244
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376734246
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376734246
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376734248
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376734251
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376734251
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376734252
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376734252
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376734252
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376734252
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376734253
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734265
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376734265
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376734266
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734266
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376734266
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376734266
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376734267
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376734267
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376734267
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376734267
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376734268
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376734268
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376734268
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376734268
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376734269
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376734799
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734818
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734821
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734821
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734833
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734848
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734850
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376734954
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735097
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735200
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735304
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735409
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735513
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735618
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735724
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735829
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376735933
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736037
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736141
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736246
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736351
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736455
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736560
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736663
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736767
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736853
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736872
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376736874
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376736875
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376736875
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376736875
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376736876
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376736876
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376736876
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376736877
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376736877
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376736877
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376736878
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376736878
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376736878
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376736879
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376736879
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376736884
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376736884
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376736884
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376736884
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376736885
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376736885
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376736886
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376736886
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376736887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376736887
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376736888
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376736888
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376736889
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376736889
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376737716
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376737719
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738645
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738646
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738649
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376738650
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376738650
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738650
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376738662
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376738662
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376738682
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376738682
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376738682
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376738682
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376738683
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376738683
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376738683
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376738684
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376738684
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376738684
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376738684
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376738685
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376738685
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376738685
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376738833
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739731
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739732
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739736
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739736
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739742
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739742
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739742
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739753
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739753
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1789376739759
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1789376739759
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1789376739759
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1789376739759
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": true,
+        "time": 1789376739760
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": true,
+        "time": 1789376739760
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": true,
+        "time": 1789376739760
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": true,
+        "time": 1789376739760
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": true,
+        "time": 1789376739761
+      },
+      {
+        "name": "cachedRead",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": true,
+        "time": 1789376739761
+      },
+      {
+        "name": "cachedRead",
+        "path": "Outside scope.md",
+        "plugin": true,
+        "time": 1789376739761
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Current note.md",
+        "plugin": true,
+        "time": 1789376739763
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": true,
+        "time": 1789376739763
+      },
+      {
+        "name": "cachedRead",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": true,
+        "time": 1789376739764
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739919
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376739920
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376739920
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376739921
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376739921
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376739922
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376739922
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376739923
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376739923
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376739924
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376739924
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376739924
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376739925
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376739925
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376739926
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376739935
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376739936
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376739936
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376739937
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376739937
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376739938
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376739938
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376739938
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376739939
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376739939
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376739940
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376739940
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376739941
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376739941
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376739942
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1789376741471
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1789376741472
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1789376741473
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1789376741473
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1789376741474
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md",
+        "plugin": false,
+        "time": 1789376741474
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/06 Canonical target reference.md",
+        "plugin": false,
+        "time": 1789376741474
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/04 No frontmatter.md",
+        "plugin": false,
+        "time": 1789376741475
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/03 CRLF occurrence.md",
+        "plugin": false,
+        "time": 1789376741475
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/02 Repeated occurrences.md",
+        "plugin": false,
+        "time": 1789376741475
+      },
+      {
+        "name": "read",
+        "path": "Inline Rewrite Test/01 Frontmatter and inline.md",
+        "plugin": false,
+        "time": 1789376741476
+      },
+      {
+        "name": "read",
+        "path": "Outside scope.md",
+        "plugin": false,
+        "time": 1789376741476
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Nested/Long path acceptance note for narrow layout.md",
+        "plugin": false,
+        "time": 1789376741476
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Existing taxonomy.md",
+        "plugin": false,
+        "time": 1789376741477
+      },
+      {
+        "name": "read",
+        "path": "Release Test/Current note.md",
+        "plugin": false,
+        "time": 1789376741479
+      }
+    ]
+  },
+  "finishedAt": "2026-09-14T09:05:41.485Z"
+}

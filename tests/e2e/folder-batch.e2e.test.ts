@@ -6,6 +6,7 @@ import {
   createDeferred,
   createFakeApp,
   installDomHelpers,
+  markdownBody,
   notices,
   obsidianMock,
   queueAiError,
@@ -20,6 +21,7 @@ type LoadedPlugin = {
   onload: () => Promise<void> | void;
   commands: Record<string, { callback?: () => unknown }>;
   settings: TagCuratorSettings;
+  coordinator: { busy: boolean };
 };
 
 const manifest = {
@@ -150,14 +152,14 @@ describe("folder batch e2e", () => {
     await waitForText(labels.folderBatch.appliedResult);
     expect(app.getNoteTags("notes/current.md")).toEqual(["base", "inline", "vault/existing", "new-topic"]);
     expect(app.getNoteTags("notes/sub/nested.md")).toEqual(["nested-inline"]);
-    expect(await app.vault.cachedRead(requiredElement(app.vault.getAbstractFileByPath("notes/current.md")))).toBe(originalCurrent);
-    expect(await app.vault.cachedRead(requiredElement(app.vault.getAbstractFileByPath("notes/sub/nested.md")))).toBe(originalNested);
+    expect(markdownBody(await app.vault.cachedRead(requiredElement(app.vault.getAbstractFileByPath("notes/current.md"))))).toBe(originalCurrent);
+    expect(markdownBody(await app.vault.cachedRead(requiredElement(app.vault.getAbstractFileByPath("notes/sub/nested.md"))))).toBe(originalNested);
 
     const persisted = app.savedData;
     const reloaded = createFakeApp(
       [
-        { path: "notes/current.md", content: originalCurrent, frontmatterTags: app.getNoteTags("notes/current.md") },
-        { path: "notes/sub/nested.md", content: originalNested, frontmatterTags: app.getNoteTags("notes/sub/nested.md") }
+        { path: "notes/current.md", content: app.vault.getNote("notes/current.md").content },
+        { path: "notes/sub/nested.md", content: app.vault.getNote("notes/sub/nested.md").content }
       ],
       { activeFilePath: "notes/current.md", pluginData: persisted }
     );
@@ -165,7 +167,7 @@ describe("folder batch e2e", () => {
     runCommand(reloadedPlugin, "undo-last-folder-batch");
     await waitFor(() => expect(reloaded.getNoteTags("notes/current.md")).toEqual(["base"]));
     expect(reloaded.getNoteTags("notes/sub/nested.md")).toEqual([]);
-    expect(notices).toContain(labels.notices.folderBatchUndone);
+    await waitFor(() => expect(notices).toContain(labels.notices.folderBatchUndone));
     expect(pageText()).toContain(labels.folderBatch.removedResult);
   });
 
@@ -246,6 +248,7 @@ describe("folder batch e2e", () => {
     click(labels.folderBatch.apply);
     click(labels.folderBatch.confirmApply);
     await waitFor(() => expect(app.getNoteTags("notes/a.md")).toEqual(["base", "inline"]));
+    await waitForText(labels.folderBatch.appliedResult);
 
     const single = createFakeApp([{ path: "a.md", content: "single #local", frontmatterTags: [] }], {
       activeFilePath: "a.md",
@@ -258,7 +261,8 @@ describe("folder batch e2e", () => {
     await waitForText(labels.recommendations.aiFailed("single failed"));
     click(labels.recommendations.apply);
     await waitFor(() => expect(single.getNoteTags("a.md")).toEqual(["local"]));
-    expect(await single.vault.cachedRead(requiredElement(single.vault.getAbstractFileByPath("a.md")))).toBe("single #local");
+    await waitFor(() => expect(notices).toContain(labels.notices.tagsUpdated));
+    expect(markdownBody(await single.vault.cachedRead(requiredElement(single.vault.getAbstractFileByPath("a.md"))))).toBe("single #local");
     runCommand(singlePlugin, "undo-last-tag-curator-change");
     await waitFor(() => expect(single.getNoteTags("a.md")).toEqual([]));
   });
@@ -335,7 +339,7 @@ describe("folder batch e2e", () => {
     runCommand(failingPlugin, "suggest-tags-for-folder");
     click(labels.folderBatch.start);
     await waitForText(labels.folderBatch.previewTitle);
-    failing.fileManager.setWriteInterceptor((_file, _tags, count) => {
+    failing.vault.setProcessInterceptor((_file, _content, count) => {
       if (count === 2) throw new Error("injected write failure");
     });
     click(labels.folderBatch.apply);
@@ -363,13 +367,13 @@ describe("folder batch e2e", () => {
     runCommand(plugin, "suggest-tags-for-folder");
     click(labels.folderBatch.start);
     await waitForText(labels.folderBatch.previewTitle);
-    app.fileManager.setWriteInterceptor((_file, _tags, count) => {
+    app.vault.setProcessInterceptor((_file, _content, count) => {
       if (count === 2 || count === 3) throw new Error("injected failure");
     });
     click(labels.folderBatch.apply);
     click(labels.folderBatch.confirmApply);
     await waitForText(labels.folderBatch.recoveryResult("before"));
-    app.fileManager.setWriteInterceptor(null);
+    app.vault.setProcessInterceptor(null);
     click(labels.folderBatch.retryRecovery);
     await waitFor(() => {
       expect(app.getNoteTags("notes/a.md")).toEqual([]);
@@ -399,17 +403,18 @@ describe("folder batch e2e", () => {
     click(labels.folderBatch.confirmApply);
     await waitForText(labels.folderBatch.appliedResult);
 
-    const writesBeforeConflict = app.fileManager.getWriteCount();
+    const writesBeforeConflict = app.vault.getProcessCount();
     app.vault.getNote("notes/b.md").frontmatterTags = ["manual"];
     click(labels.folderBatch.undo);
     await waitForText(labels.folderBatch.conflictResult);
-    expect(app.fileManager.getWriteCount()).toBe(writesBeforeConflict);
+    expect(app.vault.getProcessCount()).toBe(writesBeforeConflict);
     expect(app.getNoteTags("notes/a.md")).toEqual(["inline-a"]);
     expect(app.getNoteTags("notes/b.md")).toEqual(["manual"]);
     click(labels.folderBatch.close);
     app.vault.getNote("notes/b.md").frontmatterTags = ["inline-b"];
 
-    app.fileManager.setWriteInterceptor((file, currentTags) => {
+    app.vault.setProcessInterceptor((file) => {
+      const currentTags = app.getNoteTags(file.path);
       if (file.path === "notes/a.md" && currentTags.includes("inline-a")) {
         throw new Error("undo failed");
       }
@@ -422,12 +427,13 @@ describe("folder batch e2e", () => {
     runCommand(plugin, "suggest-tags-for-folder");
     expect(notices).toContain(labels.notices.unresolvedBatchBlocked);
 
-    app.fileManager.setWriteInterceptor(null);
+    app.vault.setProcessInterceptor(null);
     click(labels.folderBatch.retryRecovery);
     await waitFor(() => {
       expect(app.getNoteTags("notes/a.md")).toEqual(["inline-a"]);
       expect(app.getNoteTags("notes/b.md")).toEqual(["inline-b"]);
     });
+    await waitFor(() => expect(plugin.coordinator.busy).toBe(false));
     runCommand(plugin, "undo-last-folder-batch");
     await waitFor(() => {
       expect(app.getNoteTags("notes/a.md")).toEqual([]);

@@ -4,6 +4,7 @@ import { normalizeTag } from "../utils/normalizeTag";
 import { hashContent } from "../utils/hashContent";
 import { parseFrontmatterTags } from "./TagParser";
 import { splitMarkdownBody, toBodyOffset } from "./MarkdownBody";
+import { captureTagValueSnapshot, assertWritableTagValue, normalizedSnapshotTags, type TagValueSnapshot } from "./TagValuePatch";
 
 export type InlineOccurrenceAvailability = "trusted" | "cacheUnavailable" | "positionMismatch";
 
@@ -28,6 +29,8 @@ export interface InlineTagOccurrenceReadResult {
   sourceContentHash: string;
   bodyHash: string;
   frontmatterTags: string[];
+  tagValueSnapshot?: TagValueSnapshot;
+  tagValueError?: string;
   occurrences: InlineTagOccurrence[];
 }
 
@@ -59,6 +62,14 @@ export async function buildInlineTagOccurrenceReadResult(
   relevantTags: string[]
 ): Promise<InlineTagOccurrenceReadResult> {
   const parts = splitMarkdownBody(content);
+  let tagValueSnapshot: TagValueSnapshot | undefined;
+  let tagValueError: string | undefined;
+  try {
+    tagValueSnapshot = captureTagValueSnapshot(content);
+    assertWritableTagValue(tagValueSnapshot);
+  } catch (error) {
+    tagValueError = error instanceof Error ? error.message : String(error);
+  }
   return {
     notePath,
     content,
@@ -66,7 +77,9 @@ export async function buildInlineTagOccurrenceReadResult(
     body: parts.body,
     sourceContentHash: await hashContent(content),
     bodyHash: await hashContent(parts.body),
-    frontmatterTags: parseFrontmatterTags(cache?.frontmatter?.tags),
+    frontmatterTags: tagValueSnapshot ? normalizedSnapshotTags(tagValueSnapshot) : parseFrontmatterTags(cache?.frontmatter?.tags),
+    tagValueSnapshot,
+    tagValueError,
     occurrences: collectOccurrences(notePath, content, parts.contentStart, parts.body, cache, relevantTags)
   };
 }

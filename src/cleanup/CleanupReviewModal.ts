@@ -10,6 +10,7 @@ import {
   type SelectedCleanupPlan
 } from "./CleanupReviewPlan";
 import { buildCleanupReviewViewModel } from "./CleanupReviewViewModel";
+import { rawTagValues } from "../obsidian/TagValuePatch";
 
 type Labels = ReturnType<typeof getLabels>;
 
@@ -22,7 +23,8 @@ export class CleanupReviewModal extends Modal {
     app: ConstructorParameters<typeof Modal>[0],
     private plan: CleanupReviewPlan,
     private readonly labels: Labels,
-    private readonly onApply: (plan: SelectedCleanupPlan) => Promise<void>
+    private readonly onApply: (plan: SelectedCleanupPlan) => Promise<void>,
+    private readonly reviewNotes?: (plan: CleanupReviewPlan) => string[]
   ) {
     super(app);
   }
@@ -101,6 +103,7 @@ export class CleanupReviewModal extends Modal {
       )
     });
     summary.createDiv({ text: this.labels.cleanupReview.remaining(selected.remainingSourceCount) });
+    for (const note of this.reviewNotes?.(this.plan) ?? []) summary.createDiv({ text: note });
     if (selected.partial) {
       summary.createDiv({
         cls: "tag-curator-cleanup-review__warning",
@@ -119,8 +122,8 @@ export class CleanupReviewModal extends Modal {
       new Setting(details)
         .setName(this.labels.cleanupReview.frontmatterSource)
         .setDesc(
-          `${this.labels.cleanupReview.before}: ${formatTags(file.beforeTags)} → ${this.labels.cleanupReview.after}: ${formatTags(
-            file.proposedAfterTags
+          `${this.labels.cleanupReview.before}: ${formatTags(file.tagValuePatch ? rawTagValues(file.tagValuePatch.before) : file.beforeTags)} → ${this.labels.cleanupReview.after}: ${formatTags(
+            file.tagValuePatch ? rawTagValues(file.tagValuePatch.after) : file.proposedAfterTags
           )}`
         )
         .addToggle((toggle) =>
@@ -165,6 +168,7 @@ export class CleanupReviewModal extends Modal {
   }
 
   private renderConfirmation(selected: SelectedCleanupPlan): void {
+    for (const note of this.reviewNotes?.(this.plan) ?? []) this.contentEl.createEl("p", { text: note });
     this.contentEl.createEl("p", {
       text: this.labels.cleanupReview.confirmMessage(
         selected.fileCount,

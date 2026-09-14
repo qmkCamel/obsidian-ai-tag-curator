@@ -12,6 +12,7 @@ import type {
 } from "../operations/OperationLog";
 import { normalizeTag } from "../utils/normalizeTag";
 import { classifyCleanupFileState } from "./CleanupExecutor";
+import { exactTagValuePatch, reverseTagValueFields, sameTagValue, tagValueFields, type TagValueSnapshot } from "../obsidian/TagValuePatch";
 
 export interface CleanupRecoveryInlineWriter {
   apply(file: TFile, patch: InlineTagWritePatch): Promise<InlineTagWriteResult>;
@@ -19,6 +20,7 @@ export interface CleanupRecoveryInlineWriter {
 }
 
 export interface CleanupRecoveryFrontmatterWriter {
+  readTagValueSnapshot?(file: TFile): Promise<TagValueSnapshot>;
   readCurrentTags(file: TFile): string[];
   replaceTagsIfSnapshotMatches(
     file: TFile,
@@ -68,7 +70,7 @@ export class CleanupRecoveryService {
     const allBefore = classified.every((item) => item.state === "before");
     const allAfter = classified.every((item) => item.state === "after");
     if (allBefore) {
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: record.status === "applying" ? "rolledBack" : "undone" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -155,7 +157,7 @@ export class CleanupRecoveryService {
         attempted.push(item);
         await this.moveToTarget(item, "before");
       }
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: "undone" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     } catch (error) {
@@ -206,7 +208,7 @@ export class CleanupRecoveryService {
     target: CleanupRecoveryTarget
   ): Promise<CleanupRecoveryResult> {
     if (target === "before") {
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: record.status === "recoveryRequired" ? "rolledBack" : "undone" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: record.files, indexRefreshError };
     }
@@ -237,10 +239,12 @@ export class CleanupRecoveryService {
   private async moveToBefore(item: ClassifiedCleanupFile): Promise<void> {
     let snapshot = item.inlineSnapshot ?? (await this.dependencies.inlineWriter.readSnapshot(item.file!));
     const currentTags = this.dependencies.frontmatterWriter.readCurrentTags(item.file!);
-    if (!sameTags(currentTags, item.change.beforeTags)) {
+    const raw = exactTagValuePatch(item.change);
+    const currentRaw = raw ? await this.dependencies.frontmatterWriter.readTagValueSnapshot?.(item.file!) : undefined;
+    if (raw ? !sameTagValue(currentRaw, raw.before) : !sameTags(currentTags, item.change.beforeTags)) {
       const restored = await this.dependencies.frontmatterWriter.replaceTagsIfSnapshotMatches(
         item.file!,
-        { beforeTags: item.change.afterTags, sourceContentHash: snapshot.contentHash },
+        { beforeTags: item.change.afterTags, sourceContentHash: snapshot.contentHash, ...reverseTagValueFields(item.change) },
         item.change.beforeTags
       );
       snapshot = {
@@ -267,10 +271,12 @@ export class CleanupRecoveryService {
       snapshot = { contentHash: applied.afterContentHash, bodyHash: applied.afterBodyHash };
     }
     const currentTags = this.dependencies.frontmatterWriter.readCurrentTags(item.file!);
-    if (!sameTags(currentTags, item.change.afterTags)) {
+    const raw = exactTagValuePatch(item.change);
+    const currentRaw = raw ? await this.dependencies.frontmatterWriter.readTagValueSnapshot?.(item.file!) : undefined;
+    if (raw ? !sameTagValue(currentRaw, raw.after) : !sameTags(currentTags, item.change.afterTags)) {
       await this.dependencies.frontmatterWriter.replaceTagsIfSnapshotMatches(
         item.file!,
-        { beforeTags: item.change.beforeTags, sourceContentHash: snapshot.contentHash },
+        { beforeTags: item.change.beforeTags, sourceContentHash: snapshot.contentHash, ...tagValueFields(raw) },
         item.change.afterTags
       );
     }
@@ -286,10 +292,11 @@ export class CleanupRecoveryService {
     try {
       const inlineSnapshot = await this.dependencies.inlineWriter.readSnapshot(file);
       const tags = this.dependencies.frontmatterWriter.readCurrentTags(file);
+      const raw = exactTagValuePatch(change) ? await this.dependencies.frontmatterWriter.readTagValueSnapshot?.(file) : undefined;
       return {
         change,
         file,
-        state: classifyCleanupFileState(tags, inlineSnapshot.bodyHash, change) ?? "conflict",
+        state: classifyCleanupFileState(tags, inlineSnapshot.bodyHash, change, raw) ?? "conflict",
         inlineSnapshot
       };
     } catch {

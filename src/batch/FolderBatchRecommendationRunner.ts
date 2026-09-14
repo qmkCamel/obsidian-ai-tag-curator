@@ -1,6 +1,7 @@
 // Generates per-note folder-batch candidates with bounded concurrency and immediate generation cancellation.
 import type { RecommendationResult } from "../ai/RecommendationSchema";
 import type { IndexedNote, TagIndex } from "../index/TagIndex";
+import { assertWritableTagValue, captureTagValueSnapshot, cloneTagValueSnapshot, normalizedSnapshotTags, type TagValueSnapshot } from "../obsidian/TagValuePatch";
 import {
   createAiCandidates,
   createInlineSyncCandidates,
@@ -128,6 +129,7 @@ export class FolderBatchRecommendationRunner {
   /** Reads and freezes local state before AI work, then discards every update from an obsolete epoch. */
   private async processPath(notePath: string, index: TagIndex, generation: number, retry: boolean): Promise<void> {
     const existingItem = this.findItem(notePath);
+    let tagValueSnapshot: TagValueSnapshot | undefined;
     let note = retry && existingItem.sourceStatus === "ready" ? this.frozenNotes.get(notePath) : undefined;
 
     if (!note) {
@@ -138,10 +140,15 @@ export class FolderBatchRecommendationRunner {
         planStatus: "pending",
         sourceError: undefined,
         aiError: undefined,
+        tagValueSnapshot: undefined,
+        tagValueError: undefined,
         candidates: []
       }));
       try {
         note = await this.dependencies.readNote(notePath);
+        tagValueSnapshot = captureTagValueSnapshot(note.content);
+        assertWritableTagValue(tagValueSnapshot);
+        note = { ...note, frontmatterTags: normalizedSnapshotTags(tagValueSnapshot) };
       } catch (error) {
         if (!this.isCurrent(generation)) {
           return;
@@ -151,6 +158,8 @@ export class FolderBatchRecommendationRunner {
           sourceStatus: "failed",
           aiStatus: "notStarted",
           sourceError: errorMessage(error),
+          tagValueSnapshot,
+          tagValueError: errorMessage(error),
           candidates: []
         }));
         return;
@@ -172,6 +181,7 @@ export class FolderBatchRecommendationRunner {
       this.updateItem(notePath, (item) => ({
         ...item,
         beforeTags: note!.frontmatterTags,
+        tagValueSnapshot,
         sourceContentHash: note!.sourceContentHash,
         inventory: {
           frontmatterTags: note!.frontmatterTags,
@@ -314,6 +324,7 @@ function clonePlan(plan: FolderBatchPlan): FolderBatchPlan {
     items: plan.items.map((item) => ({
       ...item,
       beforeTags: item.beforeTags ? [...item.beforeTags] : undefined,
+      tagValueSnapshot: item.tagValueSnapshot ? cloneTagValueSnapshot(item.tagValueSnapshot) : undefined,
       inventory: item.inventory
         ? {
             frontmatterTags: [...item.inventory.frontmatterTags],

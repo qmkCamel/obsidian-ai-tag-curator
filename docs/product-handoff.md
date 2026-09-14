@@ -132,7 +132,15 @@ The product can win by making tag changes trustworthy, inspectable, and reversib
 
 ## Current Capabilities and Next Stage
 
-The product now has four completed implementation loops: current-note recommendations, vault-level tag health, reviewed deterministic inline cleanup, and the `0.3` safe folder-level batch preview. The inline workflow has automated coverage; real multi-version Obsidian and visual acceptance remain pending. The next stage is `0.4` full operation history, not broader body or folder write actions.
+The `feat/tag-management-workbench` branch connects recommendations, health analysis, reviewed cleanup and safe folder batches with a local tag manager. It is not a new release. The [verification record](verification/tag-management-workbench.md) separates automated, visual and real-host evidence from remaining gates.
+
+- Open from the command or ribbon without an API key, provider or active note. Search, filter and sort 100-tag pages; exact related files use 50-file pages and distinct-file counts, not token counts.
+- Manual rename and many-to-one merge hydrate at most 200 source files, then require occurrence review and a second confirmation. Child propagation, deletion, case-only renaming, regex replacement and automatic writes are outside this stage.
+- Global exclusions apply before reads/provider calls; exact/subtree protections constrain every forward entry. New raw patches preserve unselected values, casing, duplicates and order, but not YAML formatting. Scalar/mixed tags and unsafe YAML are read-only.
+- History permits undo only for the latest active operation across types, including old commands/cards and disjoint files. Legacy multi-file cleanup is read-only; missing historical raw values cannot be recreated.
+- Unknown/unresolved history blocks writes without clearing data. Reload after uncertain persistence; back up and finish recovery before downgrading.
+
+Incremental indexing, naming presets and remembered decisions remain later work. Earlier version labels below are historical milestones, not new release commitments.
 
 ### 1. Suggest Tags for Current Note
 

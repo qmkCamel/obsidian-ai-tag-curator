@@ -2,6 +2,16 @@
 
 本文档记录 AI Tag Curator 发布到 Obsidian Community Plugins 前需要完成的步骤。
 
+## 工作台候选门禁
+
+`add-tag-management-workbench` 的开发实现不等于发版。运行记录见[工作台验证](verification/tag-management-workbench.md)，真实宿主和 DOM 夹具证据分别标识。
+
+- 全量单测、旧/新 E2E、build、单 change 与全量严格 OpenSpec 校验、diff 检查必须通过。
+- 在专用合成 vault 验证无 key/无活动笔记的浏览、精确改名/合并、历史、重载撤销、规则排除和冲突零写入。
+- 保留 Obsidian 1.8.7 最低版本及宽/窄、深/浅、键盘、浮出窗口门禁，未验收项不能由旧截图或 Node 性能替代。
+- 用户可见说明必须包含全局最新撤销、legacy cleanup 只读、原值/YAML 格式边界及降级前备份恢复。
+- 版本更新、生产安装、commit/push、tag、GitHub Release 都等待单独明确请求。本候选不自动覆盖生产 vault。
+
 ## 1. 发布前检查
 
 - 确认默认分支包含最新源码。

@@ -28,6 +28,8 @@ export interface InlineTagWriteResult {
   editCount: number;
 }
 
+export type InlineTagWriteGuard = (filePath: string, edits: InlineTextEdit[]) => void;
+
 export interface InlineTagSnapshot {
   contentHash: string;
   bodyHash: string;
@@ -45,7 +47,7 @@ interface PreparedInlineTagWrite {
 }
 
 export class InlineTagWriter {
-  constructor(private readonly app: App) {}
+  constructor(private readonly app: App, private readonly guard?: InlineTagWriteGuard) {}
 
   async checkPatch(file: TFile, patch: InlineTagWritePatch): Promise<InlineTagWriteResult> {
     const prepared = await this.prepare(file, patch);
@@ -61,7 +63,8 @@ export class InlineTagWriter {
   }
 
   async apply(file: TFile, patch: InlineTagWritePatch): Promise<InlineTagWriteResult> {
-    const prepared = await this.prepare(file, patch);
+    const reviewedPatch = { ...patch, edits: patch.edits.map((edit) => ({ ...edit })) };
+    const prepared = await this.prepare(file, reviewedPatch);
     const written = await this.app.vault.process(file, (data) => {
       if (data !== prepared.content) {
         throw new InlineTagWriteError(
@@ -69,13 +72,14 @@ export class InlineTagWriter {
           "Note content changed after inline-tag preflight and before the atomic write."
         );
       }
+      this.guard?.(file.path, reviewedPatch.edits.map((edit) => ({ ...edit })));
       return prepared.afterContent;
     });
 
     if (written !== prepared.afterContent) {
       throw new InlineTagWriteError("contentChanged", "Vault.process returned content different from the reviewed patch.");
     }
-    return resultFromPrepared(prepared, patch.edits.length);
+    return resultFromPrepared(prepared, reviewedPatch.edits.length);
   }
 
   private async prepare(file: TFile, patch: InlineTagWritePatch): Promise<PreparedInlineTagWrite> {

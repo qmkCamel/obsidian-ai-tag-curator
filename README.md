@@ -6,14 +6,25 @@ AI tag management and governance for Obsidian vaults.
 
 AI Tag Curator is not a generic "generate tags for this note" plugin. It helps you keep an existing Obsidian tag taxonomy coherent by reusing known tags, explaining recommendations, and surfacing vault-level tag problems before any risky cleanup work.
 
+This checkout includes the **local tag management workbench under development**. It is not a new release. Automated regression, browser screenshots, installed Obsidian 1.13.7 acceptance, and remaining minimum-version gates are recorded separately in the [workbench verification report](docs/verification/tag-management-workbench.md) (Chinese).
 
 ## Current MVP Capabilities
+
+**Local tag management workbench (development)**
+- Open `Tag manager` from the command palette or the tags ribbon icon without a provider, API key, or active Markdown note. Browsing and manual rename/merge do not require AI; AI recommendations remain optional, separate workflows.
+- Search tags by literal substring, filter sources and folder scope, and browse 100 tags or 50 related notes per page. Counts mean distinct files, including separate frontmatter/inline source file counts, not exact body-token counts.
+- Inspect the exact tag's notes, rename one tag, or merge selected source tags into one target through file/occurrence review and confirmation. A manual plan is limited to 200 candidate files; larger scopes are blocked, not truncated.
+- Match tag identities case-insensitively but preserve accepted target spelling. Renaming `project` does not rename `project/active`; case-only changes such as `Tag` to `TAG`, deletion, and automatic descendant propagation are unsupported.
+- Keep browsing scope separate from global exclusions/protected tags. Source filtering is not write authorization: frontmatter and body selections remain explicit in review. New forward writes must obey the shared policy and preserve unselected raw tag values.
+- Display missing/current/outdated/refreshing/error index state. Refresh uses at most four reads, including pending reads from cancelled scans; incomplete scans never become current. File events mark the index outdated rather than triggering a full scan per event.
+- Inspect mixed operation history. Undo is limited to the **globally latest active operation**, across recommendation, batch, and cleanup types, even when newer operations touch different files. History filters and old undo commands cannot bypass that order.
+- Legacy multi-file cleanup records without V2 recovery evidence are read-only, including when they are newest; they cannot be used to bypass newer history or manufacture an undo plan. Unresolved or unknown recovery records block new writes.
 
 **Vault tag index**
 ![标签索引摘要](docs/images/tag-index-summary.png)
 - Build a tag index from Obsidian metadata, frontmatter tags, and optional inline tags.
 - Show a tag index summary with tag counts, usage counts, file counts, and top tags.
-- Reuse the cached index for recommendations and health reports instead of scanning the whole vault every time.
+- Reuse a current index for recommendations and health reports; a loaded cache starts outdated and can be browsed read-only until refreshed. Legacy summary usage counts are not exact body-token counts.
 
 **Current note recommendations**
 ![当前笔记标签推荐](docs/images/tag-recommendations.png)
@@ -23,7 +34,7 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Default-select inline tags that are missing from frontmatter so the formatter-facing frontmatter can represent all reviewed note tags; each item can be deselected.
 - Explain each recommendation with confidence and close alternatives not selected.
 - Apply selected recommendations only after user confirmation.
-- Undo the latest tag change made by this plugin for the current note.
+- Undo a current-note change only when it is also the globally latest eligible active operation in the development workbench.
 - Bind previews to a SHA-256 snapshot of the full Markdown and reject stale content before writing.
 - Run slow AI requests in the background and show results when ready.
 
@@ -38,7 +49,7 @@ AI Tag Curator is not a generic "generate tags for this note" plugin. It helps y
 - Keep locally derived inline-to-frontmatter sync items available when AI fails, and retry only failed read/AI items.
 - Review frontmatter, inline, and AI sources per file; low-risk inline/existing-tag additions start selected, new tags are medium risk and require individual selection, and destructive actions are not executable.
 - Apply only after a second whole-batch confirmation, using full preflight, per-file snapshot checks, reverse compensation, and a persisted fixed recovery target if compensation is incomplete.
-- Undo the latest applied folder batch as one operation, including after an Obsidian/plugin reload.
+- Undo a folder batch as one operation, including after an Obsidian/plugin reload, only when it is the globally latest eligible active operation.
 - Never rewrite note bodies or remove inline tags in the folder workflow.
 
 **Vault-level tag health report**
@@ -233,21 +244,32 @@ npm run release:verify
 
 ## Usage
 
+### Local management without AI (development)
+
+1. Open `Tag manager` or use the tags ribbon icon. No provider setup or active note is required.
+2. Refresh an absent/outdated index, search and select exact tags, and confirm scope and protection rules.
+3. Review rename/merge differences and confirm selected changes; use History to inspect the result and the globally latest eligible undo/recovery action.
+
+This workflow remains subject to the [uncompleted acceptance gates](docs/verification/tag-management-workbench.md). Use an isolated, backed-up synthetic vault for development verification.
+
+### Optional AI workflows
+
 1. Configure provider type, preset, API base URL, API key (blank is allowed for local providers), and model.
 2. Run `Refresh vault tag index`.
 3. Open a Markdown note.
 4. Run `Suggest tags for current note`.
 5. Review the recommendation modal and apply only the tags you want.
 6. Run `Generate tag suggestions for folder` to confirm a folder scope, generate candidates, and review a whole batch before writing.
-7. Run `Undo latest folder batch tag operation` to revert the latest applied folder batch as one unit.
+7. Use History or `Undo latest folder batch tag operation` to revert a batch only if it is the globally latest eligible operation.
 8. Run `Analyze tag health` to inspect vault-level tag problems.
 9. Optionally run `AI-enhanced analysis` inside the health report.
-10. Run `Undo last tag curator change` if you need to revert the latest tag write for the current note.
+10. Use History or `Undo last tag curator change` for a current-note write only if it is the globally latest eligible operation; resolve unfinished recovery before starting new writes.
 
 ## Commands
 
 The plugin UI defaults to `Auto`, which follows the current Obsidian language. In English, the commands are:
 
+- `Tag manager` (development workbench)
 - `Refresh vault tag index`
 - `Show tag index summary`
 - `Analyze tag health`
@@ -283,7 +305,11 @@ For new product work, start with an OpenSpec change proposal before implementati
 ## Current Limitations
 
 - Current-note and folder workflows still write only frontmatter `tags`; reviewed inline tags may be copied into frontmatter without changing the body.
-- The only body-write entry is deterministic merge/rename review in the health report. It replaces only user-selected complete `#tag` tokens with exact cache positions; it does not use fuzzy/global replacement or support body additions, deletion, split actions, or AI-generated body writes.
+- Body writes are limited to reviewed deterministic merge/rename in the health report and the development workbench's manual review. Both require selected complete `#tag` tokens with exact cache positions; neither permits fuzzy/global replacement, body additions, deletion, split actions, or AI-generated body writes.
+- Manual management targets exact tag identities, not subtrees. Descendant propagation and case-only renaming are unsupported. Invalid targets are rejected rather than silently normalized into a different request.
+- Undo follows global operation order, not the latest record of a selected type. Legacy multi-file cleanup is read-only; there is no out-of-order undo or redo. Old records do not prove original tag spelling or formatting that they never stored.
+- New exact tag-value patches preserve unselected values, body text, and non-tags property semantics; YAML quoting/formatting may change, and unsupported scalar/mixed tags or unsafe YAML must remain read-only. Back up and finish outstanding undo/recovery before downgrading; old plugins may not understand new raw-value recovery fields.
+- The workbench has installed-host Obsidian 1.13.7 evidence and synthetic-browser narrow/wide, light/dark, and keyboard screenshots. Minimum-host (`1.8.7`) and mobile acceptance remain pending; browser evidence does not replace host verification. See the workbench report for exact coverage and limitations.
 - Remote providers still require an API key. Local OpenAI-compatible providers may leave it blank, but still require a base URL and model.
 - The plugin only calls the explicitly configured provider endpoint. It does not install, start, or download models, and it does not silently fall back to a cloud provider.
 - A folder batch must contain 1-200 Markdown files within the configured limit; an oversized scope is blocked rather than truncated.
@@ -303,4 +329,5 @@ For new product work, start with an OpenSpec change proposal before implementati
 - [Chinese product explanation](docs/product-handoff.zh-CN.md)
 - [Chinese technical design](docs/technical-design.zh-CN.md)
 - [Chinese roadmap](docs/roadmap.zh-CN.md)
+- [Workbench verification and host gaps (Chinese)](docs/verification/tag-management-workbench.md)
 - [OpenSpec project context](openspec/project.md)

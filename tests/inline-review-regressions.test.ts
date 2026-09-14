@@ -39,6 +39,8 @@ it("loads and round-trips a 0.1.2 recommendation without changing its undo tags"
   const log = new OperationLog([historical] as never);
   const loaded = new OperationLog(log.toJSON()).latestForPath("a.md")!;
   expect(loaded.plan).toMatchObject({ ...historical.plan, syncedInlineTags: [], aiAddedTags: ["old"] });
+  expect(log.validate()).toEqual([]);
+  expect(loaded.plan.sourceContentHash).toBeUndefined();
   loaded.plan.beforeTags.push("not-in-original");
   expect(historical.plan.beforeTags).toEqual(["keep"]);
 });
@@ -62,12 +64,18 @@ it.each([false, true])("retains recovery evidence when undo deletion persistence
   expect(new OperationLog(persisted).latestCleanupV2()?.status).toBe(result.status);
   expect(f.app.vault.getNote("a.md").content).toBe(failCompensation ? "#old" : "#new");
   expect(f.log.isMutationRunning).toBe(false);
+  await expect(service.undoLatestAppliedCleanup()).rejects.toThrow("reload");
+  await expect(service.retryRecovery()).rejects.toThrow("reload");
   f.app.vault.setProcessInterceptor(null);
+  const reloadedLog = new OperationLog(persisted, f.log.receiptsToJSON());
+  const reloadedService = new CleanupRecoveryService({ ...f.dependencies, operationLog: reloadedLog,
+    persist: async () => { persisted = reloadedLog.toJSON(); } });
   if (failCompensation) {
     expect(result.record?.recoveryTarget).toBe("after");
-    expect((await service.retryRecovery()).status).toBe("applied");
+    expect((await reloadedService.retryRecovery()).status).toBe("applied");
   }
-  expect((await service.undoLatestAppliedCleanup()).status).toBe("removed");
+  expect((await reloadedService.undoLatestAppliedCleanup()).status).toBe("removed");
+  expect(reloadedLog.receiptsToJSON()[0].status).toBe("undone");
   expect(f.app.vault.getNote("a.md").content).toBe("#old");
 });
 
@@ -111,7 +119,7 @@ it("blocks a second cleanup and all transaction services while the first is stil
 });
 
 async function fixture() {
-  const app = createFakeApp([{ path: "a.md", content: "#old", frontmatterTags: [] }]);
+  const app = createFakeApp([{ path: "a.md", content: "#old" }]);
   const log = new OperationLog();
   const before = await hashContent("#old");
   const plan: SelectedCleanupPlan = {

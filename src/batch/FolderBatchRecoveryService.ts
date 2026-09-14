@@ -9,8 +9,10 @@ import type {
   OperationLog
 } from "../operations/OperationLog";
 import { normalizeTag } from "../utils/normalizeTag";
+import { exactTagValuePatch, reverseTagValueFields, sameTagValue, tagValueFields } from "../obsidian/TagValuePatch";
 
 export interface FolderBatchRecoveryWriter {
+  checkSnapshot?(file: TFile, snapshot: FrontmatterSnapshot): Promise<FrontmatterTagChange | void>;
   readCurrentTags(file: TFile): string[];
   readSnapshot(file: TFile): Promise<FrontmatterSnapshot>;
   replaceTagsIfSnapshotMatches(
@@ -62,7 +64,7 @@ export class FolderBatchRecoveryService {
     const allAfter = classified.every((item) => item.state === "after");
 
     if ((record.status === "applying" && allBefore) || (record.status === "undoing" && allBefore)) {
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: record.status === "applying" ? "rolledBack" : "undone" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -114,7 +116,7 @@ export class FolderBatchRecoveryService {
         }
         await this.dependencies.writer.replaceTagsIfSnapshotMatches(
           item.file!,
-          item.snapshot!,
+          { ...item.snapshot!, ...(target === "before" ? reverseTagValueFields(item.change) : tagValueFields(exactTagValuePatch(item.change))) },
           target === "before" ? item.change.beforeTags : item.change.afterTags
         );
       }
@@ -137,7 +139,7 @@ export class FolderBatchRecoveryService {
     }
 
     if (target === "before") {
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: "rolledBack" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     }
@@ -165,28 +167,37 @@ export class FolderBatchRecoveryService {
 
     this.dependencies.operationLog.updateBatchStatus(record.id, "undoing");
     await this.dependencies.persist();
-    const written: Array<{ item: ClassifiedFile; beforeContentHash: string }> = [];
+    const attempted: Array<{ item: ClassifiedFile; beforeContentHash?: string }> = [];
     try {
       for (const item of [...classified].sort((left, right) => right.change.notePath.localeCompare(left.change.notePath))) {
+        // A rejected write may already have changed the file; retain it for classification and compensation.
+        const attempt: { item: ClassifiedFile; beforeContentHash?: string } = { item };
+        attempted.push(attempt);
         const change = await this.dependencies.writer.replaceTagsIfSnapshotMatches(
           item.file!,
-          item.snapshot!,
+          { ...item.snapshot!, ...reverseTagValueFields(item.change) },
           item.change.beforeTags
         );
-        written.push({ item, beforeContentHash: change.afterContentHash ?? item.change.sourceContentHash ?? item.snapshot!.sourceContentHash });
+        attempt.beforeContentHash = change.afterContentHash;
       }
 
-      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+      await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: "undone" });
       const indexRefreshError = await this.refreshIndexSafely();
       return { status: "removed", files: classified.map(withRecoveryState), indexRefreshError };
     } catch (error) {
       let compensationFailed = false;
-      for (const writtenItem of [...written].reverse()) {
+      for (const attempt of [...attempted].reverse()) {
         try {
+          const [current] = await this.classify({ ...record, files: [{
+            ...attempt.item.change,
+            sourceContentHash: attempt.beforeContentHash ?? attempt.item.change.sourceContentHash
+          }] }, true);
+          if (current.state === "after") continue;
+          if (current.state !== "before") throw new Error("Undo compensation conflict.");
           await this.dependencies.writer.replaceTagsIfSnapshotMatches(
-            writtenItem.item.file!,
-            { beforeTags: writtenItem.item.change.beforeTags, sourceContentHash: writtenItem.beforeContentHash },
-            writtenItem.item.change.afterTags
+            current.file!,
+            { ...current.snapshot!, ...tagValueFields(exactTagValuePatch(current.change)) },
+            current.change.afterTags
           );
         } catch {
           compensationFailed = true;
@@ -199,7 +210,7 @@ export class FolderBatchRecoveryService {
         return { status: "applied", record: applied, files: applied.files, error: errorMessage(error) };
       }
 
-      const current = await this.classify(record, false);
+      const current = await this.classify(record, true);
       const recovery = this.dependencies.operationLog.setBatchRecoveryTarget(
         record.id,
         "after",
@@ -225,18 +236,32 @@ export class FolderBatchRecoveryService {
         if (!file) {
           return { change, file: null, state: "missing" as const };
         }
-        const snapshot = await this.dependencies.writer.readSnapshot(file);
+        let snapshot: FrontmatterSnapshot;
+        try {
+          snapshot = await this.dependencies.writer.readSnapshot(file);
+        } catch {
+          return { change, file, state: "conflict" as const };
+        }
+        const raw = exactTagValuePatch(change);
         let state: BatchFileRecoveryState = "conflict";
-        if (sameTags(snapshot.beforeTags, change.beforeTags)) {
+        if (raw ? sameTagValue(snapshot.tagValueSnapshot, raw.before) : sameTags(snapshot.beforeTags, change.beforeTags)) {
           state = "before";
-        } else if (sameTags(snapshot.beforeTags, change.afterTags)) {
+        } else if (raw ? sameTagValue(snapshot.tagValueSnapshot, raw.after) : sameTags(snapshot.beforeTags, change.afterTags)) {
           state = "after";
         }
 
         if (validateContent && state !== "conflict") {
           const expectedHash = state === "before" ? change.sourceContentHash : change.afterContentHash;
           if (expectedHash && expectedHash !== snapshot.sourceContentHash) {
-            state = "conflict";
+            // A reverse raw patch may reformat YAML. Prove its forward image is the persisted after image.
+            if (raw && state === "before" && change.afterContentHash && this.dependencies.writer.checkSnapshot) {
+              try {
+                const checked = await this.dependencies.writer.checkSnapshot(file, { ...snapshot, ...tagValueFields(raw) });
+                if (checked?.afterContentHash !== change.afterContentHash) state = "conflict";
+              } catch {
+                state = "conflict";
+              }
+            } else state = "conflict";
           }
         }
         return { change, file, state, snapshot };

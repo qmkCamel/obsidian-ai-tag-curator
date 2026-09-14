@@ -8,17 +8,16 @@ import { FrontmatterWriter } from "../../src/obsidian/FrontmatterWriter";
 import { InlineTagWriter } from "../../src/obsidian/InlineTagWriter";
 import { VaultReader } from "../../src/obsidian/VaultReader";
 import { OperationLog } from "../../src/operations/OperationLog";
-import { createFakeApp } from "./obsidian-harness";
+import { createFakeApp, markdownBody } from "./obsidian-harness";
 
 describe("reviewed inline cleanup e2e", () => {
   it("keeps missing/stale cache occurrences view-only while applying only selected exact tokens", async () => {
     const app = createFakeApp([
       { path: "trusted.md", content: "#old first and #old second", frontmatterTags: ["old"] },
-      { path: "missing-cache.md", content: "fallback #old", frontmatterTags: [], inlineTagCache: "missing" },
+      { path: "missing-cache.md", content: "fallback #old", inlineTagCache: "missing" },
       {
         path: "stale-cache.md",
         content: "stale #old",
-        frontmatterTags: [],
         inlineTagCache: [
           {
             tag: "#old",
@@ -64,7 +63,7 @@ describe("reviewed inline cleanup e2e", () => {
     const result = await executor.execute(selected, 20);
 
     expect(result.status).toBe("applied");
-    expect(app.vault.getNote("trusted.md").content).toBe("#old first and #new second");
+    expect(markdownBody(app.vault.getNote("trusted.md").content)).toBe("#old first and #new second");
     expect(app.getNoteTags("trusted.md")).toEqual(["new"]);
     expect(app.vault.getNote("missing-cache.md").content).toBe("fallback #old");
     expect(app.vault.getNote("stale-cache.md").content).toBe("stale #old");
@@ -92,8 +91,8 @@ describe("reviewed inline cleanup e2e", () => {
       refreshIndex: async () => undefined
     });
     expect((await executor.execute(selected, 20)).status).toBe("applied");
-    expect(app.vault.getNote("a.md").content).toBe("#new and #new");
-    expect(app.vault.getNote("b.md").content).toBe("prefix #new");
+    expect(markdownBody(app.vault.getNote("a.md").content)).toBe("#new and #new");
+    expect(markdownBody(app.vault.getNote("b.md").content)).toBe("prefix #new");
 
     const reloadedLog = new OperationLog(firstLog.toJSON());
     const recovery = new CleanupRecoveryService({
@@ -104,15 +103,16 @@ describe("reviewed inline cleanup e2e", () => {
       persist: async () => undefined,
       refreshIndex: async () => undefined
     });
-    app.vault.getNote("b.md").content = "prefix #manual";
+    const appliedContent = app.vault.getNote("b.md").content;
+    app.vault.getNote("b.md").content = appliedContent.replace("prefix #new", "prefix #manual");
     expect((await recovery.undoLatestAppliedCleanup()).status).toBe("conflict");
     expect(reloadedLog.latestCleanupV2()?.status).toBe("applied");
-    expect(app.vault.getNote("a.md").content).toBe("#new and #new");
+    expect(markdownBody(app.vault.getNote("a.md").content)).toBe("#new and #new");
 
-    app.vault.getNote("b.md").content = "prefix #new";
+    app.vault.getNote("b.md").content = appliedContent;
     expect((await recovery.undoLatestAppliedCleanup()).status).toBe("removed");
-    expect(app.vault.getNote("a.md").content).toBe("#old and #old");
-    expect(app.vault.getNote("b.md").content).toBe("prefix #old");
+    expect(markdownBody(app.vault.getNote("a.md").content)).toBe("#old and #old");
+    expect(markdownBody(app.vault.getNote("b.md").content)).toBe("prefix #old");
     expect(app.getNoteTags("a.md")).toEqual(["old", "keep"]);
     expect(app.getNoteTags("b.md")).toEqual(["old"]);
   });

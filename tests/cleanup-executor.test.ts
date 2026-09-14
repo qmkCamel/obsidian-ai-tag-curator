@@ -10,7 +10,7 @@ import { FrontmatterWriter } from "../src/obsidian/FrontmatterWriter";
 import { InlineTagWriter } from "../src/obsidian/InlineTagWriter";
 import { OperationLog, type CleanupFileChangeV2 } from "../src/operations/OperationLog";
 import { hashContent } from "../src/utils/hashContent";
-import { createFakeApp } from "./e2e/obsidian-harness";
+import { createFakeApp, withFrontmatter } from "./e2e/obsidian-harness";
 
 describe("CleanupExecutor", () => {
   it("applies frontmatter-only, inline-only, and mixed files in one ordered V2 record", async () => {
@@ -24,9 +24,9 @@ describe("CleanupExecutor", () => {
 
     expect(result.status).toBe("applied");
     expect(fixture.app.getNoteTags("c-frontmatter.md")).toEqual(["new", "keep"]);
-    expect(fixture.app.vault.getNote("a-inline.md").content).toBe("keep #new here");
+    expect(fixture.app.vault.getNote("a-inline.md").content).toBe(withFrontmatter("keep #new here", { tags: ["keep"] }));
     expect(fixture.app.getNoteTags("a-inline.md")).toEqual(["keep"]);
-    expect(fixture.app.vault.getNote("b-mixed.md").content).toBe("#new and #new");
+    expect(fixture.app.vault.getNote("b-mixed.md").content).toBe(withFrontmatter("#new and #new", { tags: ["new"] }));
     expect(fixture.app.getNoteTags("b-mixed.md")).toEqual(["new"]);
     expect(result.record).toMatchObject({ schemaVersion: 2, status: "applied", partial: false });
     expect(result.record?.files.map((file) => file.notePath)).toEqual([
@@ -51,7 +51,7 @@ describe("CleanupExecutor", () => {
       { missingPath: "missing.md" }
     );
     fixture.app.vault.getNote("tags.md").frontmatterTags = ["manual"];
-    fixture.app.vault.getNote("content.md").content = "changed";
+    fixture.app.vault.getNote("content.md").content = withFrontmatter("changed", { tags: ["old"] });
     fixture.plan.files.find((file) => file.notePath === "token.md")!.inlineEdits[0] = {
       ...fixture.plan.files.find((file) => file.notePath === "token.md")!.inlineEdits[0],
       beforeBodyStart: 0,
@@ -84,7 +84,7 @@ describe("CleanupExecutor", () => {
     const result = await fixture.executor.execute(fixture.plan, 20);
 
     expect(result.status).toBe("rolledBack");
-    expect(fixture.app.vault.getNote("mixed.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("mixed.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
     expect(fixture.app.getNoteTags("mixed.md")).toEqual(["old"]);
     expect(fixture.log.toJSON()).toEqual([]);
   });
@@ -101,9 +101,9 @@ describe("CleanupExecutor", () => {
     const result = await fixture.executor.execute(fixture.plan, 20);
 
     expect(result.status).toBe("rolledBack");
-    expect(fixture.app.vault.getNote("a.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("a.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
     expect(fixture.app.getNoteTags("a.md")).toEqual(["old"]);
-    expect(fixture.app.vault.getNote("b.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("b.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
   });
 
   it("fixes recovery target=before when compensation is incomplete", async () => {
@@ -135,9 +135,9 @@ describe("CleanupExecutor", () => {
     const result = await fixture.executor.execute(fixture.plan, 20);
 
     expect(result.status).toBe("recoveryRequired");
-    expect(fixture.app.vault.getNote("a.md").content).toBe("#old");
+    expect(fixture.app.vault.getNote("a.md").content).toBe(withFrontmatter("#old", { tags: ["old"] }));
     expect(fixture.app.getNoteTags("a.md")).toEqual(["old"]);
-    expect(fixture.app.vault.getNote("b.md").content).toBe("#manual");
+    expect(fixture.app.vault.getNote("b.md").content).toBe(withFrontmatter("#manual", { tags: ["old"] }));
     expect(result.record).toMatchObject({ recoveryTarget: "before" });
     expect(result.record?.files.find((file) => file.notePath === "b.md")?.recoveryState).toBe("conflict");
   });
@@ -208,7 +208,7 @@ async function setup(
       const reversing = patch.edits.some((edit: any) => edit.beforeText === "#new" && edit.afterText === "#old");
       if (reversing && file.path === options.failReverseInlinePath) throw new Error("reverse inline failed");
       if (!reversing && file.path === options.raceBeforeInlinePath) {
-        app.vault.getNote(file.path).content = "#manual";
+        app.vault.getNote(file.path).content = withFrontmatter("#manual", app.vault.getNote(file.path).readFrontmatter());
       }
       return actualInlineWriter.apply(file, patch);
     }
@@ -222,7 +222,7 @@ async function setup(
       return actualFrontmatterWriter.replaceTagsIfSnapshotMatches(file, snapshot, nextTags);
     }
   };
-  const files = await Promise.all(notes.map((note) => selectedFile(note)));
+  const files = await Promise.all(notes.map((note) => selectedFile(note, app.vault.getNote(note.path).content)));
   const plan: SelectedCleanupPlan = {
     itemId: "rename-old",
     title: "Rename old",
@@ -266,7 +266,7 @@ async function setup(
   };
 }
 
-async function selectedFile(note: NoteSetup) {
+async function selectedFile(note: NoteSetup, sourceContent: string) {
   const beforeBodyHash = await hashContent(note.content);
   const beforeTags = [...note.tags];
   const afterTags = note.frontmatter ? note.tags.map((tag) => (tag === "old" ? "new" : tag)) : beforeTags;
@@ -275,7 +275,7 @@ async function selectedFile(note: NoteSetup) {
     : [];
   return {
     notePath: note.path,
-    sourceContentHash: await hashContent(note.content),
+    sourceContentHash: await hashContent(sourceContent),
     beforeBodyHash,
     beforeTags,
     afterTags,

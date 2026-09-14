@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakeApp, TFile } from "./e2e/obsidian-harness";
+import { createFakeApp, withFrontmatter } from "./e2e/obsidian-harness";
 import { createFolderBatchPlan } from "../src/batch/FolderBatchPlan";
 import { FolderBatchExecutor, validateFolderBatchChangePlans } from "../src/batch/FolderBatchExecutor";
 import { FrontmatterWriter } from "../src/obsidian/FrontmatterWriter";
@@ -15,7 +15,7 @@ describe("FolderBatchExecutor", () => {
     const unsafe = { ...fixture.plans[0], afterTags: ["added"] };
     expect(() => validateFolderBatchChangePlans([unsafe])).toThrow(/remove or replace/);
 
-    fixture.app.vault.getNote("b.md").content = "changed";
+    fixture.app.vault.getNote("b.md").content = withFrontmatter("changed", { tags: ["base"] });
     const result = await fixture.executor.execute(fixture.batch, fixture.plans, 20);
     expect(result).toMatchObject({ status: "conflict", conflicts: [{ notePath: "b.md", kind: "contentChanged" }] });
     expect(fixture.app.getNoteTags("a.md")).toEqual(["base"]);
@@ -100,7 +100,7 @@ async function setup(
       }
       const change = await actualWriter.replaceTagsIfSnapshotMatches(file as never, snapshot, tags);
       if (!isCompensation && file.path === options.raceAfterPath) {
-        app.vault.getNote("b.md").content = "raced body";
+        app.vault.getNote("b.md").content = withFrontmatter("raced body", { tags: ["base"] });
       }
       return change;
     }
@@ -109,13 +109,13 @@ async function setup(
     createChangePlan({
       notePath: "b.md",
       beforeTags: ["base"],
-      sourceContentHash: await hashContent("body b"),
+      sourceContentHash: await hashContent(app.vault.getNote("b.md").content),
       selectedAiTags: ["b"]
     }),
     createChangePlan({
       notePath: "a.md",
       beforeTags: ["base"],
-      sourceContentHash: await hashContent("body a"),
+      sourceContentHash: await hashContent(app.vault.getNote("a.md").content),
       selectedInlineTags: ["a"]
     })
   ];

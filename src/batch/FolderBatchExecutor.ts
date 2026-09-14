@@ -6,9 +6,12 @@ import type { OperationLog, BatchFileChange, BatchOperationRecord } from "../ope
 import type { ChangePlan } from "../preview/ChangePlan";
 import { normalizeTag } from "../utils/normalizeTag";
 import type { FolderBatchPlan, FolderBatchConflict } from "./FolderBatchPlan";
+import { createAdditiveTagValuePatch, exactTagValuePatch, normalizedSnapshotTags, reverseTagValueFields, sameTagValue, tagValueFields, type TagValueSnapshot } from "../obsidian/TagValuePatch";
 
 export interface FolderBatchExecutorWriter {
-  checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<void>;
+  readTagValueSnapshot?(file: TFile): Promise<TagValueSnapshot>;
+  readSnapshot?(file: TFile): Promise<FrontmatterSnapshot>;
+  checkSnapshot(file: TFile, snapshot: FrontmatterSnapshot): Promise<FrontmatterTagChange | void>;
   replaceTagsIfSnapshotMatches(
     file: TFile,
     snapshot: FrontmatterSnapshot,
@@ -67,16 +70,22 @@ export class FolderBatchExecutor {
   ): Promise<FolderBatchExecutionResult> {
     const plans = [...changePlans].sort((left, right) => left.notePath.localeCompare(right.notePath));
     validateFolderBatchChangePlans(plans);
+    if ((batchPlan.policyRevision !== undefined || batchPlan.origin) && plans.some((plan) => !exactTagValuePatch(plan))) {
+      throw new UnsafeBatchPlanError("New batch plans require raw tag snapshots.");
+    }
 
     const resolved = plans.map((plan) => ({ plan, file: this.dependencies.findFile(plan.notePath) }));
     const conflicts: FolderBatchExecutionConflict[] = [];
+    const preparedHashes = new Map<string, string>();
     for (const target of resolved) {
       if (!target.file) {
         conflicts.push({ notePath: target.plan.notePath, kind: "missing" });
         continue;
       }
       try {
-        await this.dependencies.writer.checkSnapshot(target.file, snapshotFor(target.plan));
+        const checked = await this.dependencies.writer.checkSnapshot(target.file, snapshotFor(target.plan));
+        if (exactTagValuePatch(target.plan) && !checked?.afterContentHash) throw new UnsafeBatchPlanError("Raw writes require a prepared after-content hash.");
+        if (checked?.afterContentHash) preparedHashes.set(target.plan.notePath, checked.afterContentHash);
       } catch (error) {
         conflicts.push({ notePath: target.plan.notePath, kind: conflictKind(error) });
       }
@@ -91,7 +100,9 @@ export class FolderBatchExecutor {
         includeSubfolders: batchPlan.includeSubfolders,
         indexUpdatedAt: batchPlan.indexUpdatedAt,
         settings: batchPlan.settings,
-        files: plans.map(batchFileFromPlan)
+        ...(batchPlan.origin ? { origin: batchPlan.origin } : {}),
+        ...(batchPlan.policyRevision === undefined ? {} : { policyRevision: batchPlan.policyRevision }),
+        files: plans.map((plan) => ({ ...batchFileFromPlan(plan), afterContentHash: preparedHashes.get(plan.notePath) }))
       },
       operationLogLimit
     );
@@ -101,12 +112,16 @@ export class FolderBatchExecutor {
     try {
       for (const target of resolved) {
         const file = target.file!;
+        const raw = exactTagValuePatch(target.plan);
+        const attempt = { plan: target.plan, file, afterContentHash: preparedHashes.get(target.plan.notePath) ?? target.plan.sourceContentHash };
+        if (raw) written.push(attempt);
         const change = await this.dependencies.writer.replaceTagsIfSnapshotMatches(
           file,
           snapshotFor(target.plan),
           target.plan.afterTags
         );
-        written.push({
+        if (raw) attempt.afterContentHash = change.afterContentHash ?? attempt.afterContentHash;
+        else written.push({
           plan: target.plan,
           file,
           afterContentHash: change.afterContentHash ?? target.plan.sourceContentHash
@@ -126,9 +141,14 @@ export class FolderBatchExecutor {
       let compensationFailed = false;
       for (const entry of [...written].reverse()) {
         try {
+          const patch = exactTagValuePatch(entry.plan);
+          if (patch) {
+            const current = await this.dependencies.writer.readSnapshot?.(entry.file);
+            if (current && sameTagValue(current.tagValueSnapshot, patch.before) && current.sourceContentHash === entry.plan.sourceContentHash) continue;
+          }
           await this.dependencies.writer.replaceTagsIfSnapshotMatches(
             entry.file,
-            { beforeTags: entry.plan.afterTags, sourceContentHash: entry.afterContentHash },
+            { beforeTags: entry.plan.afterTags, sourceContentHash: entry.afterContentHash, ...reverseTagValueFields(entry.plan) },
             entry.plan.beforeTags
           );
         } catch {
@@ -137,14 +157,14 @@ export class FolderBatchExecutor {
       }
 
       if (!compensationFailed) {
-        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist());
+        await this.dependencies.operationLog.removeAndPersist(record.id, () => this.dependencies.persist(), { status: "rolledBack" });
         return { status: "rolledBack", conflicts: [], error: errorMessage(error) };
       }
 
-      const recoveredFiles = record.files.map((file) => ({
+      const recoveredFiles = await Promise.all(record.files.map(async (file) => ({
         ...file,
-        recoveryState: classifyCurrentTags(this.dependencies.findFile(file.notePath), file, this.dependencies.writer)
-      }));
+        recoveryState: await classifyCurrentTags(this.dependencies.findFile(file.notePath), file, this.dependencies.writer)
+      })));
       const recoveryRecord = this.dependencies.operationLog.setBatchRecoveryTarget(record.id, "before", recoveredFiles)!;
       await this.dependencies.persist();
       const indexRefreshError = await this.refreshIndexSafely();
@@ -173,7 +193,15 @@ export function validateFolderBatchChangePlans(plans: ChangePlan[]): void {
   if (plans.length === 0) {
     throw new UnsafeBatchPlanError("A folder batch must contain at least one selected change plan.");
   }
+  const paths = new Set<string>();
   for (const plan of plans) {
+    if (!plan.notePath || paths.has(plan.notePath)) throw new UnsafeBatchPlanError("Batch paths must be non-empty and unique.");
+    paths.add(plan.notePath);
+    const raw = exactTagValuePatch(plan);
+    if (raw && (!sameTagValue(raw.after, createAdditiveTagValuePatch(raw.before, [...plan.syncedInlineTags, ...plan.aiAddedTags]).after) ||
+        !sameTags(plan.beforeTags, normalizedSnapshotTags(raw.before)) || !sameTags(plan.afterTags, normalizedSnapshotTags(raw.after)))) {
+      throw new UnsafeBatchPlanError(`${plan.notePath}: raw patch is not the selected additive change.`);
+    }
     const before = new Set(plan.beforeTags.map(normalizeTag).filter(Boolean));
     const after = new Set(plan.afterTags.map(normalizeTag).filter(Boolean));
     const allowedAdded = new Set([...plan.syncedInlineTags, ...plan.aiAddedTags].map(normalizeTag).filter(Boolean));
@@ -192,11 +220,12 @@ export function validateFolderBatchChangePlans(plans: ChangePlan[]): void {
 }
 
 function snapshotFor(plan: ChangePlan): FrontmatterSnapshot {
-  return { beforeTags: plan.beforeTags, sourceContentHash: plan.sourceContentHash };
+  return { beforeTags: plan.beforeTags, sourceContentHash: plan.sourceContentHash, ...tagValueFields(exactTagValuePatch(plan)) };
 }
 
 function batchFileFromPlan(plan: ChangePlan): BatchFileChange {
   return {
+    ...tagValueFields(exactTagValuePatch(plan)),
     notePath: plan.notePath,
     beforeTags: [...plan.beforeTags],
     afterTags: [...plan.afterTags],
@@ -210,13 +239,24 @@ function conflictKind(error: unknown): FolderBatchConflict {
   return error instanceof SnapshotConflictError ? error.kind : "contentChanged";
 }
 
-function classifyCurrentTags(
+async function classifyCurrentTags(
   file: TFile | null,
   change: BatchFileChange,
   writer: FolderBatchExecutorWriter
-): BatchFileChange["recoveryState"] {
+): Promise<BatchFileChange["recoveryState"]> {
   if (!file) {
     return "missing";
+  }
+  try {
+    const patch = exactTagValuePatch(change);
+    if (patch) {
+      const current = await writer.readTagValueSnapshot?.(file);
+      if (sameTagValue(current, patch.before)) return "before";
+      if (sameTagValue(current, patch.after)) return "after";
+      return "conflict";
+    }
+  } catch {
+    return "conflict";
   }
   const current = writer.readCurrentTags(file);
   if (sameTags(current, change.beforeTags)) {

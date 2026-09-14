@@ -7,7 +7,7 @@ import { hashContent } from "../utils/hashContent";
 import { InlineTagOccurrenceReader, type InlineTagOccurrenceReadResult } from "./InlineTagOccurrenceReader";
 
 export class VaultReader {
-  constructor(private readonly app: App) {}
+  constructor(private readonly app: App, private readonly canRead: (path: string) => boolean = () => true) {}
 
   getCurrentMarkdownFile(): TFile | null {
     const file = this.app.workspace.getActiveFile();
@@ -35,7 +35,7 @@ export class VaultReader {
 
   /** Lists the complete confirmed scope by path segment, never by ambiguous string prefix or truncation. */
   listMarkdownFilesInFolder(folderPath: string, includeSubfolders: boolean): TFile[] {
-    const allMarkdownFiles = this.app.vault.getMarkdownFiles();
+    const allMarkdownFiles = this.app.vault.getMarkdownFiles().filter((file) => this.canRead(file.path));
     const matchingPaths = new Set(
       filterMarkdownPathsByFolder(
         allMarkdownFiles.map((file) => file.path),
@@ -71,12 +71,13 @@ export class VaultReader {
   }
 
   async readAllMarkdownNotes(): Promise<IndexedNote[]> {
-    const files = this.app.vault.getMarkdownFiles();
+    const files = this.app.vault.getMarkdownFiles().filter((file) => this.canRead(file.path));
     return Promise.all(files.map((file) => this.readNote(file)));
   }
 
   /** Captures content, source-separated tags, and a hash from the same cached Markdown read. */
   async readNote(file: TFile): Promise<IndexedNote> {
+    if (!this.canRead(file.path)) throw new Error(`Excluded folder: ${file.path}`);
     const content = await this.app.vault.cachedRead(file);
     const cache = this.app.metadataCache.getFileCache(file);
     const frontmatterTags = parseFrontmatterTags(readFrontmatterProperty(cache?.frontmatter, "tags"));
@@ -93,6 +94,7 @@ export class VaultReader {
   }
 
   async readInlineTagOccurrences(file: TFile, relevantTags: string[]): Promise<InlineTagOccurrenceReadResult> {
+    if (!this.canRead(file.path)) throw new Error(`Excluded folder: ${file.path}`);
     return new InlineTagOccurrenceReader(this.app).read(file, relevantTags);
   }
 }
