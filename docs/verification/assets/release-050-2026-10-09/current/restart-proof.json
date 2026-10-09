@@ -1,0 +1,32 @@
+{
+  "pid": 98215,
+  "recordId": "1791551382535-ljrp1cg4cz",
+  "paths": [
+    "Host Workbench Acceptance/restart-a.md",
+    "Host Workbench Acceptance/restart-b.md"
+  ],
+  "notes": {
+    "Host Workbench Acceptance/restart-b.md": "---\ntags: [RestartOld, KeepCase, KeepCase]\nother: unchanged\n---\nBody #RestartOld and #KeepCase.\n",
+    "Host Workbench Acceptance/restart-a.md": "---\ntags: [RestartOld, KeepCase, KeepCase]\nother: unchanged\n---\nBody #RestartOld and #KeepCase.\n",
+    "Host Workbench Acceptance/active.md": "---\ntags:\n  - HostActive\n  - KeepCase\n  - KeepCase\n---\nEditor body #HostActive.\nTyped #HostActive line.\n",
+    "Host Workbench Acceptance/protected.md": "---\ntags: [HostProtected, HostProtected/Child]\n---\n#HostProtected and #HostProtected/Child\n",
+    "Host Workbench Acceptance/merge.md": "---\ntags:\n  - HostA\n  - HOSTTarget\n  - KeepCase\n  - KeepCase\n  - HostB\nother: untouched\n---\n\nMerge #HostA and #HostB, existing #HOSTTarget.\n",
+    "Host Workbench Acceptance/mixed.md": "---\ntags:\n  - HostOld\n  - KeepCase\n  - KeepCase\nnested:\n  enabled: true\n  count: 2\ndescription: |\n  line one\n  line two\n---\n\nBody #HostOld and #KeepCase. Repeat #HostOld.\n`#HostOld` must remain.\n",
+    "Host Workbench Acceptance/Excluded/private.md": "---\ntags: [HostOld, HostSecret]\n---\nExcluded #HostOld.\n",
+    "Release Test/Nested/Long path acceptance note for narrow layout.md": "---\ntags:\n  - research\n---\n\n# Nested acceptance note\n\nThe nested note contributes #batch-check and validates long path wrapping.\n",
+    "Release Test/Existing taxonomy.md": "---\ntags:\n  - release-ready\n---\n\n# Existing taxonomy\n\nReference note for deterministic provider recommendations.\n",
+    "Release Test/Current note.md": "---\ntags:\n  - project/ai\n---\n\n# Release validation\n\nThis note exercises folder batch review with #workflow and #release-check tags.\n",
+    "Outside scope.md": "---\ntags:\n  - outside\n---\n\nThis note must remain outside the default folder scope.\n",
+    "Inline Rewrite Test/Nested/05 Long path note for narrow reviewed inline tag layout.md": "---\ntags:\n  - ml-notes\n---\n\n# Long path acceptance\n\nLong-path source #ml_notes is reviewed while canonical references #ml-notes and #ml-notes keep the target deterministic.\n",
+    "Inline Rewrite Test/06 Canonical target reference.md": "---\ntags:\n  - ml-notes\n---\n\n# Canonical target reference\n\nTarget-only reference #ml-notes keeps the canonical cleanup direction deterministic.\n",
+    "Inline Rewrite Test/04 No frontmatter.md": "# No frontmatter\n\nStandalone source #ml_notes and canonical #ml-notes.\n",
+    "Inline Rewrite Test/03 CRLF occurrence.md": "---\r\ntags:\r\n  - ml_notes\r\n---\r\n\r\n# CRLF occurrence\r\n\r\nCRLF source #ml_notes.\r\nCRLF target #ml-notes.\r\n",
+    "Inline Rewrite Test/02 Repeated occurrences.md": "---\ntags:\n  - ml-notes\n---\n\n# Repeated occurrences\n\nMixed #ml-notes and #ml_notes, then #ml-notes and #ml_notes. Final canonical #ml-notes.\n",
+    "Inline Rewrite Test/01 Frontmatter and inline.md": "---\ntags:\n  - ml_notes\n  - keep\n---\n\n# Frontmatter and inline\n\n中文与 emoji 🧠 前缀 #ml_notes, canonical token #ml-notes remains unchanged.\n"
+  },
+  "build": {
+    "main.js": "cc2e609443e5e481efd1fe74ae840266700a748be6138f40c06a27eef6863d63",
+    "styles.css": "5f90069d131151033bd7719b551dc7455cd41962bebc9b4ec2e2daf9f07fe72f"
+  },
+  "host": "1.14.4"
+}

@@ -9,14 +9,27 @@ import { fileURLToPath } from 'node:url';
 // node tests/verification/host-workbench.mjs --installed  -> accept installed build
 // --buildready --final-smoke writes only host-final-* evidence and a separate report.
 // --undo-outstanding-fixture closes only the latest applied fixture transaction.
+// --installed --recovery-prepare persists a controlled failed-write recovery record.
+// Quit/restart the isolated app, then --installed --recovery-resume verifies recovery.
+// OBSIDIAN_TEST_{VAULT,PORT,VERSION,ASSETS} isolate release runs and their evidence.
 // Never point this runner at a personal vault. All host evaluations check this literal.
-const VAULT = '/tmp/tag-curator-workbench-Y7AbTM/vault';
+const VAULT = resolve(process.env.OBSIDIAN_TEST_VAULT ?? '/tmp/tag-curator-workbench-Y7AbTM/vault');
+if (process.env.OBSIDIAN_TEST_VAULT) {
+  assert(/^\/(?:private\/)?tmp\/tag-curator-release-/.test(await realpath(VAULT)), 'Only isolated release fixtures are allowed');
+  assert.equal((await readFile(resolve(VAULT, '../.release-fixture'), 'utf8')).trim(), 'tag-curator-0.5.0');
+}
+const port = Number(process.env.OBSIDIAN_TEST_PORT ?? 19227);
+assert(Number.isInteger(port) && port >= 1024 && port <= 65535);
+const targetsUrl = `http://127.0.0.1:${port}/json/list`;
+const expectedHost = process.env.OBSIDIAN_TEST_VERSION;
 const PLUGIN = 'ai-tag-curator-dev';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const ASSETS = resolve(ROOT, 'docs/verification/assets');
+const ASSETS = resolve(ROOT, process.env.OBSIDIAN_TEST_ASSETS ?? 'docs/verification/assets');
+assert(ASSETS === `${ROOT}/docs/verification/assets` || ASSETS.startsWith(`${ROOT}/docs/verification/assets/`), 'Evidence must stay in the verification directory');
 const FIXTURE = 'Host Workbench Acceptance';
 const install = process.argv.includes('--buildready');
 const finalSmoke = process.argv.includes('--final-smoke');
+const recoveryPhase = process.argv.includes('--recovery-prepare') ? 'prepare' : process.argv.includes('--recovery-resume') ? 'resume' : null;
 const run = install || process.argv.includes('--installed');
 const probeOnly = !run;
 const guard = `if(app.vault.adapter.basePath!==${JSON.stringify(VAULT)})throw new Error('SYNTHETIC VAULT GUARD FAILED');`;
@@ -81,7 +94,7 @@ async function screenshot(name, client = cdp) {
     }
   }
   await mkdir(ASSETS, { recursive: true });
-  const path = resolve(ASSETS, `host-${finalSmoke ? 'final-' : ''}${name}.png`);
+  const path = resolve(ASSETS, `host-${recoveryPhase ? `recovery-${recoveryPhase}-` : finalSmoke ? 'final-' : ''}${name}.png`);
   await writeFile(path, Buffer.from(data, 'base64'));
   const relative=path.slice(ROOT.length+1);
   if(!report.screenshots.includes(relative))report.screenshots.push(relative);
@@ -321,10 +334,10 @@ async function finalSmokeChecks(moduleId) {
   await check('popout-modal-and-listener-disposal',async()=>{
     const count=()=>cdp.eval(`return ${p}.managementListeners.size;`);
     const initial=await count();assert.equal(initial,1);
-    const targets=new Set((await(await fetch('http://127.0.0.1:19227/json/list')).json()).map(t=>t.id));
+    const targets=new Set((await(await fetch(targetsUrl)).json()).map(t=>t.id));
     await cdp.eval(`window.__hostPopoutLeaf=app.workspace.openPopoutLeaf();await window.__hostPopoutLeaf.setViewState({type:'tag-curator-management',active:true});await app.workspace.revealLeaf(window.__hostPopoutLeaf);`);
     let target;
-    for(let i=0;i<50;i++){target=(await(await fetch('http://127.0.0.1:19227/json/list')).json()).find(t=>!targets.has(t.id)&&t.type==='page');if(target)break;await new Promise(r=>setTimeout(r,100));}
+    for(let i=0;i<50;i++){target=(await(await fetch(targetsUrl)).json()).find(t=>!targets.has(t.id)&&t.type==='page');if(target)break;await new Promise(r=>setTimeout(r,100));}
     assert(target,'Popout target missing');const popout=await CDP.connect(target);
     let opened,modal,closedModal;
     try{
@@ -352,8 +365,60 @@ async function finalSmokeChecks(moduleId) {
   });
 }
 
+async function recoveryChecks(moduleId) {
+  assert(run && !install, 'Recovery phases require --installed; do not replace a running recovery build');
+  await useModule(moduleId, 'window.__hostObsidian=this;return true;');
+  const proofPath = resolve(ASSETS, 'restart-proof.json');
+  const pid = await cdp.eval("return require('@electron/remote').process.pid;");
+  if (recoveryPhase === 'prepare') {
+    await check('host-post-write-rejection-and-failed-compensation', async () => {
+      assert.equal(await cdp.eval(`return ${p}.operationLog.toJSON().length;`), 0);
+      const paths = ['restart-a.md', 'restart-b.md'].map(name => `${FIXTURE}/${name}`);
+      for (const path of paths) await writeFixture(path, '---\ntags: [RestartOld, KeepCase, KeepCase]\nother: unchanged\n---\nBody #RestartOld and #KeepCase.\n');
+      await new Promise(r => setTimeout(r, 800));
+      const notes = await readNotes();
+      await prepare(['restartold'], 'RestartNew');
+      await cdp.eval(`const original=app.vault.process;window.__releaseFault={calls:0,postWrite:0,compensationFailures:0};window.__releaseRestore=()=>{app.vault.process=original;};app.vault.process=async function(file,...args){${guard}if(!${JSON.stringify(paths)}.includes(file.path))return original.call(this,file,...args);const fault=window.__releaseFault;fault.calls++;if(fault.postWrite){fault.compensationFailures++;throw new Error('Release fixture: compensation denied');}const result=await original.call(this,file,...args);fault.postWrite++;throw new Error('Release fixture: rejected after real Vault.process write');};`);
+      await click('Continue to apply', `document.querySelector('.tag-curator-cleanup-review-modal')`);
+      await click('Confirm write', `document.querySelector('.tag-curator-cleanup-review-modal')`);
+      await waitFor(`${p}.operationLog.latestUnresolvedCleanup()?.status==='recoveryRequired'&&!${state}.busy`, 'persisted recovery gate');
+      await cdp.eval('window.__releaseRestore();delete window.__releaseRestore;');
+      const record = await cdp.eval(`return ${p}.operationLog.latestUnresolvedCleanup();`);
+      const fault = await cdp.eval('return window.__releaseFault;');
+      assert.equal(record.recoveryTarget, 'before'); assert.equal(fault.postWrite, 1); assert(fault.compensationFailures > 0);
+      const disk = JSON.parse(await readFile(resolve(VAULT, '.obsidian/plugins', PLUGIN, 'data.json'), 'utf8'));
+      assert.equal(disk.operations[0].id, record.id); assert.equal(disk.operations[0].status, 'recoveryRequired');
+      await mkdir(ASSETS, { recursive: true });
+      await writeFile(proofPath, JSON.stringify({ pid, recordId: record.id, paths, notes, build: report.build, host: report.yaml.apiVersion }, null, 2));
+      await screenshot('required');
+      return { pid, recordId: record.id, target: record.recoveryTarget, fault, persisted: true };
+    });
+  } else {
+    await check('full-application-restart-and-fixed-target-recovery', async () => {
+      const proof = JSON.parse(await readFile(proofPath, 'utf8'));
+      assert.notEqual(pid, proof.pid, 'Requires a full host process restart, not a plugin reload');
+      assert.deepEqual(report.build, proof.build, 'Restart must use the same plugin assets');
+      assert.equal(report.yaml.apiVersion, proof.host);
+      const record = await cdp.eval(`return ${p}.operationLog.latestUnresolvedCleanup();`);
+      assert.equal(record.id, proof.recordId); assert.equal(record.recoveryTarget, 'before');
+      assert.equal(await cdp.eval(`return ${state}.recoveryRequired;`), true);
+      await screenshot('before');
+      await cdp.eval(`await ${p}.managementAdapter().commands.recover(${JSON.stringify(record.id)});`);
+      await waitFor(`!${state}.busy&&!${state}.recoveryRequired`, 'recovery complete');
+      const restored = await assertRestored(proof.notes, proof.paths);
+      const receipt = await cdp.eval(`return ${p}.operationLog.receiptsToJSON().find(row=>row.operationId===${JSON.stringify(record.id)});`);
+      assert.equal(receipt.status, 'rolledBack');
+      const disk = JSON.parse(await readFile(resolve(VAULT, '.obsidian/plugins', PLUGIN, 'data.json'), 'utf8'));
+      assert.equal(disk.operations.length, 0); assert(disk.receipts.some(row => row.operationId === record.id && row.status === 'rolledBack'));
+      await dismiss(); await focusClick('tab-history'); await screenshot('complete');
+      report.unverified = report.unverified.filter(item => !item.startsWith('Full application restart') && !item.startsWith('Recovery after partial'));
+      return { previousPid: proof.pid, pid, originalRecordId: record.id, restored, persistedReceipt: receipt.status, outstandingOperations: 0 };
+    });
+  }
+}
+
 async function main() {
-  const targets = await (await fetch('http://127.0.0.1:19227/json/list')).json();
+  const targets = await (await fetch(targetsUrl)).json();
   const target = targets.find(t => t.url === 'app://obsidian.md/index.html');
   assert(target, 'Obsidian page missing'); cdp = await CDP.connect(target);
   await cdp.call('Runtime.enable'); await cdp.call('Page.enable');
@@ -372,11 +437,13 @@ async function main() {
   await check('real-host-yaml-codec-probes', async () => {
     const values = await useModule(moduleId, `const samples={array:'tags: [Old, KeepCase, KeepCase]\\n',multiline:'description: |\\n  line one\\n  line two\\ntags: [Old]\\n',nested:'nested: {enabled: true, count: 2}\\ntags: [Old]\\n',anchor:'defaults: &defaults {enabled: true}\\ncopy: *defaults\\ntags: [Old]\\n',nonTags:'date: 2026-09-14\\nnullValue: null\\ntruth: true\\ntags: [Old]\\n'};return {apiVersion:this.apiVersion,functions:Object.fromEntries(['parseYaml','stringifyYaml','getFrontMatterInfo','MarkdownView','ItemView'].map(k=>[k,typeof this[k]])),samples:Object.fromEntries(Object.entries(samples).map(([key,yaml])=>{try{const before=this.parseYaml(yaml),encoded=this.stringifyYaml(before),after=this.parseYaml(encoded);return [key,{before,encoded,after,equal:JSON.stringify(before)===JSON.stringify(after)}]}catch(e){return [key,{error:e.message}]}}))};`);
     assert.equal(values.functions.parseYaml, 'function'); assert.equal(values.functions.stringifyYaml, 'function');
+    if (expectedHost) assert.equal(values.apiVersion, expectedHost, 'Unexpected Obsidian host version');
     for (const v of Object.values(values.samples)) assert.equal(v.equal, true);
     report.yaml = values; return values;
   });
   await screenshot('probe');
   if (probeOnly) { report.unverified.push('Full write acceptance: requires --buildready'); return; }
+  if (recoveryPhase) { await recoveryChecks(moduleId); return; }
   await useModule(moduleId, 'window.__hostObsidian=this;return true;');
   if(process.argv.includes('--undo-outstanding-fixture')) {
     await check('finish-outstanding-fixture-with-normal-undo',async()=>{
@@ -517,10 +584,10 @@ async function main() {
     baseline = await readNotes(); return { activePathAfterWorkbenchFocus, activePathAtReview, editorEqualsDisk: true, restored };
   });
   await check('popout-workbench-policy-modal-and-close', async () => {
-    const beforeTargets = new Set((await (await fetch('http://127.0.0.1:19227/json/list')).json()).map(t=>t.id));
+    const beforeTargets = new Set((await (await fetch(targetsUrl)).json()).map(t=>t.id));
     await cdp.eval(`window.__hostPopoutLeaf=app.workspace.openPopoutLeaf();await window.__hostPopoutLeaf.setViewState({type:'tag-curator-management',active:true});await app.workspace.revealLeaf(window.__hostPopoutLeaf);`);
     let target;
-    for (let i=0;i<50;i++) { target=(await (await fetch('http://127.0.0.1:19227/json/list')).json()).find(t=>!beforeTargets.has(t.id)&&t.type==='page');if(target)break;await new Promise(r=>setTimeout(r,100)); }
+    for (let i=0;i<50;i++) { target=(await (await fetch(targetsUrl)).json()).find(t=>!beforeTargets.has(t.id)&&t.type==='page');if(target)break;await new Promise(r=>setTimeout(r,100)); }
     assert(target, 'Popout CDP target missing');
     const popout = await CDP.connect(target);
     try {
@@ -560,13 +627,14 @@ finally {
     if (run) { await cdp.call('Debugger.disable').catch(() => {}); }
     if (run) {
       report.ioAudit = await cdp.eval('return window.__hostIO?{writes:window.__hostIO.writes,reads:window.__hostIO.reads}:null;').catch(() => null);
-      await cdp.eval('window.__hostSmokeUnsub?.forEach(fn=>fn());delete window.__hostSmokeUnsub;window.__hostIO?.restore.forEach(fn=>fn());delete window.__hostIO;delete window.__hostObsidian;delete window.__hostRequestUrlCalls;').catch(() => {});
+      await cdp.eval('window.__releaseRestore?.();delete window.__releaseRestore;window.__hostSmokeUnsub?.forEach(fn=>fn());delete window.__hostSmokeUnsub;window.__hostIO?.restore.forEach(fn=>fn());delete window.__hostIO;delete window.__hostObsidian;delete window.__hostRequestUrlCalls;').catch(() => {});
     }
     cdp.close();
   }
   report.finishedAt = new Date().toISOString();
+  if (!report.error && report.yaml?.apiVersion === '1.8.7' && run) report.unverified = report.unverified.filter(item => item !== 'Minimum supported Obsidian 1.8.7');
   await mkdir(ASSETS, { recursive: true });
-  const path = resolve(ASSETS, finalSmoke ? 'host-final-smoke-report.json' : probeOnly ? 'host-probe-report.json' : 'host-workbench-report.json');
+  const path = resolve(ASSETS, recoveryPhase ? `host-recovery-${recoveryPhase}-report.json` : finalSmoke ? 'host-final-smoke-report.json' : probeOnly ? 'host-probe-report.json' : 'host-workbench-report.json');
   await writeFile(path, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`Report: ${path}`);
 }

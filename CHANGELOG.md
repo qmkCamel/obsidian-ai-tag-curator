@@ -1,30 +1,84 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 - 2026-10-09
 
 中文
 
+无需 AI 管理标签，在审查后改名、合并，并通过统一历史撤销。
+
 ### 新增
 
+- 新增原生标签管理工作台：无需 API key 或活动笔记即可搜索标签、按来源和目录筛选、分页浏览相关笔记。
+- 支持精确标签改名和多标签合并；逐文件、逐正文位置审查后确认，最多处理 200 个候选文件，不静默截断。
+- 新增独立浏览范围、全局排除目录和 exact/subtree 标签保护，覆盖当前笔记、文件夹、健康清理和手动管理入口。
+- 新增统一操作历史、详情筛选和全局顺序撤销；未完成操作有明确恢复入口。
+- 索引展示最新、过期、刷新中和失败状态，支持取消，以最多四个并发读取刷新。
 - 为健康报告中的确定性合并/重命名新增 occurrence 级 inline token 审查、逐项取消、部分清理提示和二次确认。
 - 新增 cleanup V2 混合事务、逆序补偿、固定 before/after 恢复、跨重载整体回退和未解决事务写入门禁。
 
-### 安全边界
+### 修复与变更
 
+- 精确属性修改保留未选标签的原始大小写、重复项和顺序；正文保持非目标内容不变，非 tags 属性保持语义不变。
+- 统一保存队列和写入协调，修复取消扫描后的陈旧索引落盘、保存前提前发布候选和并发操作风险。
+- 修复 inline 前缀误匹配、目标专属文件被纳入清理、撤销写入已生效后报错漏补偿，以及日志保存失败回退后的历史缓存不一致。
+- 改善宽窄布局、深浅主题、长路径、键盘焦点和浮出窗口的工作台交互。
+
+### 升级与安全边界
+
+- 升级前备份库与插件数据；先完成已有未解决操作的恢复。降级前同样完成恢复并备份，旧版本不保证理解新增原值恢复字段。
+- 撤销现在只允许全局最近一条活动操作，不再按当前笔记或操作类型分别取最近；历史筛选和旧命令不能越过顺序。
+- 缺少 V2 恢复证据的旧多文件 cleanup 记录保持只读，不推断未保存的原值。
+- 标签身份不区分大小写，但保留合法目标的输入字面量；改名不传播到子标签，不支持仅大小写改名、删除或拆分。
+- YAML 引号与排版可能变化；不支持的标量/混合 tags 或无法安全往返的 YAML 保持只读。
+- 本地浏览和手动管理不调用 AI；可选 AI 流程仍只访问用户配置的 provider。
 - 只有当前 Obsidian `TagCache.position` 精确匹配的完整 token 可写；fallback、缓存缺失或陈旧位置保持只读。
 - 当前笔记推荐和文件夹批次继续保持 frontmatter-only；不支持 inline 新增、删除、拆分、模糊/全局替换或 AI 正文写入。
 
+### 验证与已知边界
+
+- 工作台实现通过 59 个文件、492 个测试、生产构建及 10 项严格 OpenSpec 校验。
+- 隔离 Obsidian 1.13.7 完整验收 16/16，最终代码构建冒烟 8/8；宽窄、深浅主题的合成浏览器布局检查 84/84。详见[验证记录](docs/verification/tag-management-workbench.md)，不将合成 UI 结果等同于真实宿主。
+- 0.5.0 发布构建在 macOS 的 Obsidian 1.8.7 与 1.14.4 分别通过 16/16 主流程、3/3 故障准备和 3/3 完整应用重启恢复检查；原值、正文和持久化恢复回执均已核对。详见[发布验收](docs/verification/0.5.0-release-acceptance.zh-CN.md)。
+- 最低支持版本保持 1.8.7。真实移动端、Windows/Linux 和突然断电尚未验证；桌面受控故障测试不代表全平台或所有存储故障。
+
 English
+
+Manage tags without AI, review rename/merge changes, and undo through one shared history.
 
 ### Added
 
+- Add a native tag workbench with search, source/folder filters, and paginated related notes, without requiring an API key or active note.
+- Add exact tag rename and multi-tag merge with per-file and per-occurrence review, explicit confirmation, and a hard 200-candidate-file limit instead of silent truncation.
+- Add independent browsing scopes, global folder exclusions, and exact/subtree tag protection across current-note, folder, health-cleanup, and manual workflows.
+- Add unified operation history, filtered details, global-order undo, and an entry for unfinished-operation recovery.
+- Show current, outdated, refreshing, and failed index states; allow cancellation and cap refresh at four concurrent reads.
 - Add occurrence-level inline-token review, individual deselection, partial-cleanup warnings, and second confirmation for deterministic health-report merge/rename actions.
 - Add mixed-source cleanup V2 transactions, reverse compensation, fixed before/after recovery, cross-reload whole-operation undo, and a shared unresolved-mutation gate.
 
-### Safety boundaries
+### Fixed and changed
 
+- Preserve unselected property-tag spelling, duplicates, and order; preserve non-target body text and the semantics of non-tags properties.
+- Unify persistence and mutation coordination; fix cancelled scans persisting stale indexes, premature candidate publication, and concurrent-operation risks.
+- Fix inline prefix matching, target-only files entering cleanup, missed compensation when an undo write takes effect then rejects, and stale history after failed log finalization.
+- Improve wide/narrow layouts, light/dark themes, long paths, keyboard focus, and popout-window interactions.
+
+### Upgrade and safety boundaries
+
+- Back up the vault and plugin data, and finish outstanding recovery before upgrading. Do the same before downgrading; older versions may not understand the new raw-value recovery fields.
+- Undo now requires the globally latest active operation, not the latest record for a note or operation type. History filters and legacy commands cannot bypass that order.
+- Legacy multi-file cleanup records without V2 recovery evidence remain read-only; missing original values are never inferred.
+- Tag identities are case-insensitive while valid target spelling is preserved. Rename does not propagate to descendants; case-only rename, deletion, and split are unsupported.
+- YAML quoting and formatting may change. Unsupported scalar/mixed tags and YAML that cannot safely round-trip remain read-only.
+- Local browsing and manual management do not call AI; optional AI workflows use only the configured provider.
 - Only complete tokens at exact current Obsidian `TagCache.position` ranges are writable; fallback, missing-cache, and stale-cache occurrences remain view-only.
 - Current-note and folder workflows remain frontmatter-only; inline additions, deletion, split, fuzzy/global replacement, and AI-generated body writes are unsupported.
+
+### Verification and known boundaries
+
+- The workbench implementation passed 59 files / 492 tests, the production build, and all 10 strict OpenSpec validations.
+- Isolated Obsidian 1.13.7 acceptance passed 16/16 and the final code build passed 8/8 smoke checks; synthetic-browser wide/narrow and light/dark layout checks passed 84/84. See the [verification report](docs/verification/tag-management-workbench.md); synthetic UI results are not host proof.
+- The 0.5.0 release build passed 16/16 workflow checks, 3/3 fault preparation checks, and 3/3 full-application-restart recovery checks on each of Obsidian 1.8.7 and 1.14.4 on macOS. Original values, body content, and persisted recovery receipts were verified. See the [release acceptance report](docs/verification/0.5.0-release-acceptance.zh-CN.md) (Chinese).
+- The minimum remains 1.8.7. Real mobile devices, Windows/Linux, and sudden power loss remain unverified; controlled desktop faults do not prove all platforms or storage-failure modes.
 
 ## 0.4.1 - 2026-08-31
 

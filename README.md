@@ -2,15 +2,28 @@
 
 [简体中文](README.zh-CN.md) | English
 
-AI tag management and governance for Obsidian vaults.
+Local tag management with optional AI assistance for Obsidian vaults.
 
-AI Tag Curator is not a generic "generate tags for this note" plugin. It helps you keep an existing Obsidian tag taxonomy coherent by reusing known tags, explaining recommendations, and surfacing vault-level tag problems before any risky cleanup work.
+Browse your tags, find their notes, and review rename or merge changes in one workbench. No API key is needed for manual management. Optional AI recommendations reuse your existing vocabulary and help identify vault-level tag problems.
 
-This checkout includes the **local tag management workbench under development**. It is not a new release. Automated regression, browser screenshots, installed Obsidian 1.13.7 acceptance, and remaining minimum-version gates are recorded separately in the [workbench verification report](docs/verification/tag-management-workbench.md) (Chinese).
+**0.5.0: local tag management and shared operation history.** See the [changelog](CHANGELOG.md#050---2026-10-09) for changes and upgrade notes. Obsidian 1.8.7 and 1.14.4 desktop acceptance is recorded in the [release verification report](docs/verification/0.5.0-release-acceptance.zh-CN.md) (Chinese); mobile devices remain unverified.
 
-## Current MVP Capabilities
+## New in 0.5.0
 
-**Local tag management workbench (development)**
+- **Manage without AI:** search and filter tags, inspect related notes, and review exact rename/merge changes.
+- **Control the scope:** separate browsing scope from global folder exclusions and protected tags; review property and body edits independently.
+- **Trace and undo changes:** one operation history, globally ordered undo, and fixed-target recovery when an operation is unfinished.
+
+Start with [local management](#local-management-without-ai), and read the [upgrade notes](#upgrading-to-050) before upgrading a backed-up vault.
+
+## Capabilities
+
+**Local tag management workbench**
+
+![Tag manager in isolated Obsidian 1.14.4](docs/verification/assets/release-050-2026-10-09/current/host-refreshed.png)
+
+The screenshot shows the 0.5.0 workbench in a synthetic test vault.
+
 - Open `Tag manager` from the command palette or the tags ribbon icon without a provider, API key, or active Markdown note. Browsing and manual rename/merge do not require AI; AI recommendations remain optional, separate workflows.
 - Search tags by literal substring, filter sources and folder scope, and browse 100 tags or 50 related notes per page. Counts mean distinct files, including separate frontmatter/inline source file counts, not exact body-token counts.
 - Inspect the exact tag's notes, rename one tag, or merge selected source tags into one target through file/occurrence review and confirmation. A manual plan is limited to 200 candidate files; larger scopes are blocked, not truncated.
@@ -34,7 +47,7 @@ This checkout includes the **local tag management workbench under development**.
 - Default-select inline tags that are missing from frontmatter so the formatter-facing frontmatter can represent all reviewed note tags; each item can be deselected.
 - Explain each recommendation with confidence and close alternatives not selected.
 - Apply selected recommendations only after user confirmation.
-- Undo a current-note change only when it is also the globally latest eligible active operation in the development workbench.
+- Undo a current-note change only when it is also the globally latest eligible active operation.
 - Bind previews to a SHA-256 snapshot of the full Markdown and reject stale content before writing.
 - Run slow AI requests in the background and show results when ready.
 
@@ -244,13 +257,13 @@ npm run release:verify
 
 ## Usage
 
-### Local management without AI (development)
+### Local management without AI
 
 1. Open `Tag manager` or use the tags ribbon icon. No provider setup or active note is required.
 2. Refresh an absent/outdated index, search and select exact tags, and confirm scope and protection rules.
 3. Review rename/merge differences and confirm selected changes; use History to inspect the result and the globally latest eligible undo/recovery action.
 
-This workflow remains subject to the [uncompleted acceptance gates](docs/verification/tag-management-workbench.md). Use an isolated, backed-up synthetic vault for development verification.
+Back up your vault before bulk changes. Review the [tested platforms and remaining limitations](docs/verification/0.5.0-release-acceptance.zh-CN.md).
 
 ### Optional AI workflows
 
@@ -269,7 +282,7 @@ This workflow remains subject to the [uncompleted acceptance gates](docs/verific
 
 The plugin UI defaults to `Auto`, which follows the current Obsidian language. In English, the commands are:
 
-- `Tag manager` (development workbench)
+- `Tag manager`
 - `Refresh vault tag index`
 - `Show tag index summary`
 - `Analyze tag health`
@@ -277,6 +290,15 @@ The plugin UI defaults to `Auto`, which follows the current Obsidian language. I
 - `Generate tag suggestions for folder`
 - `Undo last tag curator change`
 - `Undo latest folder batch tag operation`
+- `Handle unfinished tag operation`
+
+## Upgrading to 0.5.0
+
+- Back up your vault and plugin data; resolve unfinished operations before upgrading. Refresh the tag index after enabling the plugin, because a loaded cache starts outdated.
+- Undo now follows one global order across notes, batches, and cleanup. A newer operation must be undone first even when it touches different files; older multi-file cleanup records without recovery evidence remain read-only.
+- Rename and merge preserve unselected raw tag values, but YAML quoting and formatting can change. Unsupported scalar/mixed `tags` stay read-only, and rename does not automatically move child tags.
+- Before downgrading, finish undo/recovery and back up again. Older plugin versions may not understand the new raw-value history fields.
+- The minimum is Obsidian 1.8.7. The release build passed desktop acceptance on 1.8.7 and 1.14.4 on macOS; real mobile devices and Windows/Linux remain unverified.
 
 ## Development
 
@@ -305,11 +327,11 @@ For new product work, start with an OpenSpec change proposal before implementati
 ## Current Limitations
 
 - Current-note and folder workflows still write only frontmatter `tags`; reviewed inline tags may be copied into frontmatter without changing the body.
-- Body writes are limited to reviewed deterministic merge/rename in the health report and the development workbench's manual review. Both require selected complete `#tag` tokens with exact cache positions; neither permits fuzzy/global replacement, body additions, deletion, split actions, or AI-generated body writes.
+- Body writes are limited to reviewed deterministic merge/rename in the health report and the workbench's manual review. Both require selected complete `#tag` tokens with exact cache positions; neither permits fuzzy/global replacement, body additions, deletion, split actions, or AI-generated body writes.
 - Manual management targets exact tag identities, not subtrees. Descendant propagation and case-only renaming are unsupported. Invalid targets are rejected rather than silently normalized into a different request.
 - Undo follows global operation order, not the latest record of a selected type. Legacy multi-file cleanup is read-only; there is no out-of-order undo or redo. Old records do not prove original tag spelling or formatting that they never stored.
 - New exact tag-value patches preserve unselected values, body text, and non-tags property semantics; YAML quoting/formatting may change, and unsupported scalar/mixed tags or unsafe YAML must remain read-only. Back up and finish outstanding undo/recovery before downgrading; old plugins may not understand new raw-value recovery fields.
-- The workbench has installed-host Obsidian 1.13.7 evidence and synthetic-browser narrow/wide, light/dark, and keyboard screenshots. Minimum-host (`1.8.7`) and mobile acceptance remain pending; browser evidence does not replace host verification. See the workbench report for exact coverage and limitations.
+- The release build passed installed-host Obsidian 1.8.7 and 1.14.4 workflows and full-application-restart recovery after controlled write/compensation failures on macOS. Historical synthetic-browser narrow/wide, light/dark, and keyboard evidence is separate. Mobile, Windows/Linux, and sudden power loss remain unverified; see the [release report](docs/verification/0.5.0-release-acceptance.zh-CN.md).
 - Remote providers still require an API key. Local OpenAI-compatible providers may leave it blank, but still require a base URL and model.
 - The plugin only calls the explicitly configured provider endpoint. It does not install, start, or download models, and it does not silently fall back to a cloud provider.
 - A folder batch must contain 1-200 Markdown files within the configured limit; an oversized scope is blocked rather than truncated.

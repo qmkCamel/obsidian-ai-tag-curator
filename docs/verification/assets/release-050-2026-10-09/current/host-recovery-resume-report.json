@@ -1,0 +1,303 @@
+{
+  "startedAt": "2026-10-09T13:10:27.923Z",
+  "mode": "installed",
+  "vault": "/tmp/tag-curator-release-050-DvPq50/current/vault",
+  "checks": [
+    {
+      "name": "host-path-and-version",
+      "status": "passed",
+      "durationMs": 1,
+      "details": {
+        "basePath": "/tmp/tag-curator-release-050-DvPq50/current/vault",
+        "title": "Tag manager - vault - Obsidian 1.14.4",
+        "activeFile": null,
+        "activeEditor": false,
+        "pluginIds": [
+          "ai-tag-curator-dev"
+        ],
+        "popout": "function"
+      }
+    },
+    {
+      "name": "real-host-yaml-codec-probes",
+      "status": "passed",
+      "durationMs": 6,
+      "details": {
+        "apiVersion": "1.14.4",
+        "functions": {
+          "parseYaml": "function",
+          "stringifyYaml": "function",
+          "getFrontMatterInfo": "function",
+          "MarkdownView": "function",
+          "ItemView": "function"
+        },
+        "samples": {
+          "array": {
+            "before": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+            "after": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "equal": true
+          },
+          "multiline": {
+            "before": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+            "after": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nested": {
+            "before": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+            "after": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "anchor": {
+            "before": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+            "after": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nonTags": {
+            "before": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+            "after": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          }
+        }
+      }
+    },
+    {
+      "name": "full-application-restart-and-fixed-target-recovery",
+      "status": "passed",
+      "durationMs": 919,
+      "details": {
+        "previousPid": 98215,
+        "pid": 649,
+        "originalRecordId": "1791551382535-ljrp1cg4cz",
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": []
+        },
+        "persistedReceipt": "rolledBack",
+        "outstandingOperations": 0
+      }
+    }
+  ],
+  "screenshots": [
+    "docs/verification/assets/release-050-2026-10-09/current/host-recovery-resume-probe.png",
+    "docs/verification/assets/release-050-2026-10-09/current/host-recovery-resume-before.png",
+    "docs/verification/assets/release-050-2026-10-09/current/host-recovery-resume-complete.png"
+  ],
+  "network": [],
+  "unverified": [
+    "Minimum supported Obsidian 1.8.7",
+    "Real mobile device"
+  ],
+  "host": {
+    "basePath": "/tmp/tag-curator-release-050-DvPq50/current/vault",
+    "title": "Tag manager - vault - Obsidian 1.14.4",
+    "activeFile": null,
+    "activeEditor": false,
+    "pluginIds": [
+      "ai-tag-curator-dev"
+    ],
+    "popout": "function"
+  },
+  "build": {
+    "main.js": "cc2e609443e5e481efd1fe74ae840266700a748be6138f40c06a27eef6863d63",
+    "styles.css": "5f90069d131151033bd7719b551dc7455cd41962bebc9b4ec2e2daf9f07fe72f"
+  },
+  "yaml": {
+    "apiVersion": "1.14.4",
+    "functions": {
+      "parseYaml": "function",
+      "stringifyYaml": "function",
+      "getFrontMatterInfo": "function",
+      "MarkdownView": "function",
+      "ItemView": "function"
+    },
+    "samples": {
+      "array": {
+        "before": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+        "after": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "equal": true
+      },
+      "multiline": {
+        "before": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+        "after": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nested": {
+        "before": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+        "after": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "anchor": {
+        "before": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+        "after": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nonTags": {
+        "before": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+        "after": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      }
+    }
+  },
+  "finalHost": {
+    "basePath": "/tmp/tag-curator-release-050-DvPq50/current/vault",
+    "title": "Tag manager - vault - Obsidian 1.14.4",
+    "modals": []
+  },
+  "ioAudit": null,
+  "finishedAt": "2026-10-09T13:10:29.438Z"
+}

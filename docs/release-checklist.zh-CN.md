@@ -2,6 +2,21 @@
 
 本文档记录 AI Tag Curator 发布到 Obsidian Community Plugins 前需要完成的步骤。
 
+## 0.5.0 发布验收
+
+2026-10-09：完成 0.5.0 桌面发布补验。`package.json`、lockfile、`manifest.json` 与 `versions.json` 使用同一版本；最低版本保持 1.8.7。用户已授权验收通过后发布；不包含生产库安装。
+
+- [x] 汇总 0.4.1 之后的受审查 inline 改写与本地工作台变更，新增中英文 0.5.0 changelog，日期为 2026-10-09。
+- [x] 更新中英文 README：本地零配置入口、截图、命令、全局撤销及升级/降级说明。
+- [x] `npm test` 59 文件 / 492 项、`npm run build`、全量 10 项严格 OpenSpec 校验通过；`npm audit --json` 为 0 漏洞。
+- [x] macOS 上 Obsidian 1.8.7 与 1.14.4 各通过 16/16 主流程、3/3 故障准备和 3/3 完整应用重启恢复；真实移动端仍需单列验证，详见[发布验收](verification/0.5.0-release-acceptance.zh-CN.md)。
+- [x] 更新中英文 README 的正式版本说明、真实 0.5.0 截图、changelog 锚点及支持边界。
+- [x] `npm run release:verify`、`git diff --check`、宿主脚本语法检查和 68 个本地 Markdown 链接/锚点检查通过；发布构建哈希与本轮验收一致。
+
+发布执行顺序：复跑 `release:verify` 与 diff 检查，提交并快进默认分支，推送 `dev`/`main` 和 `0.5.0` tag，上传三个资产，核对远端下载哈希后公开 GitHub Release。以 [GitHub Release](https://github.com/qmkCamel/obsidian-ai-tag-curator/releases/tag/0.5.0) 的实际公开状态为准，清单本身不作为已发布证明。
+
+`npm run release:verify` 只验证版本一致性、changelog 标题和三个发布资产的存在/哈希，不验证宿主兼容性或发布是否完成。本轮独立安装 `ai-tag-curator-dev@0.5.0`，运行代码与样式哈希和发布资产一致；历史 0.4.1 元数据的证据仍单独保留。
+
 ## 工作台候选门禁
 
 `add-tag-management-workbench` 的开发实现不等于发版。运行记录见[工作台验证](verification/tag-management-workbench.md)，真实宿主和 DOM 夹具证据分别标识。
