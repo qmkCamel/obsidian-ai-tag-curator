@@ -2,352 +2,122 @@
 
 简体中文 | [English](README.md)
 
-面向 Obsidian 库的本地标签管理插件，AI 辅助可选。
-
-在一个工作台中浏览标签、查找相关笔记、审查改名与合并，无需配置 API key。需要 AI 时，可以生成优先复用已有标签的推荐，或分析整个库的标签问题。
-
-**0.5.0：本地标签管理与统一操作历史。** 变更和升级注意事项见 [changelog](CHANGELOG.md#050---2026-10-09)；Obsidian 1.8.7 与 1.14.4 桌面验收见[发布验证记录](docs/verification/0.5.0-release-acceptance.zh-CN.md)，移动端仍未实机验证。
-
-## 0.5.0 新增
-
-- **不依赖 AI 的管理：** 搜索、筛选标签，查看相关笔记，审查精确改名与合并。
-- **明确操作范围：** 浏览范围、全局排除目录和保护标签分离，属性与正文修改独立勾选。
-- **可追溯、可撤销：** 统一操作历史、全局顺序撤销，以及未完成操作的固定目标恢复。
-
-从[无 AI 的本地管理](#无-ai-的本地管理)开始；升级前先阅读[升级说明](#升级到-050)，并备份库。
-
-## 功能
-
-**本地标签管理工作台**
-
-![隔离 Obsidian 1.14.4 中的标签管理工作台](docs/verification/assets/release-050-2026-10-09/current/host-refreshed.png)
-
-截图来自合成测试库中安装的 0.5.0 工作台。
-
-- 从命令面板执行 `标签管理` 或点击标签 ribbon 图标，无需 provider、API key 或活动 Markdown 笔记；浏览与手动改名/合并不依赖 AI，AI 推荐仍是独立可选流程。
-- 支持标签字面子串搜索、来源和目录范围筛选，每页 100 个标签、50 篇相关笔记。统计的是去重文件数及属性/正文来源文件数，不是精确正文 token 次数。
-- 查看精确标签的文件集合，直接改名单标签或把多个源标签合并到一个目标，仍需文件/位置级审查与确认。手动计划最多 200 个候选文件，超过时阻断，不截断。
-- 身份比较不区分大小写，保留合法目标的输入字面量。将 `project` 改名不会改变 `project/active`；不支持 `Tag` 改为 `TAG` 这类仅大小写变更、删除或后代自动传播。
-- 浏览 scope 与全局排除目录/保护标签分离。来源筛选不是写入授权，属性与正文仍在审查中显式选择；新前向写入必须遵守公共策略并保留未选标签原值。
-- 展示无索引、最新、过期、刷新中和错误状态。刷新最多四个读取，取消后尚未返回的旧读取也占用额度；不完整结果不宣称最新，文件事件只标脏，不逐事件全库扫描。
-- 历史统一展示各类操作。只能撤销**全局最近一条活动操作**，不按推荐、批次或清理类型分别取最近；即使更新操作涉及不同文件，也不能跳过，历史筛选和旧命令同样遵守顺序。
-- 缺少 V2 恢复证据的 legacy 多文件 cleanup 始终只读，即使位于最新位置也不伪造撤销或越过它处理更早记录；未解决或未知恢复记录阻止新写入。
-
-**库标签索引**
-![标签索引摘要](docs/images/tag-index-summary.png)
-- 从 Obsidian metadata、frontmatter tags 和可选 inline tags 构建标签索引。
-- 展示标签索引摘要，包括标签数、使用次数、文件数和高频标签。
-- 推荐和健康报告复用最新索引；重载缓存先标记过期，刷新前仅供只读浏览。旧摘要的使用次数不等于精确正文 token 数。
-
-**当前笔记标签推荐**
-![当前笔记标签推荐](docs/images/tag-recommendations.png)
-- 为当前 Markdown 笔记推荐标签。
-- 即使允许新标签，也优先复用库中已有标签。
-- 将 frontmatter 与正文 inline tags 汇总成带来源的整篇标签清单，两类已有标签都不会被 AI 重复推荐。
-- 正文已有但 frontmatter 缺少的标签默认作为同步项选中，让面向 formatter 的 frontmatter 可汇总整篇已审查标签；每项仍可取消。
-- 为每个推荐给出理由、置信度和相近但未选标签。
-- 写入前必须由用户确认。
-- 只允许在当前笔记修改也是全局最近可撤销活动操作时回退。
-- 预览绑定完整 Markdown 的 SHA-256 内容快照，应用前内容已变化时拒绝陈旧写入。
-- 慢速 AI 请求后台执行，完成后再弹出结果。
-
-**文件夹级安全批量预览**
-
-![文件夹级安全批量预览](docs/images/folder-batch-preview.png)
-
-- 默认从当前笔记父文件夹开始，也可选择库内其他文件夹或库根目录；默认包含子文件夹。
-- 在读取正文、构建索引或请求 provider 前，先确认完整 Markdown 文件数和按每篇一次估算的请求数。
-- 单批上限可配置为 1–200，默认 50；超过上限会阻止开始，不会静默截断。
-- 最多并发 2 个 AI 请求；取消会立即停止领取新任务并丢弃晚到结果，同时提示已发出的在途请求仍可能计费。
-- AI 失败时保留本地确定的 inline-to-frontmatter 同步项，并支持仅重试读取/AI 失败项。
-- 按文件展示 frontmatter、inline 和 AI 来源；inline 同步与已有标签新增为低风险并默认选中，新标签为中风险且需逐项选择，破坏性动作不可执行。
-- 二次确认后才应用；执行包含全量预检、逐文件内容/tags 快照检查、逆序补偿，以及补偿不完整时持久化唯一固定恢复目标。
-- 文件夹批次只有在属于全局最近可撤销活动操作时才能整体回退，插件或 Obsidian 重载后仍遵守相同顺序。
-- 文件夹流程始终不改写正文和 inline tag 原位置。
-
-**库级标签健康报告**
-- 按“总览、AI 优先处理项、规则证据明细”三层组织库级标签健康报告。
-- 识别低频标签、近似重复标签、层级不一致、过宽标签、过细标签和命名风格漂移等问题。
-- 规则分析负责提供事实证据和动作安全边界；AI 辅助分析负责合并问题、解释原因、排序优先级和补充风险提示。
-- AI 行动建议会展示面向用户的优先级、置信度、可执行状态、诊断、原因、目标标签、规则证据和注意事项。
-- 按当前标签索引缓存 AI 增强分析，重新打开报告时展示上次分析时间。
-- 可执行的确定性合并/重命名建议会先按文件读取 frontmatter diff 和每个正文 `#tag` occurrence；只有 Obsidian `TagCache.position` 与当前文本精确匹配的位置可勾选写入。
-- 用户可分别取消 frontmatter 或任一正文位置；部分清理会明确显示剩余 source 数并要求二次确认。
-- 应用使用完整内容/body hash、token slice 和 `Vault.process` 回调内 CAS；frontmatter 与正文作为一条 V2 事务整体补偿、恢复和回退。
-- 低频观察、过宽拆分、废弃/移除类建议，以及缓存缺失或陈旧的正文位置，保持只读或人工判断。
-- 支持把 AI 行动建议和清理建议复制为 Markdown，方便外部审查。
-- 健康报告中的标签支持点击复制并搜索。
-- 长报告会在稳定的 Modal 布局内部滚动，避免内容导致窗口尺寸跳动。
-![AI 行动建议](docs/images/tag-health-report-ai-actions.png)
-![AI 建议应用后回退](docs/images/tag-health-report-ai-actions-applied.png)
-![规则证据明细](docs/images/tag-health-report-rule-evidence.png)
+**让 Obsidian 标签保持一致：本地浏览、改名与合并，按需使用 AI 建议。**
 
+查看标签关联的笔记，整理重复命名，在修改 Markdown 文件前逐项审查。本地管理无需 API key；需要 AI 时，可以优先复用已有标签，并判断整个库中哪些标签值得整理。
 
-**设置**
-![设置](docs/images/settings.png)
-![Provider 连接测试进度](docs/images/settings-provider-test-progress.png)
-- 支持 DeepSeek、OpenAI 等远端 OpenAI-compatible provider，也支持 Ollama、LM Studio、LiteRT-LM CLI 等本地 OpenAI-compatible endpoint。
-- 本地 provider 允许空 API key，可关闭 JSON mode，并默认使用更小的 `edge-small` prompt profile 与 1 并发文件夹批次。
-- 设置按通用、AI 服务连接、高级模型设置、标签推荐、索引与批量处理、诊断与反馈分组；高级模型设置默认折叠。
-- 设置页提供手动 provider 连接测试，持续显示阶段和已用时间，允许取消并隔离晚到结果，同时展示当前 endpoint 会接收哪些内容。
-- 支持中文、英文和跟随 Obsidian 当前语言的 `Auto` 模式。
-- 开发模式支持展示标签推荐和 AI 增强分析的总耗时与阶段耗时。
-- 可配置 1–200 的单批完整文件上限。
+[安装](#安装) · [快速开始](#快速开始) · [使用指南](docs/guide.zh-CN.md) · [版本发布](https://github.com/qmkCamel/obsidian-ai-tag-curator/releases) · [反馈问题](https://github.com/qmkCamel/obsidian-ai-tag-curator/issues)
 
-## Provider 配置
+![标签管理工作台：搜索标签、筛选来源、查看关联文件数和操作历史](docs/verification/assets/release-050-2026-10-09/current/host-refreshed.png)
 
-在插件设置中先选择 `Provider preset`，再按需配置：
+*Obsidian 1.14.4 中的 0.5.0 工作台，截图来自合成测试库。*
 
-- `Provider 类型`（仅 `自定义` preset 展示）
-- `API base URL`（标准 preset 只读，`自定义` preset 可编辑）
-- `API key`（远端 provider 必填；本地 provider 可留空）
-- `Model`
-- `JSON mode`
-- `Prompt profile`
-- `Provider 并发`
+## 可以做什么
 
-常见 OpenAI-compatible 配置示例：
+| 任务 | 提供的能力 | 是否需要 AI |
+| --- | --- | --- |
+| 浏览与整理标签 | 搜索、来源与目录筛选、相关笔记、审查后改名或合并 | 不需要 |
+| 检查标签健康度 | 重复标签、命名不一致等问题的规则证据 | 不需要；AI 解释和优先级分析可选 |
+| 为当前笔记打标签 | 优先复用已有标签，展示理由、置信度，逐项选择 | 生成推荐需要 |
+| 为文件夹打标签 | 限定范围、逐笔记审查、最终确认的批次建议 | 生成推荐需要 |
+| 查看与撤销修改 | 统一操作历史、未完成操作恢复 | 不需要 |
 
-| Provider | 类型 | API base URL | API key | Model 示例 |
-| --- | --- | --- | --- | --- |
-| OpenAI | 远端 | `https://api.openai.com/v1` | 必填 | `gpt-4o-mini` |
-| DeepSeek | 远端 | `https://api.deepseek.com` | 必填 | `deepseek-chat` |
-| Ollama | 本地 | `http://127.0.0.1:11434/v1` | 可空 | `qwen3.8:27b` |
-| LM Studio | 本地 | `http://127.0.0.1:1234/v1` | 可空 | 本地已加载模型名 |
-| LiteRT-LM CLI | 本地 | `http://127.0.0.1:9379/v1` | 可空 | `litert-lm serve` 暴露的模型名 |
+界面支持简体中文、英文，也可以自动跟随 Obsidian 的语言。
 
-API key 会保存在本地 Obsidian 插件数据中，不会进入文件夹批次快照或操作日志。插件不会自动安装、启动、下载或管理任何本地模型；如果配置的本地 endpoint 不是 `127.0.0.1` / `localhost`，设置页和文件夹范围确认会提示内容会发送到该地址。
+例如，将 `#project-ideas` 和 `#project_ideas` 合并到一个选定标签：先检查受影响笔记和标签位置，再确认应用。未勾选的位置保持不变。将 `#project` 改名不会同时修改 `#project/active`。
 
-Apple Foundation Models、Android Gemini Nano/AICore、Chrome Prompt API 和 LiteRT-LM JS 这类原生端上 SDK 不会直接打包进 Obsidian 插件运行时；本阶段只通过显式本地 OpenAI-compatible endpoint 接入。详细调研见 [端上模型支持调研](docs/on-device-model-support-research.zh-CN.md)。
+## 安装
 
-### Ollama + Qwen3.8 快速开始
+需要 **Obsidian 1.8.7 或更高版本**。0.5.0 已在 macOS 的 Obsidian 1.8.7 和 1.14.4 上完成验收；Windows、Linux 和移动设备尚未验证。详见[发布验收记录](docs/verification/0.5.0-release-acceptance.zh-CN.md)。
 
-以下路径已在 Apple M2 Pro、32GB 统一内存上使用 Ollama `0.32.15` 和约 17GB 的 `qwen3.8:27b` 验证。其他硬件请根据可用内存选择更小模型。
+1. 打开[最新版本发布页](https://github.com/qmkCamel/obsidian-ai-tag-curator/releases/latest)。
+2. 从同一个版本的 **Assets** 下载 **`main.js`**、**`manifest.json`** 和 **`styles.css`**。
+3. 在你的库中创建 `.obsidian/plugins/ai-tag-curator/`，将这三个文件放进去。
+4. 重新加载 Obsidian，在 **设置 → 第三方插件** 中启用 **AI Tag Curator**。
 
-1. 安装并启动 Ollama：
+这种安装方式不需要 Node.js 或构建工具。源码构建、并排安装开发版见[从源码构建](docs/guide.zh-CN.md#从源码构建)。
 
-```bash
-brew install --cask ollama-app
-ollama --version
-```
+升级现有安装前，请备份库与插件数据，处理完未完成操作，并阅读 [0.5.0 升级说明](docs/guide.zh-CN.md#升级到-050)，特别是撤销顺序和旧操作记录的变化。
 
-启动 Ollama 应用；也可以在需要手动运行服务时使用 `ollama serve`。
+## 快速开始
 
-2. 下载并确认模型：
+先体验本地管理，AI 服务可以之后再配置。
 
-```bash
-ollama pull qwen3.8:27b
-ollama list
-```
+1. 打开命令面板，执行 **标签管理**，或点击侧边栏的标签图标。
+2. 如果索引不存在或已过期，先刷新，再搜索标签并查看相关笔记。
+3. 选择改名或合并，检查文件、属性标签和正文标签位置，确认所选变更。
+4. 在 **历史** 中查看结果，或撤销最近一条符合条件的操作。
 
-3. 验证原生接口和 OpenAI-compatible 接口：
+批量修改前请先备份库。浏览筛选用于查找标签；**范围与保护**用于设置全局排除目录和受保护标签。最终改哪些位置，由审查中的勾选决定。
 
-```bash
-curl -fsS http://127.0.0.1:11434/api/version
-curl -fsS http://127.0.0.1:11434/v1/models
-curl -fsS http://127.0.0.1:11434/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"qwen3.8:27b","messages":[{"role":"user","content":"Return exactly {\"ok\":true} as JSON."}],"stream":false}'
-```
+只想检查库而不修改时，执行 **分析标签健康度**，无需配置 AI 即可查看规则证据。
 
-4. 在插件设置的“AI 服务连接”分组中选择：
+## 可选 AI
 
-- Provider preset：`Ollama`
-- API base URL：`http://127.0.0.1:11434/v1`（由 preset 管理）
-- Model：`qwen3.8:27b`
-- API key：留空
-- 高级模型设置：`edge-small`、并发 `1`；JSON mode 默认关闭，如模型连接测试确认支持可再开启
-- 点击“测试连接”，等待设置页内的阶段、已用时间和最终结果
+在 **设置 → AI Tag Curator → AI 服务连接** 中选择服务，填写你可使用的模型，点击 **测试连接**。
 
-切换 provider 会清空旧 API key，并应用目标 provider 的安全默认值。本地模型连接测试和推荐可能耗时数分钟；取消后 UI 会丢弃晚到结果，但已经发给 Ollama 的推理请求仍可能继续运行到结束。
+| 服务预设 | 连接方式 | API key |
+| --- | --- | --- |
+| OpenAI / DeepSeek | 远端 OpenAI-compatible 服务 | 必填 |
+| Ollama / LM Studio / LiteRT-LM CLI | 你已启动的本地 OpenAI-compatible 服务 | 可留空 |
+| Custom | 自行指定的兼容接口 | 取决于服务类型 |
 
-### 能力边界
+随后打开一篇 Markdown 笔记，执行 **为当前笔记推荐标签**，查看理由并勾选需要的标签后应用。处理多篇笔记时，执行 **为文件夹批量生成标签建议**，先确认范围再生成。
 
-插件当前只使用文本 `chat/completions` 并要求可解析的结构化 JSON。即使 Ollama、LocalAI 或其他 runtime 本身支持更多能力，插件目前也不会调用 vision、图像生成、语音、embeddings、tools/agent、流式输出或原生 Apple/Google 端上 SDK。
+文件夹批次默认最多 50 篇 Markdown，可配置为 1 到 200 篇。超过上限会阻断，不会静默截取部分文件。手动改名或合并也最多审查 200 个候选文件。
 
-### 常见问题
+健康报告中的 AI 建议会解释诊断、目标标签、优先级与风险。是否可执行由本地规则决定，生成分析不会直接应用修改。
 
-- endpoint 不可达：确认 Ollama 已启动，并运行 `lsof -nP -iTCP:11434 -sTCP:LISTEN` 和 `/api/version` 检查。
-- 模型 404：运行 `ollama list`，把插件中的 Model 改为完全一致的名称。
-- JSON mode / `response_format` 不兼容：展开“高级模型设置”，关闭 JSON mode 后重新测试。
-- 返回内容不是 JSON：保留 `edge-small`，确认模型遵循结构化输出；必要时换用指令遵循更稳定的模型。
-- 推理很慢：运行 `ollama ps` 查看驻留模型；避免同时驻留多个大模型，并降低批次并发或改用更小模型。
+接口配置、JSON 兼容性和慢请求处理见[服务配置、本地模型示例与排查指南](docs/guide.zh-CN.md#provider-配置)。插件连接你提供的模型服务，不会下载或启动模型。
 
-## 本地安装
+## 数据与修改边界
 
-1. 安装依赖：
+- **本地流程：** 标签索引、浏览、手动管理和基于规则的健康分析无需 AI 请求。
+- **AI 请求：** 推荐会向配置的接口发送有长度限制的笔记内容、路径、已有标签及部分标签索引示例；健康分析发送报告、标签统计及部分文件路径和片段。文件夹推荐逐篇请求。
+- **接口选择：** 不会自动回退到云端。即使服务类型设为本地，只要地址指向其他机器，提交的内容也会发送到那台机器。
+- **凭据：** API key 保存在 Obsidian 插件数据中，不写入批次快照或操作日志。
+- **审查后写入：** 当前笔记和文件夹推荐只更新笔记的 `tags` 属性（YAML frontmatter）。手动管理和健康报告中的改名/合并还可修改逐项审查、位置经过验证的正文 `#tag`。
+- **撤销与恢复：** 笔记、批次和清理共用撤销顺序，只能撤销全局最近一条符合条件的活动操作。未完成恢复会阻止新写入；部分旧清理记录只读。
+- **限制：** 不支持删除、拆分、仅大小写改名、自动改名子标签或乱序撤销。YAML 引号和排版可能变化。取消 AI 请求无法撤回已发送的工作，服务方仍可能计费。
 
-```bash
-npm install
-```
-
-2. 构建插件：
-
-```bash
-npm run build
-```
-
-3. 在目标 Obsidian 库中创建插件目录：
-
-```bash
-mkdir -p /path/to/your-vault/.obsidian/plugins/ai-tag-curator
-```
-
-4. 复制构建产物：
-
-```bash
-cp main.js manifest.json styles.css .hotreload /path/to/your-vault/.obsidian/plugins/ai-tag-curator/
-```
-
-5. 打开 Obsidian，进入 `Settings -> Community plugins`，启用 `AI Tag Curator`。
-
-构建产物包括：
-
-- `main.js`
-- `manifest.json`
-- `styles.css`
-- `.hotreload`，用于配合 [Hot Reload](https://github.com/pjeby/hot-reload) 插件进行本地开发
-
-本地开发时，也可以直接安装到 Obsidian 库：
-
-```bash
-OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install
-```
-
-如果要和插件市场版本并排安装，使用 dev 版本：
-
-```bash
-OBSIDIAN_VAULT_PATH=/path/to/your-vault npm run local:install-dev
-```
-
-安装脚本要求显式设置 `OBSIDIAN_VAULT_PATH`，避免把插件写入错误或未登记的 Obsidian 库。
-
-### 发布截图测试库
-
-准备或重置用于真实 Obsidian smoke 与发布截图的合成测试库：
-
-```bash
-OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault npm run release:vault:prepare
-```
-
-必须显式设置 `OBSIDIAN_RELEASE_VAULT_PATH`，因为命令会重置合成发布笔记。脚本会安装并排的开发版插件并关闭 Obsidian Sync；未提供主题源时使用 Obsidian 默认外观。如需复用某个测试库的主题，可选设置：
-
-```bash
-OBSIDIAN_RELEASE_VAULT_PATH=/path/to/test-vault \
-OBSIDIAN_THEME_SOURCE_VAULT=/path/to/theme-source \
-npm run release:vault:prepare
-```
-
-脚本只会从可选主题源复制当前外观配置、对应主题目录和核心插件配置，不会复制个人笔记或凭据。
-
-启动确定性的本地 provider 后再验证 AI 流程：
-
-```bash
-npm run release:mock
-```
-
-发布候选构建完成后，校验版本元数据并输出三个必需发布资产的大小与 SHA-256：
-
-```bash
-npm run build
-npm run release:verify
-```
-
-## 使用流程
-
-### 无 AI 的本地管理
-
-1. 执行 `标签管理` 或点击标签 ribbon 图标，不必先配置 provider 或打开笔记。
-2. 为无索引/过期状态执行刷新，搜索并选择精确标签，确认范围与保护规则。
-3. 审查改名/合并 diff 并确认所选变更，在历史中检查结果及全局最近操作的撤销/恢复资格。
-
-批量修改前请先备份库；已验证平台和剩余限制见[发布验收](docs/verification/0.5.0-release-acceptance.zh-CN.md)。
-
-### 可选 AI 流程
-
-1. 配置 provider 类型、preset、API base URL、API key（本地 provider 可留空）和 model。
-2. 执行 `刷新标签索引`。
-3. 打开一篇 Markdown 笔记。
-4. 执行 `为当前笔记推荐标签`。
-5. 在推荐弹窗中检查结果，只应用想保留的标签。
-6. 执行 `为文件夹批量生成标签建议`，确认范围、生成候选并在写入前审查整个批次。
-7. 从历史或 `撤销最近一次文件夹批量标签操作` 回退批次，前提是该批次仍为全局最近可撤销操作。
-8. 执行 `分析标签健康度` 查看库级标签问题。
-9. 可在健康报告中执行 `AI 增强分析`。
-10. 从历史或 `撤销当前笔记最近标签修改` 回退当前笔记写入，前提是它仍为全局最近可撤销操作；存在未完成恢复时先处理恢复。
-
-## 插件命令
-
-插件界面语言默认是 `Auto`，会跟随 Obsidian 当前语言。中文界面下的命令是：
-
-- `标签管理`
-- `刷新标签索引`
-- `查看标签索引摘要`
-- `分析标签健康度`
-- `为当前笔记推荐标签`
-- `为文件夹批量生成标签建议`
-- `撤销当前笔记最近标签修改`
-- `撤销最近一次文件夹批量标签操作`
-- `处理未完成标签操作`
-
-## 升级到 0.5.0
-
-- 升级前备份库与插件数据，先完成未解决操作的恢复。启用插件后刷新标签索引，重载缓存最初会标记为过期。
-- 撤销改为跨笔记、批次、清理的全局顺序：即使更新操作修改了其他文件，也必须先撤销它。缺少恢复证据的旧多文件 cleanup 记录保持只读。
-- 改名与合并保留未选标签原值，但 YAML 引号和排版可能变化。不支持的标量/混合 `tags` 保持只读，改名不会自动迁移子标签。
-- 降级前完成撤销/恢复并再次备份；旧版本可能无法理解新增的原值历史字段。
-- 最低支持 Obsidian 1.8.7；发布构建已通过 macOS 上 1.8.7 与 1.14.4 的桌面验收，真实移动端和 Windows/Linux 仍未验证。
-
-## 开发
-
-运行测试：
-
-```bash
-npm test
-```
-
-构建：
-
-```bash
-npm run build
-```
-
-OpenSpec 工作流：
-
-```bash
-npm run spec:list
-npm run spec:status -- --change <change-name>
-npm run spec:validate -- <change-name>
-```
-
-后续产品功能先创建 OpenSpec change proposal，再进入实现。
-
-## 当前限制
-
-- 当前笔记推荐和文件夹批次仍只写 frontmatter `tags`；它们可以把已审查 inline tags 同步进 frontmatter，但不改正文。
-- 正文写入限于健康报告的确定性合并/重命名审查和工作台的手动审查：两者均只替换用户勾选且缓存位置精确匹配的完整 `#tag` token，不做模糊搜索、全局替换、添加、删除、拆分或 AI 生成的正文写入。
-- 手动管理只针对精确标签身份，不迁移子树，不支持后代传播或仅大小写改名；非法目标直接拒绝，不静默规范化成另一种请求。
-- 撤销遵守全局操作顺序，不按所选类型取最近记录。legacy 多文件清理只读，不支持乱序撤销或 redo；旧记录没有保存过的标签字面量/排版不能推断还原。
-- 新精确标签 patch 保留未选值、正文及非 tags 属性语义，但 YAML 引号/排版可能变化；不支持的标量/混合 tags 或无法安全往返的 YAML 保持只读。降级前需备份并完成未解决的撤销/恢复；旧插件可能无法理解新增原值恢复字段。
-- 发布构建已在 macOS 的 Obsidian 1.8.7 与 1.14.4 验证主流程、受控写入/补偿失败后的完整应用重启恢复。历史合成浏览器宽窄、深浅主题及键盘证据单列；移动端、Windows/Linux 和突然断电仍未验证，详见[发布验收](docs/verification/0.5.0-release-acceptance.zh-CN.md)。
-- 远端 provider 仍要求 API key；本地 OpenAI-compatible provider 可以留空 API key，但仍必须配置 base URL 和 model。
-- 插件只调用用户显式配置的 provider endpoint，不会自动安装、启动或下载任何模型，也不会静默云端 fallback。
-- 文件夹批次必须在当前配置的 1–200 篇完整上限内；超过上限会阻断，而不是截取前 N 篇。
-- 取消无法撤回已经发给 provider 的请求，因此在途请求仍可能计费，但其晚到结果会被丢弃。
-- 文件夹批次只允许新增标签；删除、替换、合并和正文改写仍在文件夹工作流边界之外。
-- 标签健康报告中的规则证据是只读诊断；可执行清理项必须经过文件预览和用户手动确认。
-- AI 增强健康分析只提供总体判断和行动建议说明，不能改变本地动作能力，也不能直接执行变更。
-- 清理计划会标记动作能力；可执行的合并/重命名项可以手动应用并回退，其他项保持仅预览、仅观察或需人工判断。
-- AI 返回内容必须是结构化 JSON，解析失败时不会修改任何文件。
+大范围修改或降级前，请阅读[完整限制说明](docs/guide.zh-CN.md#当前限制)。
 
 ## 文档
 
-- [更新日志](CHANGELOG.md)
-- [许可证](LICENSE)
-- [Obsidian 插件市场发布清单](docs/release-checklist.zh-CN.md)
-- [英文产品交接文档](docs/product-handoff.md)
-- [中文产品说明](docs/product-handoff.zh-CN.md)
-- [中文技术方案](docs/technical-design.zh-CN.md)
-- [中文路线图](docs/roadmap.zh-CN.md)
-- [工作台验证记录与宿主缺口](docs/verification/tag-management-workbench.md)
-- [OpenSpec 项目上下文](openspec/project.md)
+| 想了解什么 | 文档入口 |
+| --- | --- |
+| 完整流程、截图与命令 | [使用指南](docs/guide.zh-CN.md) |
+| AI 服务配置与排查 | [AI 配置](docs/guide.zh-CN.md#provider-配置) |
+| 升级与降级注意事项 | [0.5.0 升级说明](docs/guide.zh-CN.md#升级到-050) |
+| 各版本变化 | [双语更新日志](CHANGELOG.md) |
+| 已测试平台与发布证据 | [0.5.0 发布验收](docs/verification/0.5.0-release-acceptance.zh-CN.md) |
+| 产品方向 | [路线图](docs/roadmap.zh-CN.md) |
+| 架构与开发约定 | [技术方案](docs/technical-design.zh-CN.md) · [项目上下文](openspec/project.md) |
+
+## 反馈与贡献
+
+通过 [GitHub Issues](https://github.com/qmkCamel/obsidian-ai-tag-curator/issues) 报告问题或提出建议。请附上插件版本、Obsidian 版本、操作系统、复现步骤、预期结果与实际结果。AI 相关问题请补充服务类型和模型名称，并从日志或截图中移除 API key 和私人笔记内容。
+
+欢迎文档修正、翻译和 bug 修复。新增产品功能先通过 issue 讨论，并创建 OpenSpec 提案，具体见[项目约定](openspec/project.md)。提交信息遵循[中英双语格式](AGENTS.md)。
+
+本地开发使用 [mise.toml](mise.toml) 指定的 Node.js 版本，然后运行：
+
+```bash
+git clone https://github.com/qmkCamel/obsidian-ai-tag-curator.git
+cd obsidian-ai-tag-curator
+npm ci
+npm test
+npm run build
+```
+
+在测试库中并排安装开发版：
+
+```bash
+OBSIDIAN_VAULT_PATH=/path/to/test-vault npm run local:install-dev
+```
+
+更多步骤见[开发与 OpenSpec 命令](docs/guide.zh-CN.md#开发)和[合成发布测试库](docs/guide.zh-CN.md#发布截图测试库)。
+
+## 许可证
+
+[MIT](LICENSE)，由 [qmkCamel](https://github.com/qmkCamel) 维护。
