@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
+tests/flowassert/artifacts/
+docs/verification/assets/host-*-regression/
 

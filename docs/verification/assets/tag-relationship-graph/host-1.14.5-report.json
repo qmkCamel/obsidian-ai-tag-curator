@@ -1,0 +1,103 @@
+{
+  "version": "1.14.5",
+  "runId": "host-1.14.5-2026-10-28T14-35-22-635Z",
+  "vault": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+  "profile": "/private/tmp/tag-curator-release-graph-PjVgBe/profile",
+  "sha": "664712386524cc7777101b7998fa9f49801d498f",
+  "assets": {
+    "main.js": "29d369f81a8d002e7d2449233f4c7ecc286b0e0aaf0b13c9752c6415d8f10f56",
+    "manifest.json": "57b1799a59a0a6756e3d7b4eba86fc88feacc3c9f9b559fafba316f9d58e9104",
+    "styles.css": "9180e34464f9672e29972634a9f71ac0dc6075c3a7477f061882dd02ef1482d4"
+  },
+  "checks": [
+    {
+      "name": "version-isolation-no-key-and-no-auto-scan",
+      "status": "passed",
+      "durationMs": 32,
+      "value": {
+        "version": "1.14.5",
+        "electron": "43.8.3",
+        "basePath": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+        "key": "",
+        "active": null
+      }
+    },
+    {
+      "name": "three-assets-offline-refresh-200-nodes-800-edges",
+      "status": "passed",
+      "durationMs": 1033,
+      "value": {
+        "nodes": 200,
+        "edges": 800
+      }
+    },
+    {
+      "name": "real-note-evidence-and-read-only-management-navigation",
+      "status": "passed",
+      "durationMs": 350
+    },
+    {
+      "name": "in-progress-file-open-search-cancel-failure-preservation",
+      "status": "passed",
+      "durationMs": 196,
+      "value": {
+        "workers": 0,
+        "urls": 0
+      }
+    },
+    {
+      "name": "owner-window-popout-offline-worker",
+      "status": "passed",
+      "durationMs": 1074
+    },
+    {
+      "name": "index-save-failure-preserves-evidence-and-last-index-time",
+      "status": "passed",
+      "durationMs": 431
+    },
+    {
+      "name": "narrow-wide-dark-light-keyboard",
+      "status": "passed",
+      "durationMs": 524
+    },
+    {
+      "name": "full-process-restart-stale-cache",
+      "status": "passed",
+      "durationMs": 1368,
+      "value": {
+        "beforePid": 29505,
+        "afterPid": 29519,
+        "freshness": "stale"
+      }
+    },
+    {
+      "name": "final-no-note-or-operation-writes",
+      "status": "passed",
+      "durationMs": 31,
+      "value": {
+        "notes": 5
+      }
+    },
+    {
+      "name": "existing-real-host-rename-merge-undo-regression",
+      "status": "passed",
+      "durationMs": 22418,
+      "value": {
+        "assets": "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression"
+      }
+    }
+  ],
+  "screenshots": [
+    "overview-200-800.png",
+    "comparison.png",
+    "popout.png",
+    "index-save-failure.png",
+    "keyboard-360-light.png",
+    "keyboard-360-dark.png",
+    "keyboard-900-light.png",
+    "keyboard-900-dark.png"
+  ],
+  "requests": [],
+  "errors": [],
+  "finishedAt": "2026-10-28T14:35:51.999Z"
+}

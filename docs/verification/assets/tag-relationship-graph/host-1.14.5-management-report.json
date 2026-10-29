@@ -1,0 +1,3081 @@
+{
+  "startedAt": "2026-10-28T14:35:29.466Z",
+  "mode": "installed",
+  "vault": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+  "checks": [
+    {
+      "name": "host-path-and-version",
+      "status": "passed",
+      "durationMs": 0,
+      "details": {
+        "basePath": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+        "title": "Tag manager - vault - Obsidian 1.14.5",
+        "activeFile": "a.md",
+        "activeEditor": false,
+        "pluginIds": [
+          "ai-tag-curator-dev"
+        ],
+        "popout": "function"
+      }
+    },
+    {
+      "name": "real-host-yaml-codec-probes",
+      "status": "passed",
+      "durationMs": 4,
+      "details": {
+        "apiVersion": "1.14.5",
+        "functions": {
+          "parseYaml": "function",
+          "stringifyYaml": "function",
+          "getFrontMatterInfo": "function",
+          "MarkdownView": "function",
+          "ItemView": "function"
+        },
+        "samples": {
+          "array": {
+            "before": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+            "after": {
+              "tags": [
+                "Old",
+                "KeepCase",
+                "KeepCase"
+              ]
+            },
+            "equal": true
+          },
+          "multiline": {
+            "before": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+            "after": {
+              "description": "line one\nline two\n",
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nested": {
+            "before": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+            "after": {
+              "nested": {
+                "enabled": true,
+                "count": 2
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "anchor": {
+            "before": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+            "after": {
+              "defaults": {
+                "enabled": true
+              },
+              "copy": {
+                "enabled": true
+              },
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          },
+          "nonTags": {
+            "before": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+            "after": {
+              "date": "2026-09-14",
+              "nullValue": null,
+              "truth": true,
+              "tags": [
+                "Old"
+              ]
+            },
+            "equal": true
+          }
+        }
+      }
+    },
+    {
+      "name": "prepare-synthetic-fixtures-and-guards",
+      "status": "passed",
+      "durationMs": 1078,
+      "details": {
+        "fixtureRoot": "Host Workbench Acceptance",
+        "files": [
+          "mixed.md",
+          "merge.md",
+          "protected.md",
+          "active.md",
+          "Excluded/private.md"
+        ]
+      }
+    },
+    {
+      "name": "no-key-no-active-open-and-reuse",
+      "status": "passed",
+      "durationMs": 442,
+      "details": {
+        "noKey": true,
+        "activeFile": null,
+        "leaves": 1
+      }
+    },
+    {
+      "name": "refresh-and-policy-exclusions",
+      "status": "passed",
+      "durationMs": 1348,
+      "details": {
+        "state": "ready",
+        "tags": [
+          "hostactive",
+          "keepcase",
+          "hosta",
+          "hosttarget",
+          "hostb",
+          "hostold",
+          "hostprotected",
+          "hostprotected/child",
+          "alpha",
+          "alpha/child",
+          "dense-000",
+          "dense-001",
+          "dense-002",
+          "dense-003",
+          "dense-004",
+          "dense-005",
+          "dense-006",
+          "dense-007",
+          "dense-008",
+          "dense-009",
+          "dense-010",
+          "dense-011",
+          "dense-012",
+          "dense-013",
+          "dense-014",
+          "dense-015",
+          "dense-016",
+          "dense-017",
+          "dense-018",
+          "dense-019",
+          "dense-020",
+          "dense-021",
+          "dense-022",
+          "dense-023",
+          "dense-024",
+          "dense-025",
+          "dense-026",
+          "dense-027",
+          "dense-028",
+          "dense-029",
+          "dense-030",
+          "dense-031",
+          "dense-032",
+          "dense-033",
+          "dense-034",
+          "dense-035",
+          "dense-036",
+          "dense-037",
+          "dense-038",
+          "dense-039",
+          "dense-040",
+          "dense-041",
+          "dense-042",
+          "dense-043",
+          "dense-044",
+          "dense-045",
+          "dense-046",
+          "dense-047",
+          "dense-048",
+          "dense-049",
+          "dense-050",
+          "dense-051",
+          "dense-052",
+          "dense-053",
+          "dense-054",
+          "dense-055",
+          "dense-056",
+          "dense-057",
+          "dense-058",
+          "dense-059",
+          "dense-060",
+          "dense-061",
+          "dense-062",
+          "dense-063",
+          "dense-064",
+          "dense-065",
+          "dense-066",
+          "dense-067",
+          "dense-068",
+          "dense-069",
+          "dense-070",
+          "dense-071",
+          "dense-072",
+          "dense-073",
+          "dense-074",
+          "dense-075",
+          "dense-076",
+          "dense-077",
+          "dense-078",
+          "dense-079",
+          "dense-080",
+          "dense-081",
+          "dense-082",
+          "dense-083",
+          "dense-084",
+          "dense-085",
+          "dense-086",
+          "dense-087",
+          "dense-088",
+          "dense-089",
+          "dense-090",
+          "dense-091",
+          "dense-092",
+          "dense-093",
+          "dense-094",
+          "dense-095",
+          "dense-096",
+          "dense-097",
+          "dense-098",
+          "dense-099",
+          "dense-100",
+          "dense-101",
+          "dense-102",
+          "dense-103",
+          "dense-104",
+          "dense-105",
+          "dense-106",
+          "dense-107",
+          "dense-108",
+          "dense-109",
+          "dense-110",
+          "dense-111",
+          "dense-112",
+          "dense-113",
+          "dense-114",
+          "dense-115",
+          "dense-116",
+          "dense-117",
+          "dense-118",
+          "dense-119",
+          "dense-120",
+          "dense-121",
+          "dense-122",
+          "dense-123",
+          "dense-124",
+          "dense-125",
+          "dense-126",
+          "dense-127",
+          "dense-128",
+          "dense-129",
+          "dense-130",
+          "dense-131",
+          "dense-132",
+          "dense-133",
+          "dense-134",
+          "dense-135",
+          "dense-136",
+          "dense-137",
+          "dense-138",
+          "dense-139",
+          "dense-140",
+          "dense-141",
+          "dense-142",
+          "dense-143",
+          "dense-144",
+          "dense-145",
+          "dense-146",
+          "dense-147",
+          "dense-148",
+          "dense-149",
+          "dense-150",
+          "dense-151",
+          "dense-152",
+          "dense-153",
+          "dense-154",
+          "dense-155",
+          "dense-156",
+          "dense-157",
+          "dense-158",
+          "dense-159",
+          "dense-160",
+          "dense-161",
+          "dense-162",
+          "dense-163",
+          "dense-164",
+          "dense-165",
+          "dense-166",
+          "dense-167",
+          "dense-168",
+          "dense-169",
+          "dense-170",
+          "dense-171",
+          "dense-172",
+          "dense-173",
+          "dense-174",
+          "dense-175",
+          "dense-176",
+          "dense-177",
+          "dense-178",
+          "dense-179",
+          "dense-180",
+          "dense-181",
+          "dense-182",
+          "dense-183",
+          "dense-184",
+          "dense-185",
+          "dense-186",
+          "dense-187",
+          "dense-188",
+          "dense-189",
+          "dense-190",
+          "dense-191",
+          "dense-192",
+          "dense-193",
+          "dense-194",
+          "dense-195",
+          "dense-196",
+          "dense-197",
+          "dense-198",
+          "dense-199",
+          "unrelated"
+        ],
+        "scope": {
+          "include": [
+            {
+              "path": "Host Workbench Acceptance",
+              "recursive": true
+            }
+          ]
+        },
+        "policy": {
+          "schemaVersion": 1,
+          "revision": 1,
+          "excludedFolders": [
+            "Host Workbench Acceptance/Excluded"
+          ],
+          "protectedTags": [
+            {
+              "tag": "hostprotected",
+              "mode": "subtree"
+            }
+          ]
+        },
+        "excludedReads": []
+      }
+    },
+    {
+      "name": "scope-only-policy-revision-stable",
+      "status": "passed",
+      "durationMs": 230,
+      "details": {
+        "before": {
+          "revision": 1,
+          "indexRevision": 2,
+          "freshness": "ready"
+        },
+        "after": {
+          "revision": 1,
+          "indexRevision": 2,
+          "freshness": "ready",
+          "scope": {
+            "include": [
+              {
+                "path": "Host Workbench Acceptance",
+                "recursive": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "manual-rename-mixed-raw-values-and-body",
+      "status": "passed",
+      "durationMs": 2590,
+      "details": {
+        "renameId": "1793198135017-99q13uhe1da",
+        "properties": {
+          "tags": [
+            "HostNew/Name",
+            "KeepCase",
+            "KeepCase"
+          ],
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "description": "line one\nline two\n"
+        },
+        "body": "\nBody #HostNew/Name and #KeepCase. Repeat #HostNew/Name.\n`#HostOld` must remain.\n"
+      }
+    },
+    {
+      "name": "history-and-undo-after-plugin-reload",
+      "status": "passed",
+      "durationMs": 1651,
+      "details": {
+        "receipt": {
+          "id": "1793198135017-99q13uhe1da",
+          "createdAt": "2026-10-28T14:35:35.017Z",
+          "origin": "manual",
+          "action": "rename",
+          "status": "undone",
+          "files": [
+            {
+              "path": "Host Workbench Acceptance/mixed.md",
+              "beforeTags": [
+                "HostOld",
+                "KeepCase",
+                "KeepCase"
+              ],
+              "afterTags": [
+                "HostNew/Name",
+                "KeepCase",
+                "KeepCase"
+              ],
+              "inlineChanges": [
+                {
+                  "before": "#HostOld",
+                  "after": "#HostNew/Name"
+                },
+                {
+                  "before": "#HostOld",
+                  "after": "#HostNew/Name"
+                }
+              ]
+            }
+          ],
+          "canUndo": false,
+          "canRecover": false,
+          "legacy": false,
+          "unresolved": false,
+          "readOnlyReason": "completed",
+          "policyExceptions": []
+        },
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/mixed.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "manual-merge-existing-target-and-undo",
+      "status": "passed",
+      "durationMs": 2941,
+      "details": {
+        "id": "1793198139249-7lphof9mhvn",
+        "tags": [
+          "HOSTTarget",
+          "KeepCase",
+          "KeepCase"
+        ],
+        "body": "\nMerge #HostTarget and #HostTarget, existing #HOSTTarget.\n",
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/merge.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "protected-source-and-target-zero-writes",
+      "status": "passed",
+      "durationMs": 1404,
+      "details": {
+        "markdownWriteCalls": 0
+      }
+    },
+    {
+      "name": "stale-confirmation-conflict-zero-plugin-writes",
+      "status": "passed",
+      "durationMs": 1485,
+      "details": {
+        "markdownWritesByPlugin": 0,
+        "operationIntentCreated": false
+      }
+    },
+    {
+      "name": "active-editor-edit-mixed-rename-and-undo",
+      "status": "passed",
+      "durationMs": 5494,
+      "details": {
+        "activePathAfterWorkbenchFocus": null,
+        "activePathAtReview": "Host Workbench Acceptance/active.md",
+        "editorEqualsDisk": true,
+        "restored": {
+          "rawTagValuesAndNonTagSemanticsRestored": true,
+          "bodyRestoredByteForByte": true,
+          "yamlReformatted": [
+            "Host Workbench Acceptance/active.md"
+          ]
+        }
+      }
+    },
+    {
+      "name": "popout-workbench-policy-modal-and-close",
+      "status": "passed",
+      "durationMs": 3073,
+      "details": {
+        "basePath": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+        "history": true,
+        "width": 1024,
+        "height": 800
+      }
+    },
+    {
+      "name": "original-nonfixture-notes-unchanged",
+      "status": "passed",
+      "durationMs": 23,
+      "details": {
+        "verifiedFiles": 5
+      }
+    },
+    {
+      "name": "local-plugin-network-zero-requests",
+      "status": "passed",
+      "durationMs": 1,
+      "details": {
+        "pluginRequestUrl": 0,
+        "pluginRendererRequests": 0,
+        "unrelatedRendererRequests": 0
+      }
+    }
+  ],
+  "screenshots": [
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-probe.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-no-key-no-active.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-refreshed.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-rename-review.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-manual-confirmation.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-rename-applied.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-history-after-reload.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-history-before-undo.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-undo-persisted.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-merge-review.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-policy-protected.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-conflict-zero-writes.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-active-editor-review.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-active-editor-applied.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-popout-workbench.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-popout-policy-modal.png",
+    "docs/verification/assets/host-1.14.5-2026-10-28T14-35-22-635Z-regression/host-popout-history.png"
+  ],
+  "network": [],
+  "unverified": [
+    "Minimum supported Obsidian 1.8.7",
+    "Real mobile device",
+    "Full application restart (only dev-plugin reload exercised)",
+    "Recovery after partial I/O failure and compensation"
+  ],
+  "host": {
+    "basePath": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+    "title": "Tag manager - vault - Obsidian 1.14.5",
+    "activeFile": "a.md",
+    "activeEditor": false,
+    "pluginIds": [
+      "ai-tag-curator-dev"
+    ],
+    "popout": "function"
+  },
+  "build": {
+    "main.js": "29d369f81a8d002e7d2449233f4c7ecc286b0e0aaf0b13c9752c6415d8f10f56",
+    "styles.css": "9180e34464f9672e29972634a9f71ac0dc6075c3a7477f061882dd02ef1482d4"
+  },
+  "yaml": {
+    "apiVersion": "1.14.5",
+    "functions": {
+      "parseYaml": "function",
+      "stringifyYaml": "function",
+      "getFrontMatterInfo": "function",
+      "MarkdownView": "function",
+      "ItemView": "function"
+    },
+    "samples": {
+      "array": {
+        "before": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "encoded": "tags:\n  - Old\n  - KeepCase\n  - KeepCase\n",
+        "after": {
+          "tags": [
+            "Old",
+            "KeepCase",
+            "KeepCase"
+          ]
+        },
+        "equal": true
+      },
+      "multiline": {
+        "before": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "description: |\n  line one\n  line two\ntags:\n  - Old\n",
+        "after": {
+          "description": "line one\nline two\n",
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nested": {
+        "before": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "nested:\n  enabled: true\n  count: 2\ntags:\n  - Old\n",
+        "after": {
+          "nested": {
+            "enabled": true,
+            "count": 2
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "anchor": {
+        "before": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "defaults:\n  enabled: true\ncopy:\n  enabled: true\ntags:\n  - Old\n",
+        "after": {
+          "defaults": {
+            "enabled": true
+          },
+          "copy": {
+            "enabled": true
+          },
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      },
+      "nonTags": {
+        "before": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "encoded": "date: 2026-09-14\nnullValue:\ntruth: true\ntags:\n  - Old\n",
+        "after": {
+          "date": "2026-09-14",
+          "nullValue": null,
+          "truth": true,
+          "tags": [
+            "Old"
+          ]
+        },
+        "equal": true
+      }
+    }
+  },
+  "networkProbe": {
+    "requestUrlBreakpoint": "7:1",
+    "filtering": "Only plugin sourceURL call stacks counted; updater/unattributed renderer requests listed separately, not failures."
+  },
+  "inputLimitations": [
+    "Popout native focus not observed; dispatched a window focus event before real CDP mouse input. Manual native activation remains unverified."
+  ],
+  "requestUrlCalls": [],
+  "finalHost": {
+    "basePath": "/private/tmp/tag-curator-release-graph-PjVgBe/vault",
+    "title": "Tag manager - vault - Obsidian 1.14.5",
+    "modals": []
+  },
+  "ioAudit": {
+    "writes": [
+      {
+        "name": "create",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198130087
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198130087
+      },
+      {
+        "name": "create",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198130090
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198130090
+      },
+      {
+        "name": "create",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198130092
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198130092
+      },
+      {
+        "name": "create",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198130094
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198130094
+      },
+      {
+        "name": "create",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198130100
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198130101
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198130105
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198130152
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198130153
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198131083
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198131719
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198132166
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198132956
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198133068
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198133315
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198135019
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135021
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135024
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198135028
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198135030
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198135145
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198136644
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136646
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136649
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198136651
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198136655
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198136770
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198136776
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198137543
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198137980
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198139250
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139252
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139255
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198139259
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198139261
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198139376
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198140035
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140037
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140041
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198140044
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198140045
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198140162
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198140497
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198141887
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198142721
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198142721
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198143248
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198143248
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198144262
+      },
+      {
+        "name": "modify",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145280
+      },
+      {
+        "name": "write",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145280
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198145520
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198147215
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147217
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147218
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198147224
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198147230
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198147344
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198148406
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148408
+      },
+      {
+        "name": "process",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148413
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198148415
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198148419
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/plugins/ai-tag-curator-dev/data.json",
+        "plugin": false,
+        "time": 1793198148538
+      },
+      {
+        "name": "write",
+        "path": ".obsidian/workspace.json",
+        "plugin": false,
+        "time": 1793198149745
+      }
+    ],
+    "reads": [
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198130077
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198130077
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198130077
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198130077
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198130077
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198131602
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198131602
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198131602
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198131602
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198131603
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198131603
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198131603
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198131603
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198131718
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198133176
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198133177
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198133177
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198133177
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198133178
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198133178
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198133178
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198133178
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198133178
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198133179
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198133188
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198133188
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198133188
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198133188
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198133189
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198133189
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198133189
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198133189
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198133313
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198134153
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198134594
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198134594
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198134594
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198134595
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135012
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135013
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135021
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135023
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198135031
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198135031
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198135031
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198135031
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198135032
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198135032
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198135032
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198135032
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198135144
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198135338
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198135338
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198135339
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198135339
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198135339
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198135339
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198135339
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198135340
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198135340
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198135340
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198135341
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136641
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136642
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136645
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136645
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136649
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198136656
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198136656
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198136656
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198136657
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198136657
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198136657
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198136657
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198136657
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198136769
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198136961
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198136961
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198136961
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198136962
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198136962
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198136962
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198136962
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198136963
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198136963
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198136963
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198136965
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198136966
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198136966
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198136966
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198136966
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198136967
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198136967
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198136967
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198136967
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198136967
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198137427
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198137427
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198137427
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198137427
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198137428
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198137428
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198137428
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198137428
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198137541
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198138379
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139245
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139246
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139252
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139255
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198139262
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198139262
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198139262
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198139262
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198139263
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198139263
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198139263
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198139263
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198139374
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198139567
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140033
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140033
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140036
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140037
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140041
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198140047
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140047
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198140047
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198140047
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198140048
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198140048
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198140048
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198140048
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198140160
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198140353
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198140354
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198140354
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198140354
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198140355
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198140355
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198140355
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198140355
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198140356
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198140356
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198140358
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198140359
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198140359
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198140359
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198140359
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198140359
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198140360
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198140360
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198140360
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198140360
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198140370
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198140370
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198140370
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198140370
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198140371
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198140371
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198140371
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198140371
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198140496
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198141326
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198141327
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198141327
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198141327
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198141328
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198141328
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198141328
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198141328
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198141328
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198141329
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198141772
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198141885
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198142713
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198142725
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198142726
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198142726
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198142727
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198142733
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198142734
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198142734
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198142734
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198142734
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143260
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143280
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143383
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143485
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143590
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143696
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143799
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198143903
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144008
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144114
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144220
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144325
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144430
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144533
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144637
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144742
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144847
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198144953
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145057
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145162
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145268
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145372
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198145374
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198145374
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198145375
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198145375
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198145375
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198145375
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198145376
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198145376
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198145376
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198145376
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198145389
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198145389
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198145389
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198145389
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198145390
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198145390
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198145390
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198145390
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198145518
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198146347
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147211
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147211
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147217
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198147217
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198147217
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147218
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198147222
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198147222
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198147231
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198147343
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198147536
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148404
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148405
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148407
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148408
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148409
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148409
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148409
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148414
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148414
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": true,
+        "time": 1793198148422
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": true,
+        "time": 1793198148422
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": true,
+        "time": 1793198148422
+      },
+      {
+        "name": "cachedRead",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": true,
+        "time": 1793198148422
+      },
+      {
+        "name": "cachedRead",
+        "path": "a.md",
+        "plugin": true,
+        "time": 1793198148423
+      },
+      {
+        "name": "cachedRead",
+        "path": "b.md",
+        "plugin": true,
+        "time": 1793198148423
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-a.md",
+        "plugin": true,
+        "time": 1793198148423
+      },
+      {
+        "name": "cachedRead",
+        "path": "dense-b.md",
+        "plugin": true,
+        "time": 1793198148423
+      },
+      {
+        "name": "cachedRead",
+        "path": "zero.md",
+        "plugin": true,
+        "time": 1793198148537
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148728
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198148729
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198148730
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198148730
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198148730
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198148730
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198148731
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198148731
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198148731
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198148731
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198148741
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198148741
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198148741
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198148742
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198148742
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198148742
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198148742
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198148743
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198148743
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198148743
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/active.md",
+        "plugin": false,
+        "time": 1793198151838
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/protected.md",
+        "plugin": false,
+        "time": 1793198151838
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/merge.md",
+        "plugin": false,
+        "time": 1793198151838
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/mixed.md",
+        "plugin": false,
+        "time": 1793198151838
+      },
+      {
+        "name": "read",
+        "path": "Host Workbench Acceptance/Excluded/private.md",
+        "plugin": false,
+        "time": 1793198151839
+      },
+      {
+        "name": "read",
+        "path": "zero.md",
+        "plugin": false,
+        "time": 1793198151839
+      },
+      {
+        "name": "read",
+        "path": "dense-b.md",
+        "plugin": false,
+        "time": 1793198151839
+      },
+      {
+        "name": "read",
+        "path": "dense-a.md",
+        "plugin": false,
+        "time": 1793198151839
+      },
+      {
+        "name": "read",
+        "path": "b.md",
+        "plugin": false,
+        "time": 1793198151839
+      },
+      {
+        "name": "read",
+        "path": "a.md",
+        "plugin": false,
+        "time": 1793198151839
+      }
+    ]
+  },
+  "finishedAt": "2026-10-28T14:35:51.845Z"
+}

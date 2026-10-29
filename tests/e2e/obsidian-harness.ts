@@ -1311,3 +1311,4 @@ export const obsidianMock = {
   setIcon,
   normalizePath
 };
+export const Platform = { isMobile: false };

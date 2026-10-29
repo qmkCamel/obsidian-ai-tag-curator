@@ -79,7 +79,7 @@ async function waitFor(code, label, timeout = 15000, client = cdp) {
 }
 
 async function screenshot(name, client = cdp) {
-  await client.eval(`const win=require('@electron/remote').getCurrentWindow();if(win.isMinimized())win.restore();win.show();win.focus();`);
+  await client.eval(`const win=window.electronWindow??require('@electron/remote').getCurrentWindow();if(win.isMinimized?.())win.restore();win.show();win.focus();`);
   await client.call('Page.bringToFront');
   let data;
   for (let attempt=0;attempt<2;attempt++) {
@@ -137,7 +137,7 @@ async function click(label, root = 'document', client = cdp) {
   await client.eval(`const root=${root};const el=Array.from(root.querySelectorAll('button,[role="tab"]')).find(e=>e.getAttribute('aria-label')===${JSON.stringify(label)}||e.textContent.trim()===${JSON.stringify(label)});if(!el)throw new Error('Button missing: '+${JSON.stringify(label)});if(el.disabled)throw new Error('Button disabled: '+${JSON.stringify(label)});el.click();`);
 }
 async function focusClick(key, client = cdp) {
-  await client.eval(`const el=Array.from(document.querySelectorAll('[data-focus]')).find(e=>e.dataset.focus===${JSON.stringify(key)});if(!el||el.disabled)throw new Error('Focus target missing/disabled: '+${JSON.stringify(key)});el.click();`);
+  await client.eval(`const el=Array.from(document.querySelectorAll('[data-focus]')).find(e=>e.dataset.focus===${JSON.stringify(key)});if(!el||el.disabled)throw new Error('Focus target missing/disabled: '+${JSON.stringify(key)});el.focus();el.click();`);
 }
 async function input(label, value, client = cdp) {
   await client.eval(`const e=Array.from(document.querySelectorAll('input,textarea')).find(e=>e.getAttribute('aria-label')===${JSON.stringify(label)});if(!e)throw new Error('Input missing');e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('input',{bubbles:true}));`);
@@ -593,8 +593,26 @@ async function main() {
     try {
       await waitFor(`document.querySelector('.tag-curator-workbench')`, 'popout workbench', 15000, popout);
       await screenshot('popout-workbench', popout);
-      await focusClick('settings', popout);
-      await waitFor(`document.querySelector('.tag-curator-workbench-modal')`, 'modal in popout ownerDocument', 5000, popout);
+      // A JS click alone does not activate the native window after a prior popout cycle.
+      await popout.call('Page.bringToFront');
+      await cdp.eval('app.workspace.setActiveLeaf(window.__hostPopoutLeaf,{focus:true});');
+      await popout.eval(`window.electronWindow?.focus();window.focus();`);
+      try { await waitFor(`activeWindow===window.__hostPopoutLeaf.view.contentEl.ownerDocument.defaultView`, 'native popout focus', 1500); }
+      catch {
+        // CDP does not reliably deliver native focus in this environment. Exercise
+        // Obsidian's real focus handler, and retain this limitation in the report.
+        (report.inputLimitations??=[]).push('Popout native focus not observed; dispatched a window focus event before real CDP mouse input. Manual native activation remains unverified.');
+        await popout.eval(`window.dispatchEvent(new FocusEvent('focus'));`);
+        await waitFor(`activeWindow===window.__hostPopoutLeaf.view.contentEl.ownerDocument.defaultView`, 'host popout focus handler', 1500);
+      }
+      const point=await popout.eval(`const el=document.querySelector('[data-focus="settings"]');el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};`);
+      await popout.call('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
+      await popout.call('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',clickCount:1});
+      try { await waitFor(`document.querySelector('.tag-curator-workbench-modal')`, 'modal in popout ownerDocument', 5000, popout); }
+      catch (error) {
+        report.popoutDiagnostic = await cdp.eval(`return {mainModals:Array.from(document.querySelectorAll('.modal')).map(e=>e.textContent.slice(0,500)),viewModals:Array.from(window.__hostPopoutLeaf.view.modals).map(m=>({live:m.live,connected:m.containerEl.isConnected,mainDocument:m.containerEl.ownerDocument===document,owner:m.containerEl.ownerDocument.title})),modalOpen:String(window.__hostObsidian.Modal.prototype.open)};`);
+        await screenshot('popout-modal-failure',popout);throw error;
+      }
       await screenshot('popout-policy-modal', popout);
       await click('Cancel', 'document', popout);
       await focusClick('tab-history', popout); await screenshot('popout-history', popout);

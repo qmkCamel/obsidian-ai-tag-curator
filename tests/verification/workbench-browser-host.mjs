@@ -21,6 +21,7 @@ Object.assign(HTMLElement.prototype, {
 export class ItemView {
   constructor(leaf) { this.app = leaf.app; this.contentEl = document.querySelector("#preview").createDiv({ cls: "view-content" }); }
 }
+export const Platform = { isMobile: false };
 export class Modal {
   constructor(app) {
     this.app = app; this.containerEl = document.createElement("div"); this.containerEl.className = "modal-container mod-dim";

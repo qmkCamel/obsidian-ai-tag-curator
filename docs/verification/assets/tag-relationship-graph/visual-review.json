@@ -1,0 +1,12 @@
+{
+  "reviewedAt": "2026-10-28",
+  "browserRun": "2026-10-28T14-34-09-465Z",
+  "review": "7 screenshots visually inspected; final rerun hashes match inspected run 2026-10-28T14-09-32-157Z",
+  "limitations": [
+    "Native popout focus requires a synthetic focus event in the CDP regression environment; physical activation remains unverified.",
+    "No real mobile device or independent participant/product comparison."
+  ],
+  "hostReview": [
+    "1.8.7 and 1.14.5 final SVG overview and single-pane 360px dark comparison inspected"
+  ]
+}

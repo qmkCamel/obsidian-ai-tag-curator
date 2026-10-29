@@ -162,15 +162,17 @@ export default class TagCuratorPlugin extends Plugin {
       : `Recovery uses the original operation scope: ${exceptions.length} file(s) are exempt from later exclusions/protections. Content conflict checks still apply.`);
   }
 
-  private async showManagement(): Promise<void> {
+  private async showManagement(relationships = false): Promise<void> {
     const leaf = this.app.workspace.getLeavesOfType(TAG_MANAGEMENT_VIEW_TYPE)[0] ?? this.app.workspace.getLeaf("tab");
     await leaf.setViewState({ type: TAG_MANAGEMENT_VIEW_TYPE, active: true });
     await this.app.workspace.revealLeaf(leaf);
+    if(relationships && leaf.view instanceof TagManagementView) leaf.view.openRelationships();
   }
 
   private managementAdapter(): TagManagementAdapter {
     this.managementService ??= new TagManagementService({
       index: () => this.indexService.getSnapshot(), scope: () => this.managementScope, policy: () => this.mutationPolicy,
+      readInlineTags: () => this.settings.readInlineTags,
       records: () => this.operationLog.toJSON(), receipts: () => this.operationLog.receiptsToJSON(),
       historyRevision: () => this.operationLog.revision,
       markdownPaths: () => this.app.vault.getMarkdownFiles().map(file => file.path),
@@ -187,8 +189,20 @@ export default class TagCuratorPlugin extends Plugin {
           if (!file) throw new Error(this.labels.notices.noteMissing);
           await this.app.workspace.getLeaf(false).openFile(file);
         },
+        openGraphFile: async path => {
+          const file=this.vaultReader.getMarkdownFileByPath(path);
+          if(!file)throw new Error(this.labels.notices.noteMissing);
+          // Keep the relationship view and its evidence alive while opening a note beside it.
+          const existing=this.app.workspace.getLeavesOfType("markdown").find(leaf=>(leaf.view as unknown as {file?:TFile}).file?.path===path);
+          const leaf=existing??this.app.workspace.getLeaf("split");
+          await leaf.openFile(file);await this.app.workspace.revealLeaf(leaf);
+        },
         undo: id => this.runHistoryAction(id, false), recover: id => this.runHistoryAction(id, true),
-        openHealth: () => this.analyzeTagHealth()
+        openHealth: () => this.analyzeTagHealth(),
+        openGraphSettings: () => {
+          const settings=(this.app as unknown as {setting?:{open():void;openTabById(id:string):void}}).setting;
+          settings?.open();settings?.openTabById(this.manifest.id);
+        }
       }
     });
     return this.managementService;
@@ -352,6 +366,7 @@ export default class TagCuratorPlugin extends Plugin {
     this.registerEvent(this.app.metadataCache.on("deleted", () => this.indexService.markVaultChanged()));
     this.registerView(TAG_MANAGEMENT_VIEW_TYPE, (leaf) => new TagManagementView(leaf, { adapter: this.managementAdapter(), language: this.uiLanguage }));
     this.addCommand({ id: "open-tag-manager", name: getManagementLabels(this.uiLanguage).title, callback: () => void this.showManagement() });
+    this.addCommand({id:"open-tag-relationship-graph",name:this.uiLanguage.startsWith("zh")?"打开标签关系图":"Open tag relationships",callback:()=>void this.showManagement(true)});
     this.addRibbonIcon("tags", getManagementLabels(this.uiLanguage).title, () => void this.showManagement());
     this.folderBatchRecoveryService = new FolderBatchRecoveryService({
       findFile: (path) => this.vaultReader.getMarkdownFileByPath(path),

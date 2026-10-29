@@ -1,4 +1,6 @@
-import { ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Platform, setIcon, type WorkspaceLeaf } from "obsidian";
+import { TagGraphPanel, type TagRelationshipContext } from "../graph/TagGraphPanel";
+import { scopeKey as graphScopeKey, snapshotKey as graphSnapshotKey } from "../graph/TagRelationshipModel";
 import type { TagIndex, TagFileUsage } from "../index/TagIndex";
 import { getManagementLabels, managementHistoryText, type ManagementLabels } from "../ui/managementLabels";
 import { TagManagementPolicyModal, TagManagementManualModal, TagManagementHistoryModal } from "./TagManagementModals";
@@ -24,6 +26,7 @@ export interface TagManagementState {
   index: TagIndex | null;
   freshness: "missing" | "ready" | "stale" | "refreshing" | "error";
   indexRevision?: number; scope: ManagementScope; policy: ManagementPolicy;
+  vaultRevision?: number; readInlineTags?: boolean;
   history: ManagementHistoryEntry[]; historyError?: string; error?: string;
   busy?: boolean; recoveryRequired?: boolean; failedPaths?: string[];
   progress?: { completed: number; total: number }; folders?: string[]; missingPaths?: string[]; invalidFolders?: string[];
@@ -40,8 +43,10 @@ export interface TagManagementAdapter {
     // The service owns validation, hydration generation, review and all writes. Honor signal after awaits.
     startManual(intent: ManagementManualIntent, signal: AbortSignal): Promise<void>;
     openFile(path: string): Promise<void> | void;
+    openGraphFile?(path: string): Promise<void> | void;
     undo(recordId: string): Promise<void>; recover(recordId: string): Promise<void>;
     openHealth?(): Promise<void> | void;
+    openGraphSettings?(): void;
   };
 }
 export interface TagManagementViewProps { adapter: TagManagementAdapter; language?: string }
@@ -75,7 +80,13 @@ export class TagManagementView extends ItemView {
   private readonly adapter: TagManagementAdapter;
   private readonly labels: ManagementLabels;
   private unsubscribe?: () => void;
-  private tab: "tags" | "history" = "tags";
+  private tab: "tags" | "history" | "relationships" = "tags";
+  private frame?: HTMLElement;
+  private graphHost?: HTMLElement;
+  private graphPanel?: TagGraphPanel;
+  private relationshipContext?: TagRelationshipContext;
+  private readonly language: string;
+  private graphState?: TagManagementState;
   private search = "";
   private source = "all";
   private sort = "count";
@@ -98,14 +109,14 @@ export class TagManagementView extends ItemView {
   private model = new TagManagementViewModel();
 
   constructor(leaf: WorkspaceLeaf, props: TagManagementViewProps) {
-    super(leaf); this.adapter = props.adapter; this.labels = getManagementLabels(props.language ?? "en");
+    super(leaf); this.adapter = props.adapter; this.language=props.language??"en"; this.labels = getManagementLabels(this.language);
   }
   getViewType(): string { return TAG_MANAGEMENT_VIEW_TYPE; }
   getDisplayText(): string { return this.labels.title; }
   getIcon(): string { return "tags"; }
   getState(): Record<string, unknown> { return { tab: this.tab, scope: this.adapter.getState().scope }; }
   async setState(state: Record<string, unknown>): Promise<void> {
-    this.tab = state.tab === "history" ? "history" : "tags";
+    this.tab = state.tab === "relationships" ? "relationships" : state.tab === "history" ? "history" : "tags";
     // Scope persistence/restoration belongs to the adapter; never restore transient selections or search.
     if (this.alive) this.render();
   }
@@ -115,6 +126,7 @@ export class TagManagementView extends ItemView {
   }
   async onClose(): Promise<void> {
     this.alive = false; this.unsubscribe?.(); this.unsubscribe = undefined;
+    this.graphPanel?.dispose(); this.graphPanel=undefined;this.graphHost=undefined;this.frame=undefined;this.relationshipContext=undefined;
     for (const modal of this.modals) modal.close(); this.modals.clear(); this.contentEl.empty();
   }
   private blocked(state: TagManagementState): boolean {
@@ -141,11 +153,16 @@ export class TagManagementView extends ItemView {
     const focusKey = this.contentEl.contains(active) ? active?.dataset.focus : undefined;
     const caret = active?.tagName === "INPUT" && active.type === "search" ? active.selectionStart : null;
     const state = this.adapter.getState(); const l = this.labels;
+    this.graphState=state;
     const key = JSON.stringify(state.scope);
     if (this.scopeKey && key !== this.scopeKey) { this.clearForFilter(); this.detail = undefined; }
     this.scopeKey = key;
-    this.contentEl.empty();
-    const header = this.contentEl.createDiv({ cls: "tag-curator-workbench__toolbar" });
+    this.frame ??= this.contentEl.createDiv({cls:"tag-curator-workbench__frame"});
+    this.frame.classList.toggle("tag-curator-workbench__frame--graph",this.tab==="relationships");
+    this.frame.empty();
+    if(this.relationshipContext&&this.relationshipContext.result.identity.scopeKey!==graphScopeKey(state))this.relationshipContext=undefined;
+    this.graphPanel?.update();
+    const header = this.frame.createDiv({ cls: "tag-curator-workbench__toolbar" });
     header.createEl("h2", { text: l.title });
     this.button(header, state.freshness === "refreshing" ? l.cancelRefresh : l.refresh, state.freshness === "refreshing" ? "x" : "refresh-cw", () => {
       // Cancellation must stay reachable while the refresh promise is pending.
@@ -154,7 +171,7 @@ export class TagManagementView extends ItemView {
     }, "refresh", state.freshness !== "refreshing" && (this.pending || !!state.busy));
     this.button(header, l.settings, "sliders-horizontal", () => this.openModal(new TagManagementPolicyModal(this.app, this.adapter, l)), "settings");
     if (this.adapter.commands.openHealth) this.button(header, l.health, "activity", () => void this.run(() => this.adapter.commands.openHealth?.()), "health");
-    const status = this.contentEl.createDiv({ cls: "tag-curator-workbench__status", attr: { role: "status", "aria-live": "polite" } });
+    const status = this.frame.createDiv({ cls: "tag-curator-workbench__status", attr: { role: "status", "aria-live": "polite" } });
     status.createSpan({ text: l[state.freshness] });
     if (state.index) status.createSpan({ text: state.index.updatedAt });
     if (state.progress) status.createSpan({ text: l.progress(state.progress.completed, state.progress.total) });
@@ -162,21 +179,51 @@ export class TagManagementView extends ItemView {
     if (state.busy) status.createSpan({ text: l.busy });
     if (state.recoveryRequired || state.history.some(entry => entry.unresolved)) status.createSpan({ text: l.recoveryBlocked });
     if (this.notice) status.createSpan({ text: this.notice });
-    if (state.error || state.historyError || this.localError) this.contentEl.createDiv({ cls: "tag-curator-workbench__error", text: [state.historyError && l.historyError, state.historyError, state.error, this.localError].filter(Boolean).join(": "), attr: { role: "alert" } });
-    if (state.invalidFolders?.length) this.contentEl.createDiv({ cls: "tag-curator-workbench__error", text: `${l.invalidFolders}: ${state.invalidFolders.map(path => path || l.root).join(", ")}`, attr: { role: "status", "aria-live": "polite", "data-invalid-folders": "true" } });
-    const tabs = this.contentEl.createDiv({ cls: "tag-curator-workbench__tabs", attr: { role: "tablist", "aria-label": l.title } });
-    for (const tab of ["tags", "history"] as const) {
-      const button = this.button(tabs, l[tab], undefined, () => { this.tab = tab; this.render(); }, `tab-${tab}`);
+    if (state.error || state.historyError || this.localError) this.frame.createDiv({ cls: "tag-curator-workbench__error", text: [state.historyError && l.historyError, state.historyError, state.error, this.localError].filter(Boolean).join(": "), attr: { role: "alert" } });
+    if (state.invalidFolders?.length) this.frame.createDiv({ cls: "tag-curator-workbench__error", text: `${l.invalidFolders}: ${state.invalidFolders.map(path => path || l.root).join(", ")}`, attr: { role: "status", "aria-live": "polite", "data-invalid-folders": "true" } });
+    const tabs = this.frame.createDiv({ cls: "tag-curator-workbench__tabs", attr: { role: "tablist", "aria-label": l.title } });
+    const tabLabels={...l,relationships:this.language.startsWith("zh")?"关系图":"Relationships"};
+    const tabOrder=["tags","history","relationships"] as const;
+    for (const tab of tabOrder) {
+      const button = this.button(tabs, tabLabels[tab], undefined, () => { this.tab = tab; this.render(); }, `tab-${tab}`);
       button.setAttribute("role", "tab"); button.setAttribute("aria-selected", String(this.tab === tab)); button.tabIndex = this.tab === tab ? 0 : -1;
-      button.addEventListener("keydown", event => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); this.tab = event.key === "Home" ? "tags" : event.key === "End" ? "history" : this.tab === "tags" ? "history" : "tags"; this.render(); this.contentEl.querySelector<HTMLButtonElement>(`[data-focus="tab-${this.tab}"]`)?.focus(); } });
+      button.addEventListener("keydown", event => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); this.tab = event.key === "Home" ? "tags" : event.key === "End" ? "relationships" : tabOrder[(tabOrder.indexOf(this.tab)+(event.key==="ArrowRight"?1:2))%3]; this.render(); this.contentEl.querySelector<HTMLButtonElement>(`[data-focus="tab-${this.tab}"]`)?.focus(); } });
     }
-    const panel = this.contentEl.createDiv({ cls: "tag-curator-workbench__panel", attr: { role: "tabpanel", "aria-label": l[this.tab] } });
-    if (this.tab === "tags") this.renderTags(panel, state); else this.renderHistory(panel, state);
+    if(this.tab==="relationships"){
+      this.ensureGraph().show();
+    }else{
+      this.graphPanel?.hide();
+      const panel = this.frame.createDiv({ cls: "tag-curator-workbench__panel", attr: { role: "tabpanel", "aria-label": tabLabels[this.tab] } });
+      if(this.tab==="tags"){
+        if(this.relationshipContext){
+          const c=this.relationshipContext,r=c.result,v=r.value;
+          if(v.kind==="comparison"){
+            const box=panel.createDiv({cls:"tag-graph__context"});box.createEl("p",{text:`${r.data.tags[v.a]} / ${r.data.tags[v.b]} · ${r.query.source} · ${this.language.startsWith("zh")?"只读比较上下文：请另行选择操作和范围，浏览来源不代表修改范围。":"Read-only comparison: choose the operation and scope separately; browse sources do not authorize changes."}`});
+            if(r.snapshotKey!==graphSnapshotKey(state)||r.index!==state.index)box.createEl("p",{text:this.language.startsWith("zh")?"比较已过期，请显式刷新索引。":"Comparison is stale; refresh the index explicitly."});
+            this.button(box,this.language.startsWith("zh")?"取消整理，返回比较":"Cancel management and return to comparison",undefined,()=>{this.tab="relationships";this.render();this.ensureGraph().restore(c);},"return-comparison");
+            this.button(box,l.history,undefined,()=>{this.tab="history";this.render();},"comparison-history");
+          }
+        }
+        this.renderTags(panel,state);
+      }else this.renderHistory(panel,state);
+    }
     if (focusKey) {
       const next = Array.from(this.contentEl.querySelectorAll<HTMLElement>("[data-focus]")).find(el => el.dataset.focus === focusKey);
       next?.focus(); if (caret !== null && next?.tagName === "INPUT") (next as HTMLInputElement).setSelectionRange(caret, caret);
     }
   }
+  private ensureGraph():TagGraphPanel{
+    if(!this.graphPanel){
+      this.graphHost=this.contentEl.createDiv({attr:{role:"tabpanel","aria-label":this.language.startsWith("zh")?"关系图":"Relationships"}});
+      this.graphPanel=new TagGraphPanel(this.graphHost,{state:()=>this.graphState??this.adapter.getState(),language:this.language,mobile:Platform?.isMobile??false,
+        openFile:path=>(this.adapter.commands.openGraphFile??this.adapter.commands.openFile)(path),refresh:()=>this.adapter.commands.refresh(),
+        settings:()=>{if(this.adapter.commands.openGraphSettings)this.adapter.commands.openGraphSettings();else this.openModal(new TagManagementPolicyModal(this.app,this.adapter,this.labels));},
+        showTag:key=>{this.tab="tags";this.selected.clear();this.search="";this.source="all";this.detail=key;this.filePage=0;this.render();},
+        handoff:context=>{this.relationshipContext=context;this.selected.clear();this.detail=undefined;this.tab="tags";this.render();}
+      });
+    }return this.graphPanel;
+  }
+  openRelationships(root?:string):void{this.tab="relationships";if(this.alive){this.render();if(root)this.ensureGraph().show(root,this.source as "all"|"inline"|"frontmatter");}}
   private pager(parent: HTMLElement, page: number, total: number, size: number, change: (page: number) => void, key: string): void {
     const pages = Math.max(1, Math.ceil(total / size));
     const bar = parent.createDiv({ cls: "tag-curator-workbench__pager" });
@@ -241,6 +288,7 @@ export class TagManagementView extends ItemView {
     }
     if (row) {
       detail.createEl("h3", { text: row.tagText });
+      this.button(detail,this.language.startsWith("zh")?"查看关系":"View relationships",undefined,()=>this.openRelationships(row!.tagKey),"tag-relationships");
       const metrics = detail.createEl("dl", { cls: "tag-curator-workbench__metrics" });
       for (const [name, count] of [[l.distinctFiles, row.fileCount], [l.frontmatter, row.frontmatterFileCount], [l.inline, row.inlineFileCount], ...(row.metadataFileCount ? [[l.metadata, row.metadataFileCount] as const] : [])] as const) {
         const metric = metrics.createDiv(); metric.createEl("dt", { text: name }); metric.createEl("dd", { text: l.fileCount(count) });

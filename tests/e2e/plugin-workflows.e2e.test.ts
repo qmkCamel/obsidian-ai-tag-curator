@@ -131,6 +131,7 @@ describe("plugin e2e workflows", () => {
       "analyze-tag-health",
       "handle-unfinished-tag-operation",
       "open-tag-manager",
+      "open-tag-relationship-graph",
       "refresh-tag-index",
       "show-tag-index-summary",
       "suggest-tags-for-current-note",

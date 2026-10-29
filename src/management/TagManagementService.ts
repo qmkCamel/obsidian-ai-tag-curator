@@ -7,6 +7,7 @@ import type { ManagementHistoryEntry, TagManagementAdapter, TagManagementState }
 
 export interface TagManagementDependencies {
   index(): TagIndexSnapshot;
+  readInlineTags?(): boolean;
   scope(): TagScope;
   policy(): TagMutationPolicy;
   records(): unknown;
@@ -45,6 +46,7 @@ export class TagManagementService implements TagManagementAdapter {
     const folders = d.folders();
     return {
       index: snapshot.index ?? null, freshness: snapshot.state, indexRevision: snapshot.revision,
+      vaultRevision: snapshot.vaultRevision, readInlineTags: d.readInlineTags?.() ?? true,
       scope: structuredClone(scope), policy: structuredClone(policy), history,
       historyError: d.historyError() ?? undefined, error: d.error() ?? snapshot.error ?? undefined,
       busy: d.busy(), recoveryRequired: history.some(row => row.unresolved),

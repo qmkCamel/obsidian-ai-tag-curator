@@ -16,7 +16,10 @@
     "spec:validate": "openspec validate",
     "test": "vitest run",
     "test:unit": "vitest run tests/*.test.ts",
-    "test:e2e": "vitest run tests/e2e"
+    "test:e2e": "vitest run tests/e2e",
+    "test:graph:browser": "node tests/flowassert/run.mjs",
+    "test:graph:flowassert": "node tests/flowassert/run.mjs --performance --flowassert",
+    "test:graph:host": "node tests/flowassert/host.mjs"
   },
   "keywords": [
     "obsidian",
@@ -36,6 +39,9 @@
   "license": "MIT",
   "devDependencies": {
     "@fission-ai/openspec": "^1.3.1",
+    "@types/d3-force": "3.0.10",
+    "@types/d3-selection": "3.0.11",
+    "@types/d3-zoom": "3.0.8",
     "@types/node": "^20.12.7",
     "esbuild": "^0.28.1",
     "jsdom": "^24.1.3",
@@ -43,5 +49,10 @@
     "tslib": "^2.6.2",
     "typescript": "^5.4.5",
     "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "d3-force": "3.0.0",
+    "d3-selection": "3.0.0",
+    "d3-zoom": "3.0.0"
   }
 }

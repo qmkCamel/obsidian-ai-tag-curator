@@ -21,6 +21,7 @@ import { TagManagementManualModal, TagManagementPolicyModal, TagManagementHistor
 import { getManagementLabels, managementHistoryText } from "../src/ui/managementLabels";
 import { createFakeApp, installDomHelpers, resetObsidianMockState, requestUrlMock, openModals, Modal } from "./e2e/obsidian-harness";
 import type { TagUsage } from "../src/index/TagIndex";
+import { Platform } from "./e2e/obsidian-harness";
 
 const labels = getManagementLabels("en");
 const usage = (tag: string, count = 1): TagUsage => ({ tag, normalized: tag, count: 9999,
@@ -54,6 +55,57 @@ async function mounted(f = fixture(), language = "en") {
   const view = new TagManagementView({ app: createFakeApp([]) } as never, { adapter: f.adapter, language }); await view.onOpen(); return { ...f, view };
 }
 beforeEach(() => { installDomHelpers(); resetObsidianMockState(); });
+
+describe("relationship integration and read-only handoff",()=>{
+  async function compare(f:Awaited<ReturnType<typeof mounted>>){
+    button("Relationships").click();await vi.waitFor(()=>expect(document.querySelector(".tag-graph")?.getAttribute("data-phase")).toBe("ready"));
+    fill("Exact tag A","old");fill("Exact tag B","other");button("Compare pair").click();
+    await vi.waitFor(()=>expect(document.querySelector(".tag-graph__error")?.textContent).toContain("Worker unavailable"));
+    button("Retry as relationship table").click();await vi.waitFor(()=>expect(document.querySelector(".tag-graph__details")?.textContent).toContain("Shared / only A / only B"));
+    await vi.waitFor(()=>expect(document.querySelector(".tag-graph")?.getAttribute("data-phase")).toBe("ready"));
+  }
+  it("starts with full search, survives progress without rebuilding input, and never invokes AI or writes",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));button("Relationships").click();
+    const search=input("Search all scoped tags");search.focus();fill("Search all scoped tags","ol");f.update({progress:{completed:1,total:10},freshness:"refreshing"});
+    expect(input("Search all scoped tags")).toBe(search);expect(document.activeElement).toBe(search);
+    expect(document.querySelector(".tag-graph__canvas svg")).toBeNull();expect(f.commands.refresh).not.toHaveBeenCalled();expect(f.commands.startManual).not.toHaveBeenCalled();expect(requestUrlMock).not.toHaveBeenCalled();await f.view.onClose();
+  });
+  it("hands off no selection or intent and returns to the same difference group",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));await compare(f);button("Only A files").click();await vi.waitFor(()=>expect(document.querySelectorAll(".tag-graph__file")).toHaveLength(1));
+    button("Bring to management").click();expect(document.querySelectorAll("[data-tag] input:checked")).toHaveLength(0);expect(f.commands.startManual).not.toHaveBeenCalled();expect(document.querySelector(".tag-graph__context")?.textContent).toContain("old / other");
+    button("Cancel management and return to comparison").click();await vi.waitFor(()=>expect(button("Only A files").getAttribute("aria-pressed")).toBe("true"));expect(f.commands.startManual).not.toHaveBeenCalled();await f.view.onClose();
+  });
+  it("revokes paths and handoff immediately when scope or exclusions change",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));await compare(f);button("Bring to management").click();
+    f.update({scope:{include:[{path:"Elsewhere",recursive:true}]}});expect(document.querySelector(".tag-graph__context")).toBeNull();expect(document.querySelectorAll(".tag-graph__file")).toHaveLength(0);expect(document.querySelector(".tag-graph__details")?.textContent).toBe("");await f.view.onClose();
+  });
+  it("allows read-only comparison during recovery and retains stale provenance",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));f.update({busy:true,recoveryRequired:true,historyError:"recovery",freshness:"stale",vaultRevision:2});await compare(f);
+    expect(document.querySelector(".tag-graph__status")?.textContent).toContain("Stale index/evidence");expect(document.querySelector(".tag-graph")?.textContent).toContain("2026-09-10");button("Bring to management").click();expect(f.commands.startManual).not.toHaveBeenCalled();await f.view.onClose();
+  });
+  it("marks handoff stale after apply/undo revisions and revalidates missing endpoints on return",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));await compare(f);button("Bring to management").click();
+    // Applied writes and undo both advance the vault version; old evidence remains labelled.
+    for(const vaultRevision of [2,3]){f.update({vaultRevision,freshness:"stale"});expect(document.querySelector(".tag-graph__context")?.textContent).toContain("Comparison is stale");}
+    button(labels.history,document.querySelector(".tag-graph__context")!).click();expect(button(labels.history).getAttribute("aria-selected")).toBe("true");button(labels.tags).click();
+    f.update({freshness:"ready",indexRevision:2,index:{updatedAt:"2026-10-28",tags:{other:usage("other")}}});
+    button("Cancel management and return to comparison").click();
+    await vi.waitFor(()=>expect(document.querySelector(".tag-graph__error")?.textContent).toContain("endpoint has no eligible files"));
+    expect(f.commands.startManual).not.toHaveBeenCalled();expect(f.commands.undo).not.toHaveBeenCalled();await f.view.onClose();expect(f.listeners.size).toBe(0);
+  });
+  it("protection changes invalidate handoff evidence and do not authorize protected writes",async()=>{
+    const f=await mounted(fixture({old:usage("old",2),other:usage("other",1)}));await compare(f);button("Bring to management").click();
+    f.update({policy:{...f.state().policy,revision:2,protectedTags:[{tag:"old",mode:"exact"}]}});
+    expect(document.querySelector(".tag-graph__context")?.textContent).toContain("Comparison is stale");
+    document.querySelector<HTMLButtonElement>('[data-focus="tag-old"]')!.click();expect(button(labels.rename).disabled).toBe(true);
+    expect(f.commands.startManual).not.toHaveBeenCalled();await f.view.onClose();
+  });
+  it("mobile entry stays explicitly unsupported without creating a worker",async()=>{
+    Platform.isMobile=true;
+    try{const f=await mounted();button("Relationships").click();expect(document.querySelector(".tag-graph")?.textContent).toContain("desktop only");expect(document.querySelector(".tag-graph")?.getAttribute("data-phase")).toBe("idle");button("Back to tags").click();expect(button(labels.tags).getAttribute("aria-selected")).toBe("true");await f.view.onClose();}
+    finally{Platform.isMobile=false;}
+  });
+});
 
 describe("native tag management workbench", () => {
   it.each([[0, "0 files"], [1, "1 file"], [2, "2 files"]] as const)("uses English file count %s in history DOM", async (count, expected) => {

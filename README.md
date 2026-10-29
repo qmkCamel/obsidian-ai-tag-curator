@@ -10,6 +10,8 @@ Browse your tags, find their notes, and review rename or merge changes in one wo
 
 ## New in 0.5.0
 
+Working-tree addition, **not yet released**: a desktop Relationships tab and `Open tag relationships` command. Search any scoped tag, explore a bounded neighborhood/overview, or compare two tags' shared and exclusive files, Jaccard and directional coverage. Evidence is read-only; handoff to management makes no selections or writes. Worker computation is cancellable, with an explicit table fallback. See the [usage guide](docs/tag-relationships.zh-CN.md) and [verification record](docs/verification/tag-relationship-graph.md) (Chinese) for scope, limits and remaining product validation.
+
 - **Manage without AI:** search and filter tags, inspect related notes, and review exact rename/merge changes.
 - **Control the scope:** separate browsing scope from global folder exclusions and protected tags; review property and body edits independently.
 - **Trace and undo changes:** one operation history, globally ordered undo, and fixed-target recovery when an operation is unfinished.

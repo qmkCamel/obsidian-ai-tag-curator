@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+中文
+
+- 新增桌面标签关系探索：完整搜索、一跳邻域、有界概览、独立直接层级和等价关系表。
+- 增加共同/双侧差集、交并比、双向覆盖率、零交集比较与只读整理交接；打开证据笔记保留关系工作台。
+- 统计与静态布局在内嵌 Worker 中执行，提供资源预算、取消、版本隔离及显式分片关系表回退；不新增 AI 请求或图内写入。
+- 保留浏览器/真实宿主 case、性能证据与 FlowAssert 报告导入链路。详见[验收记录](docs/verification/tag-relationship-graph.md)，不代表已发布或完成独立用户/竞品任务研究。
+
+English
+
+- Add desktop relationship exploration with full-scope search, one-hop neighborhoods, bounded overview, direct naming hierarchy and a keyboard-equivalent table.
+- Compare shared/exclusive files, Jaccard and directional coverage, including zero-overlap pairs; preserve read-only context when navigating to reviewed management.
+- Embed cancellable, budgeted statistics and static layout in a Worker with version isolation and an explicit sliced table fallback. Evidence opens beside the workbench; no new AI requests or graph mutations.
+- Retain executable browser/host cases, performance evidence and a FlowAssert report-import workflow. This is unreleased; independent participant/competitor task validation remains separate.
+
 ## 0.5.0 - 2026-10-09
 
 中文
